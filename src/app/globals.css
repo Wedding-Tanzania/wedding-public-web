@@ -3,11 +3,98 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-    color: #15171E;
+  :root {
+    --w-blush-50: #FDF7F4;
+    --w-blush-100: #FAE9E1;
+    --w-blush-200: #F4D0C1;
+    --w-blush-300: #E8A996;
+    --w-blush-400: #D27F6C;
+    --w-blush-500: #B35E4D;
+    --w-blush-600: #8C3F31;
+    --w-blush-700: #622820;
+    --w-blush-800: #3D1712;
+    --w-blush-900: #21090A;
+    --w-ivory: #FBF7F0;
+    --w-paper: #FFFDF9;
+    --w-champagne: #E8D9B8;
+    --w-champagne-dk: #A88D4A;
+    --w-sage: #7C8B6F;
+    --w-sage-dk: #3F4B33;
+    --w-ink-1: #2A1714;
+    --w-ink-2: #5C413B;
+    --w-ink-3: #907671;
+    --w-ink-4: #C0A9A3;
+    --w-border: #E8DDD4;
   }
-  body {
-    background: #FAFAFB;
+
+  html, body {
+    background: var(--w-ivory);
+    color: var(--w-ink-1);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* Ornamental rule used between display headings */
+  .ornament {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--w-blush-600);
+    font-weight: 500;
+  }
+  .ornament::before,
+  .ornament::after {
+    content: '';
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--w-blush-300), transparent);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 16px 28px;
+    border: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 200ms ease;
+  }
+  .btn-primary { background: var(--w-blush-600); color: var(--w-paper); }
+  .btn-primary:hover { background: var(--w-blush-700); box-shadow: 0 16px 40px rgba(179, 94, 77, 0.25); }
+  .btn-outline {
+    background: transparent;
+    color: var(--w-blush-700);
+    border: 1px solid var(--w-blush-500);
+  }
+  .btn-outline:hover {
+    background: var(--w-blush-600);
+    color: var(--w-paper);
+    border-color: var(--w-blush-600);
+  }
+  .btn-sage { background: var(--w-sage); color: var(--w-paper); }
+  .btn-sage:hover { background: var(--w-sage-dk); }
+
+  .tag {
+    display: inline-block;
+    padding: 5px 14px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    background: var(--w-champagne);
+    color: var(--w-blush-800);
+    border-radius: 999px;
   }
 }

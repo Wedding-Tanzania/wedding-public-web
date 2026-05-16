@@ -1,60 +1,287 @@
 import Link from 'next/link';
+import { Section, SectionHead } from '@/components/Section';
 
 export default function HomePage() {
   return (
     <main>
-      <section className="bg-gradient-to-br from-primary to-primary-dark text-white">
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-            Plan your wedding. <br />
-            Collect contributions. <br />
-            All in one place.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg opacity-90">
-            Wedding.co.tz is Tanzania&apos;s home for engaged couples and the vendors who bring
-            weddings to life. Build your story page, share your invitation, and let family and
-            friends contribute directly via M-Pesa Changisha, Mixx by YAS Mchango, or bank.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="https://app.wedding.co.tz"
-              className="rounded-lg bg-white px-6 py-3 font-semibold text-primary shadow-md hover:bg-gray-50"
-            >
-              Start your wedding page
-            </Link>
-            <Link
-              href="/vendors"
-              className="rounded-lg border border-white/40 px-6 py-3 font-semibold hover:bg-white/10"
-            >
-              Browse vendors
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-20 grid md:grid-cols-3 gap-8">
-        <Feature
-          title="Your story, your page"
-          body="A beautiful, shareable webpage for your wedding, with your story, schedule, gallery, RSVPs, and contribution link."
-        />
-        <Feature
-          title="Find the right vendor"
-          body="Photographers, caterers, venues, decor, and more. Filter by theme, from traditional Chagga to coastal Swahili."
-        />
-        <Feature
-          title="Kuchangiana, digitised"
-          body="Guests pledge and pay directly to your Changisha, Mchango, Lipa Namba, or bank account. You never leave funds on our platform."
-        />
-      </section>
+      <Hero />
+      <Principles />
+      <ForCouples />
+      <ForVendors />
+      <Testimonials />
+      <CTA />
     </main>
   );
 }
 
-function Feature({ title, body }: { title: string; body: string }) {
+function Hero() {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="text-xl font-semibold text-secondary">{title}</h3>
-      <p className="mt-3 text-gray-600">{body}</p>
-    </div>
+    <section
+      className="relative overflow-hidden px-6 lg:px-12"
+      style={{
+        background:
+          'radial-gradient(ellipse at top, var(--w-blush-50), var(--w-ivory) 60%)',
+        padding: '120px 0 140px',
+      }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 10% 20%, rgba(232,169,150,0.25), transparent 35%), radial-gradient(circle at 90% 80%, rgba(232,217,184,0.35), transparent 40%)',
+        }}
+      />
+      <div className="relative max-w-wrap mx-auto">
+        <div className="ornament justify-center">— Design System · 2026 —</div>
+        <h1 className="mt-6 font-display font-light text-center text-blush-900 leading-[0.98] tracking-tight text-[clamp(3.5rem,7.5vw,7rem)]">
+          The day that <em className="italic text-blush-600 font-normal">begins</em>
+          <br />a lifetime together.
+        </h1>
+        <p className="font-display italic text-xl text-ink-2 text-center max-w-xl mx-auto mt-8 leading-relaxed">
+          Planning, invitations, RSVPs, vendors, and gifting. Composed with the restraint of a
+          letterpressed invitation and the rhythm of a garden ceremony.
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center mt-12">
+          <Link href="/contact" className="btn btn-primary">
+            Start planning
+          </Link>
+          <Link href="/features" className="btn btn-outline">
+            See the look
+          </Link>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-10 max-w-3xl mx-auto mt-20 text-center">
+          {[
+            ['500+', 'Verified vendors'],
+            ['7', 'Service categories'],
+            ['TZ · KE', 'Active markets'],
+          ].map(([n, l]) => (
+            <div key={l}>
+              <div className="font-display font-normal text-4xl text-blush-700">{n}</div>
+              <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-2">{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Principles() {
+  const items = [
+    {
+      title: 'Tactile, not digital',
+      body:
+        'Surfaces feel like paper. Serifs carry voice. Chrome recedes; content is invited forward.',
+    },
+    {
+      title: 'Composed, not crowded',
+      body:
+        'Generous margins, centred axis, restrained rules. Let each element breathe its own air.',
+    },
+    {
+      title: 'Warmth over gloss',
+      body:
+        'Blush, champagne, and sage. No hard gradients or neon; the palette is a garden at dusk.',
+    },
+  ];
+  return (
+    <Section tone="paper">
+      <SectionHead
+        eyebrow="Principles"
+        title={<>Set like a table, <em className="italic text-blush-600">not a grid.</em></>}
+      />
+      <div className="grid md:grid-cols-3 gap-6">
+        {items.map((p) => (
+          <div
+            key={p.title}
+            className="bg-paper border border-bordr rounded-lg p-10 text-center shadow-soft"
+          >
+            <div className="w-12 h-12 rounded-full bg-blush-100 grid place-items-center mx-auto mb-5 text-blush-600">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 4L14 10H20L15 14L17 20L12 16L7 20L9 14L4 10H10Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className="font-display font-medium text-2xl">{p.title}</div>
+            <p className="mt-4 text-sm text-ink-3 leading-relaxed">{p.body}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ForCouples() {
+  const features = [
+    { t: 'Vendor Marketplace', b: 'Browse and compare hundreds of verified vendors across venues, catering, photography, decor, entertainment, transport, and more.' },
+    { t: 'Reviews & Ratings', b: 'Authentic reviews from real couples, verified by the platform. Every decision informed.' },
+    { t: 'Budget Planner', b: 'Set a total budget and track spending across every vendor and category in real time.' },
+    { t: 'Checklist & Timeline', b: 'A customisable planning checklist with milestone reminders, from engagement to honeymoon.' },
+    { t: 'Booking & Payments', b: 'Reserve vendors and pay deposits directly. Mobile money, card, or bank transfer, powered by Malipopay.' },
+    { t: 'Wedding Website', b: 'Every couple gets a personalised story page to share details, RSVPs, and contribution links.' },
+    { t: 'Guest Management', b: 'Track RSVPs, dietary requirements, seating preferences, and plus-ones from a single guest list.' },
+  ];
+  return (
+    <Section tone="cream">
+      <SectionHead
+        eyebrow="For couples"
+        title={
+          <>
+            Every stage of the journey. <em className="italic text-blush-600">One quiet place.</em>
+          </>
+        }
+      />
+      <div className="grid md:grid-cols-3 gap-5">
+        {features.map((f, i) => (
+          <div
+            key={f.t}
+            className={`bg-paper border border-bordr rounded-lg p-8 flex flex-col gap-3 ${i === 0 ? 'md:col-span-2' : ''}`}
+          >
+            <div className="font-mono text-[11px] font-bold text-blush-600">
+              {(i + 1).toString().padStart(2, '0')}
+            </div>
+            <div className="font-display text-2xl font-medium">{f.t}</div>
+            <p className="text-sm text-ink-2 leading-relaxed">{f.b}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ForVendors() {
+  const features = [
+    ['Verified vendor profile', 'A professional, searchable business page with portfolio, packages, pricing, and contact.'],
+    ['Lead inbox', 'All enquiries delivered directly, with tools to respond, quote, and convert.'],
+    ['Booking calendar', 'Manage availability, prevent double-bookings, and see upcoming events in one view.'],
+    ['Analytics dashboard', 'See how many couples viewed your profile, where they came from, and what packages they enquired about.'],
+    ['Payment collection', 'Accept deposits and full payments through the platform, settled via Malipopay.'],
+  ];
+  return (
+    <Section tone="paper">
+      <div className="grid lg:grid-cols-[1fr_1.3fr] gap-20 items-start">
+        <div className="lg:sticky lg:top-32">
+          <div className="ornament">— For vendors —</div>
+          <h2 className="mt-4 font-display font-light text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-tight">
+            A professional storefront. <em className="italic text-blush-600">A leads engine.</em>
+          </h2>
+          <p className="mt-6 text-ink-2 leading-relaxed max-w-md">
+            Put your services in front of every couple actively planning a wedding in Tanzania.
+            Wedding by Lockwood is a digital shopfront and a conversion machine, built for the way
+            vendors here actually operate.
+          </p>
+          <Link href="/contact?topic=vendor" className="btn btn-primary mt-8">
+            Become a vendor
+          </Link>
+        </div>
+        <div>
+          {features.map(([t, b], i) => (
+            <div
+              key={t}
+              className={`grid grid-cols-[60px_1fr] gap-8 items-start py-8 border-t border-bordr ${i === features.length - 1 ? 'border-b' : ''}`}
+            >
+              <div className="font-mono text-[13px] text-blush-600 font-bold pt-1">0{i + 1}.</div>
+              <div>
+                <div className="font-display text-2xl font-medium">{t}</div>
+                <p className="mt-2 text-ink-2 leading-relaxed">{b}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function Testimonials() {
+  const quotes = [
+    {
+      quote:
+        'We planned a 320-guest wedding in five months without a planner. The vendor reviews saved us from three bad decisions.',
+      who: 'Amani & Nyota',
+      sub: 'Married December 2026 · Oyster Bay Gardens',
+    },
+    {
+      quote:
+        'I went from cold WhatsApp leads to a booked diary in eight weeks. The lead inbox is the whole game.',
+      who: 'Faraja Mwakatumbula',
+      sub: 'Founder, Kilima Gardens Estate',
+    },
+    {
+      quote:
+        'Our families could pledge from Mwanza, Arusha, and London on the same page. Money landed straight in our Changisha.',
+      who: 'Hassan & Asha',
+      sub: 'Married April 2026 · Zanzibar coastal',
+    },
+  ];
+  return (
+    <Section tone="cream">
+      <SectionHead
+        eyebrow="Real weddings"
+        title={
+          <>
+            Real couples. <em className="italic text-blush-600">Real ceremonies.</em>
+          </>
+        }
+      />
+      <div className="grid md:grid-cols-3 gap-6">
+        {quotes.map((q) => (
+          <figure
+            key={q.who}
+            className="bg-paper border border-champagne rounded-lg p-10 relative shadow-soft"
+          >
+            <div className="font-display italic text-blush-300 text-6xl leading-none">"</div>
+            <blockquote className="font-display text-xl text-ink-1 leading-relaxed mt-2">
+              {q.quote}
+            </blockquote>
+            <figcaption className="mt-6 pt-4 border-t border-bordr">
+              <div className="font-display text-lg">{q.who}</div>
+              <div className="text-xs uppercase tracking-widest3 text-ink-3 mt-1">{q.sub}</div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <div className="text-center mt-12">
+        <Link href="/testimonials" className="btn btn-outline">
+          Read more stories
+        </Link>
+      </div>
+    </Section>
+  );
+}
+
+function CTA() {
+  return (
+    <section
+      className="relative overflow-hidden text-blush-50"
+      style={{
+        background:
+          'linear-gradient(135deg, var(--w-blush-700) 0%, var(--w-blush-900) 100%)',
+        padding: '140px 24px',
+      }}
+    >
+      <div className="relative max-w-wrap mx-auto text-center">
+        <div className="ornament justify-center text-blush-300">— Start planning —</div>
+        <h2 className="mt-4 font-display font-light text-[clamp(2.4rem,5vw,4rem)] leading-tight text-blush-50">
+          Trust, structure, and convenience. <em className="italic text-blush-300">This market has long needed them.</em>
+        </h2>
+        <div className="flex flex-wrap gap-4 justify-center mt-12">
+          <Link href="/contact" className="btn btn-primary !bg-paper !text-blush-700 hover:!bg-blush-50">
+            Start planning
+          </Link>
+          <Link
+            href="/contact?topic=vendor"
+            className="btn btn-outline !text-blush-50 !border-blush-300 hover:!bg-blush-700"
+          >
+            Become a vendor
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
