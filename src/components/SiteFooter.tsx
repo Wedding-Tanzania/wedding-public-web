@@ -39,28 +39,28 @@ const cols = [
 
 export function SiteFooter() {
   return (
-    <footer className="bg-blush-900 text-blush-200 mt-32">
+    <footer className="bg-herb-900 text-herb-200 mt-32">
       <div className="max-w-wrap mx-auto px-6 lg:px-12 pt-20 pb-12">
         <div className="grid lg:grid-cols-[1.4fr_repeat(4,1fr)] gap-10">
           <div>
-            <div className="font-display italic text-3xl text-blush-50">Wedding</div>
-            <div className="text-[10px] uppercase tracking-widest3 text-blush-300 mt-1">
+            <div className="font-sans text-3xl text-herb-50">Wedding</div>
+            <div className="text-[10px] uppercase tracking-widest text-herb-300 mt-1">
               by Lockwood
             </div>
-            <p className="font-display italic text-lg text-blush-200 mt-6 max-w-xs leading-relaxed">
+            <p className="font-sans text-lg text-herb-200 mt-6 max-w-xs leading-relaxed">
               For the day that begins a lifetime together. Built in Dar es Salaam, made for East
               Africa.
             </p>
           </div>
           {cols.map((col) => (
             <div key={col.title}>
-              <div className="text-[10px] uppercase tracking-widest3 text-blush-400">
+              <div className="text-[10px] uppercase tracking-widest text-herb-400">
                 {col.title}
               </div>
-              <ul className="mt-4 space-y-3 text-sm text-blush-200">
+              <ul className="mt-4 space-y-3 text-sm text-herb-200">
                 {col.links.map((l) => (
                   <li key={l.href}>
-                    <Link href={l.href} className="hover:text-blush-50">
+                    <Link href={l.href} className="hover:text-herb-50">
                       {l.label}
                     </Link>
                   </li>
@@ -69,9 +69,9 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="border-t border-blush-800 mt-16 pt-8 flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-widest3 text-blush-400">
+        <div className="border-t border-herb-800 mt-16 pt-8 flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-widest text-herb-400">
           <div>© {new Date().getFullYear()} Lockwood Technology Tanzania</div>
-          <div className="font-display italic normal-case tracking-normal text-blush-300 text-base">
+          <div className="font-sans normal-case tracking-normal text-herb-300 text-base">
             Payments powered by Malipopay
           </div>
         </div>

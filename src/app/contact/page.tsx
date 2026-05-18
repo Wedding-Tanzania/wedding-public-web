@@ -8,13 +8,13 @@ export default function ContactPage() {
     <main>
       <Section tone="ivory" className="!pt-32 !pb-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="ornament justify-center">— Contact —</div>
-          <h1 className="mt-4 font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <div className="eyebrow justify-center">Contact</div>
+          <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             Tell us about
             <br />
-            <em className="italic text-blush-600">your day.</em>
+            <em className="not-italic font-extrabold text-herb-600">your day.</em>
           </h1>
-          <p className="mt-6 font-display italic text-xl text-ink-2 leading-relaxed">
+          <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
             Couples, vendors, journalists, partners. Whatever you need, we read every message.
           </p>
         </div>
@@ -42,9 +42,9 @@ export default function ContactPage() {
               phone="+255 754 000 003"
               note="Media, MNO partnerships, brand collaborations, and co-marketing requests."
             />
-            <div className="bg-blush-50 border border-champagne rounded-lg p-8">
-              <div className="ornament">— Visit us —</div>
-              <div className="font-display text-2xl mt-4 text-blush-900">
+            <div className="bg-herb-50 border border-champagne rounded-lg p-8">
+              <div className="eyebrow">Visit us</div>
+              <div className="font-sans text-2xl mt-4 text-herb-900">
                 Lockwood Technology HQ
               </div>
               <div className="text-ink-2 mt-2 leading-relaxed">
@@ -54,7 +54,7 @@ export default function ContactPage() {
                 <br />
                 Tanzania
               </div>
-              <div className="mt-4 text-[11px] uppercase tracking-widest3 text-ink-3">
+              <div className="mt-4 text-[11px] uppercase tracking-widest text-ink-3">
                 Mon–Fri · 09:00–18:00 EAT
               </div>
             </div>
@@ -65,7 +65,7 @@ export default function ContactPage() {
       <Section tone="cream">
         <SectionHead
           eyebrow="FAQ"
-          title={<>Common <em className="italic text-blush-600">questions.</em></>}
+          title={<>Common <em className="not-italic font-extrabold text-herb-600">questions.</em></>}
         />
         <div className="max-w-3xl mx-auto divide-y divide-bordr">
           {[
@@ -91,9 +91,9 @@ export default function ContactPage() {
             ],
           ].map(([q, a]) => (
             <details key={q} className="py-6 group">
-              <summary className="cursor-pointer flex items-center justify-between font-display text-xl text-blush-900 list-none">
+              <summary className="cursor-pointer flex items-center justify-between font-sans text-xl text-herb-900 list-none">
                 <span>{q}</span>
-                <span className="text-blush-600 group-open:rotate-45 transition-transform">+</span>
+                <span className="text-herb-600 group-open:rotate-45 transition-transform">+</span>
               </summary>
               <p className="mt-3 text-ink-2 leading-relaxed">{a}</p>
             </details>
@@ -117,12 +117,12 @@ function ChannelBlock({
 }) {
   return (
     <div>
-      <div className="ornament">— {title} —</div>
+      <div className="eyebrow">{title}</div>
       <div className="mt-4 space-y-1">
-        <a href={`mailto:${email}`} className="font-display text-xl text-blush-700 hover:underline">
+        <a href={`mailto:${email}`} className="font-sans text-xl text-herb-700 hover:underline">
           {email}
         </a>
-        <div className="font-display text-lg text-ink-1">{phone}</div>
+        <div className="font-sans text-lg text-ink-1">{phone}</div>
       </div>
       <p className="mt-3 text-sm text-ink-2 leading-relaxed">{note}</p>
     </div>

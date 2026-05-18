@@ -15,13 +15,13 @@ export default function VendorJoinPage() {
     <main>
       <Section tone="ivory" className="!pt-32 !pb-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="ornament justify-center">— For vendors —</div>
-          <h1 className="mt-4 font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <div className="eyebrow justify-center">For vendors</div>
+          <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             Put your work
             <br />
-            <em className="italic text-blush-600">in front of every couple.</em>
+            <em className="not-italic font-extrabold text-herb-600">in front of every couple.</em>
           </h1>
-          <p className="mt-6 font-display italic text-xl text-ink-2 leading-relaxed">
+          <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
             Verified vendors only. Real leads, real bookings, real reviews. Built for the way
             Tanzanian vendors actually operate.
           </p>
@@ -33,13 +33,13 @@ export default function VendorJoinPage() {
       </Section>
 
       <Section tone="paper">
-        <SectionHead eyebrow="How it works" title={<>Four steps to <em className="italic text-blush-600">your first booking.</em></>} />
+        <SectionHead eyebrow="How it works" title={<>Four steps to <em className="not-italic font-extrabold text-herb-600">your first booking.</em></>} />
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-2 max-w-4xl mx-auto">
           {steps.map((s, i) => (
             <div key={s.t} className="py-8 border-b border-bordr grid grid-cols-[60px_1fr] gap-6 items-start">
-              <div className="font-mono text-[13px] text-blush-600 font-bold pt-1">0{i + 1}.</div>
+              <div className="font-mono text-[13px] text-herb-600 font-bold pt-1">0{i + 1}.</div>
               <div>
-                <div className="font-display text-2xl text-blush-900">{s.t}</div>
+                <div className="font-sans text-2xl text-herb-900">{s.t}</div>
                 <p className="text-ink-2 leading-relaxed mt-2">{s.b}</p>
               </div>
             </div>

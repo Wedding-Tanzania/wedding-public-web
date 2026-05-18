@@ -14,14 +14,14 @@ const navItems = [
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 bg-ivory/80 backdrop-blur border-b border-bordr">
+    <header className="sticky top-0 z-40 bg-linen/80 backdrop-blur border-b border-bordr">
       <div className="max-w-wrap mx-auto px-6 lg:px-12 flex items-center justify-between h-20">
         <Link href="/" aria-label="Wedding by Lockwood home">
           <Wordmark tone="dark" />
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-[12px] uppercase tracking-widest3 font-medium text-ink-2">
+        <nav className="hidden md:flex items-center gap-8 text-[12px] uppercase tracking-widest font-medium text-ink-2">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-blush-700">
+            <Link key={item.href} href={item.href} className="hover:text-herb-700">
               {item.label}
             </Link>
           ))}
@@ -35,7 +35,7 @@ export function SiteNav() {
           </Link>
         </div>
         <button
-          className="md:hidden text-blush-700"
+          className="md:hidden text-herb-700"
           aria-label="Open menu"
           onClick={() => setOpen((v) => !v)}
         >

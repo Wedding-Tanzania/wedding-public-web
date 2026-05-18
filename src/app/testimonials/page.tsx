@@ -75,13 +75,13 @@ export default function TestimonialsPage() {
     <main>
       <Section tone="ivory" className="!pt-32 !pb-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="ornament justify-center">— Stories —</div>
-          <h1 className="mt-4 font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <div className="eyebrow justify-center">Stories</div>
+          <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             Real couples.
             <br />
-            <em className="italic text-blush-600">Real ceremonies.</em>
+            <em className="not-italic font-extrabold text-herb-600">Real ceremonies.</em>
           </h1>
-          <p className="mt-6 font-display italic text-xl text-ink-2 leading-relaxed">
+          <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
             From garden weddings in Dar to coastal Nikahs in Zanzibar, these are the stories the
             platform was built for.
           </p>
@@ -90,13 +90,13 @@ export default function TestimonialsPage() {
 
       <Section tone="cream">
         <figure className="max-w-4xl mx-auto bg-paper border border-champagne shadow-soft p-14 text-center">
-          <div className="font-display italic text-blush-300 text-7xl leading-none">"</div>
-          <blockquote className="font-display text-2xl md:text-3xl text-ink-1 leading-snug mt-4">
+          <div className="font-sans text-herb-300 text-7xl leading-none">"</div>
+          <blockquote className="font-sans text-2xl md:text-3xl text-ink-1 leading-snug mt-4">
             {featured.quote}
           </blockquote>
           <figcaption className="mt-10 pt-6 border-t border-bordr">
-            <div className="font-display text-2xl text-blush-700">{featured.who}</div>
-            <div className="text-xs uppercase tracking-widest3 text-ink-3 mt-2">
+            <div className="font-sans text-2xl text-herb-700">{featured.who}</div>
+            <div className="text-xs uppercase tracking-widest text-ink-3 mt-2">
               {featured.sub}
             </div>
           </figcaption>
@@ -106,7 +106,7 @@ export default function TestimonialsPage() {
       <Section tone="paper">
         <SectionHead
           eyebrow="From the couples"
-          title={<>Letters from <em className="italic text-blush-600">the day after.</em></>}
+          title={<>Letters from <em className="not-italic font-extrabold text-herb-600">the day after.</em></>}
         />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {coupleStories.map((s) => (
@@ -114,13 +114,13 @@ export default function TestimonialsPage() {
               key={s.who}
               className="bg-paper border border-bordr rounded-lg p-8 shadow-soft flex flex-col h-full"
             >
-              <div className="font-display italic text-blush-300 text-5xl leading-none">"</div>
-              <blockquote className="font-display text-lg text-ink-1 leading-relaxed mt-2 flex-1">
+              <div className="font-sans text-herb-300 text-5xl leading-none">"</div>
+              <blockquote className="font-sans text-lg text-ink-1 leading-relaxed mt-2 flex-1">
                 {s.quote}
               </blockquote>
               <figcaption className="mt-6 pt-4 border-t border-bordr">
-                <div className="font-display text-lg text-blush-700">{s.who}</div>
-                <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-1">{s.sub}</div>
+                <div className="font-sans text-lg text-herb-700">{s.who}</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-1">{s.sub}</div>
               </figcaption>
             </figure>
           ))}
@@ -130,7 +130,7 @@ export default function TestimonialsPage() {
       <Section tone="cream">
         <SectionHead
           eyebrow="From the vendors"
-          title={<>The diary is <em className="italic text-blush-600">full.</em></>}
+          title={<>The diary is <em className="not-italic font-extrabold text-herb-600">full.</em></>}
         />
         <div className="grid md:grid-cols-3 gap-6">
           {vendorStories.map((s) => (
@@ -139,11 +139,11 @@ export default function TestimonialsPage() {
               className="bg-paper border border-champagne rounded-lg p-8 flex flex-col h-full"
             >
               <span className="tag self-start">Verified vendor</span>
-              <blockquote className="font-display text-lg text-ink-1 leading-relaxed mt-6 flex-1">
+              <blockquote className="font-sans text-lg text-ink-1 leading-relaxed mt-6 flex-1">
                 {s.quote}
               </blockquote>
               <figcaption className="mt-6 pt-4 border-t border-bordr">
-                <div className="font-display text-lg text-blush-700">{s.who}</div>
+                <div className="font-sans text-lg text-herb-700">{s.who}</div>
                 <div className="text-xs text-ink-3 mt-1">{s.role}</div>
               </figcaption>
             </figure>
@@ -159,8 +159,8 @@ export default function TestimonialsPage() {
             ['8 wks', 'Median planning time saved'],
           ].map(([n, l]) => (
             <div key={l}>
-              <div className="font-display text-6xl text-blush-700">{n}</div>
-              <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-3">{l}</div>
+              <div className="font-sans text-6xl text-herb-700">{n}</div>
+              <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-3">{l}</div>
             </div>
           ))}
         </div>

@@ -7,9 +7,9 @@ export default function SecurityPage() {
     <main>
       <Section tone="ivory" className="!pt-32 !pb-12">
         <div className="max-w-3xl mx-auto">
-          <div className="ornament">— Trust —</div>
-          <h1 className="font-display font-light text-5xl text-blush-900 mt-4">Security</h1>
-          <p className="font-display italic text-xl text-ink-2 mt-4">
+          <div className="eyebrow">Trust</div>
+          <h1 className="font-sans font-light text-5xl text-herb-900 mt-4">Security</h1>
+          <p className="font-sans text-xl text-ink-2 mt-4">
             How we protect couples, vendors, and the money that flows through the platform.
           </p>
         </div>
@@ -24,8 +24,8 @@ export default function SecurityPage() {
             ['Verified vendors only', 'Every vendor is reviewed by our team before going live. Verified, Highly Rated, and Fast Responder badges signal trust at a glance.'],
             ['TRA fiscal receipts', 'Every vendor transaction produces a TRA-compliant EFD receipt automatically.'],
           ].map(([t, b]) => (
-            <div key={t} className="border-l-2 border-blush-300 pl-6">
-              <div className="font-display text-2xl text-blush-900">{t}</div>
+            <div key={t} className="border-l-2 border-herb-300 pl-6">
+              <div className="font-sans text-2xl text-herb-900">{t}</div>
               <p className="text-ink-2 mt-2 leading-relaxed">{b}</p>
             </div>
           ))}

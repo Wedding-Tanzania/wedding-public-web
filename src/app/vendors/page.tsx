@@ -179,13 +179,13 @@ export default async function VendorsPage({
     <main>
       <Section tone="ivory" className="!pt-32 !pb-12">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="ornament justify-center">— Marketplace —</div>
-          <h1 className="mt-4 font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <div className="eyebrow justify-center">Marketplace</div>
+          <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             Verified vendors.
             <br />
-            <em className="italic text-blush-600">From across East Africa.</em>
+            <em className="not-italic font-extrabold text-herb-600">From across East Africa.</em>
           </h1>
-          <p className="mt-6 font-display italic text-xl text-ink-2 leading-relaxed">
+          <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
             Filter by theme, category, or city. Every listing reviewed by our team.
           </p>
         </div>
@@ -193,7 +193,7 @@ export default async function VendorsPage({
 
       <Section tone="paper" className="!pt-12">
         <div className="flex flex-wrap gap-3 items-center mb-10 pb-6 border-b border-bordr">
-          <span className="text-[11px] uppercase tracking-widest3 text-ink-3">Category</span>
+          <span className="text-[11px] uppercase tracking-widest text-ink-3">Category</span>
           {categoryFilters.map((f) => (
             <FilterPill
               key={`cat-${f.value}`}
@@ -204,7 +204,7 @@ export default async function VendorsPage({
           ))}
         </div>
         <div className="flex flex-wrap gap-3 items-center mb-12">
-          <span className="text-[11px] uppercase tracking-widest3 text-ink-3">Theme</span>
+          <span className="text-[11px] uppercase tracking-widest text-ink-3">Theme</span>
           {themeFilters.map((f) => (
             <FilterPill
               key={`th-${f.value}`}
@@ -222,7 +222,7 @@ export default async function VendorsPage({
         </div>
 
         <div className="text-center mt-16">
-          <p className="font-display italic text-ink-3">
+          <p className="font-sans text-ink-3">
             Showing {data.items.length} of {data.total} vendors.
           </p>
         </div>
@@ -237,8 +237,8 @@ function FilterPill({ href, active, label }: { href: string; active: boolean; la
       href={href}
       className={`text-xs px-4 py-2 rounded-full border transition ${
         active
-          ? 'bg-blush-600 text-paper border-blush-600'
-          : 'bg-paper text-ink-2 border-bordr hover:border-blush-300'
+          ? 'bg-herb-600 text-paper border-herb-600'
+          : 'bg-paper text-ink-2 border-bordr hover:border-herb-300'
       }`}
     >
       {label}
@@ -252,34 +252,34 @@ function VendorCard({ v }: { v: Vendor }) {
       href={`/vendors/${v.slug}`}
       className="group block bg-paper border border-bordr rounded-lg overflow-hidden shadow-soft hover:shadow-brand transition"
     >
-      <div className="h-44 bg-gradient-to-br from-blush-100 via-paper to-champagne relative">
+      <div className="h-44 bg-gradient-to-br from-herb-100 via-paper to-champagne relative">
         {v.verified && (
-          <div className="absolute top-3 right-3 bg-paper text-blush-700 text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest3 border border-blush-100">
+          <div className="absolute top-3 right-3 bg-paper text-herb-700 text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest border border-herb-100">
             ✓ Verified
           </div>
         )}
         {v.highlyRated && (
-          <div className="absolute top-3 left-3 bg-blush-600 text-paper text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest3">
+          <div className="absolute top-3 left-3 bg-herb-600 text-paper text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest">
             Highly rated
           </div>
         )}
       </div>
       <div className="p-6">
-        <div className="font-display text-2xl text-blush-900 group-hover:text-blush-700 transition">
+        <div className="font-sans text-2xl text-herb-900 group-hover:text-herb-700 transition">
           {v.businessName}
         </div>
-        <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-1">
+        <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-1">
           {v.category.replace('_', ' ')} · {v.serviceAreas.join(', ')}
         </div>
         <p className="mt-4 text-sm text-ink-2 leading-relaxed line-clamp-3">{v.description}</p>
         <div className="mt-5 pt-4 border-t border-bordr flex items-center justify-between">
           {v.rating !== undefined && (
             <div className="text-sm text-ink-1">
-              <span className="font-display text-lg">{v.rating.toFixed(1)}</span>
+              <span className="font-sans text-lg">{v.rating.toFixed(1)}</span>
               <span className="text-ink-3 ml-2 text-xs">({v.reviewCount})</span>
             </div>
           )}
-          <span className="text-[11px] uppercase tracking-widest3 text-blush-600 group-hover:text-blush-800">
+          <span className="text-[11px] uppercase tracking-widest text-herb-600 group-hover:text-herb-800">
             View →
           </span>
         </div>

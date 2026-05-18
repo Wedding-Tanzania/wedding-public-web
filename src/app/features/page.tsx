@@ -36,13 +36,13 @@ export default function FeaturesPage() {
     <main>
       <Section tone="ivory" className="!pt-32 !pb-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="ornament justify-center">— Features —</div>
-          <h1 className="mt-4 font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <div className="eyebrow justify-center">Features</div>
+          <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             Everything you need.
             <br />
-            <em className="italic text-blush-600">Nothing you don't.</em>
+            <em className="not-italic font-extrabold text-herb-600">Nothing you don't.</em>
           </h1>
-          <p className="mt-6 font-display italic text-xl text-ink-2 leading-relaxed">
+          <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
             A planning platform, a vendor marketplace, and a contribution engine — composed into one
             quiet, organised experience.
           </p>
@@ -52,7 +52,7 @@ export default function FeaturesPage() {
       <Section tone="paper">
         <SectionHead
           eyebrow="For couples"
-          title={<>From engagement <em className="italic text-blush-600">to honeymoon.</em></>}
+          title={<>From engagement <em className="not-italic font-extrabold text-herb-600">to honeymoon.</em></>}
         />
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-2">
           {coupleFeatures.map((f, i) => (
@@ -64,7 +64,7 @@ export default function FeaturesPage() {
       <Section tone="cream">
         <SectionHead
           eyebrow="For vendors"
-          title={<>Run your business <em className="italic text-blush-600">like a brand.</em></>}
+          title={<>Run your business <em className="not-italic font-extrabold text-herb-600">like a brand.</em></>}
         />
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-2">
           {vendorFeatures.map((f, i) => (
@@ -76,17 +76,17 @@ export default function FeaturesPage() {
       <Section tone="ink">
         <SectionHead
           eyebrow="Under the hood"
-          title={<>Built on <em className="italic text-blush-300">Malipopay.</em></>}
+          title={<>Built on <em className="not-italic font-extrabold text-herb-300">Malipopay.</em></>}
           tone="light"
         />
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-6 max-w-4xl mx-auto">
           {platformFeatures.map((f, i) => (
-            <div key={f.t} className="border-t border-blush-800 pt-6">
-              <div className="font-mono text-[11px] text-blush-300 font-bold">
+            <div key={f.t} className="border-t border-herb-800 pt-6">
+              <div className="font-mono text-[11px] text-herb-300 font-bold">
                 0{i + 1}.
               </div>
-              <div className="font-display text-2xl mt-1 text-blush-50">{f.t}</div>
-              <p className="text-blush-200 leading-relaxed mt-2">{f.b}</p>
+              <div className="font-sans text-2xl mt-1 text-herb-50">{f.t}</div>
+              <p className="text-herb-200 leading-relaxed mt-2">{f.b}</p>
             </div>
           ))}
         </div>
@@ -94,9 +94,9 @@ export default function FeaturesPage() {
 
       <Section tone="paper">
         <div className="text-center">
-          <div className="ornament justify-center">— Ready —</div>
-          <h2 className="mt-4 font-display font-light text-4xl text-blush-900">
-            Start your wedding page in <em className="italic text-blush-600">five minutes.</em>
+          <div className="eyebrow justify-center">Ready</div>
+          <h2 className="mt-4 font-sans font-light text-4xl text-herb-900">
+            Start your wedding page in <em className="not-italic font-extrabold text-herb-600">five minutes.</em>
           </h2>
           <div className="flex gap-4 justify-center mt-10">
             <Link href="/contact" className="btn btn-primary">Start planning</Link>
@@ -111,11 +111,11 @@ export default function FeaturesPage() {
 function FeatureRow({ index, title, body }: { index: number; title: string; body: string }) {
   return (
     <div className="grid grid-cols-[44px_1fr] gap-6 items-start py-6 border-b border-bordr">
-      <div className="font-mono text-[12px] text-blush-600 font-bold pt-1">
+      <div className="font-mono text-[12px] text-herb-600 font-bold pt-1">
         {index.toString().padStart(2, '0')}.
       </div>
       <div>
-        <div className="font-display text-xl font-medium">{title}</div>
+        <div className="font-sans text-xl font-medium">{title}</div>
         <p className="text-sm text-ink-2 leading-relaxed mt-2">{body}</p>
       </div>
     </div>

@@ -35,13 +35,13 @@ export default async function OgImage({ params }: { params: { coupleSlug: string
         style={{
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #A80754 0%, #1D2040 100%)',
+          background: 'linear-gradient(135deg, #4F6A42 0%, #2A3A24 100%)',
           color: 'white',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: 'DM Sans, sans-serif',
+          fontFamily: 'Manrope, sans-serif',
         }}
       >
         <div style={{ fontSize: 28, opacity: 0.8, letterSpacing: 4 }}>WEDDING.CO.TZ</div>

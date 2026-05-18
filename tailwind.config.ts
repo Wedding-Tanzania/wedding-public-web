@@ -6,50 +6,63 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        blush: {
-          50: tokens.brand.blush50,
-          100: tokens.brand.blush100,
-          200: tokens.brand.blush200,
-          300: tokens.brand.blush300,
-          400: tokens.brand.blush400,
-          500: tokens.brand.blush500,
-          600: tokens.brand.blush600,
-          700: tokens.brand.blush700,
-          800: tokens.brand.blush800,
-          900: tokens.brand.blush900,
-        },
-        ivory: tokens.brand.ivory,
-        paper: tokens.brand.paper,
-        champagne: tokens.brand.champagne,
-        'champagne-dk': tokens.brand.champagneDk,
-        sage: tokens.brand.sage,
-        'sage-dk': tokens.brand.sageDk,
-        ink: {
-          1: tokens.ink['1'],
-          2: tokens.ink['2'],
-          3: tokens.ink['3'],
-          4: tokens.ink['4'],
-        },
-        bordr: tokens.border,
+        // Primitives
+        herb: tokens.primitives.herb,
+        linen: tokens.primitives.linen,
+        paper: tokens.primitives.paper,
+        champagne: tokens.primitives.champagne,        // champagne-light / -dark
+        coral: tokens.primitives.coral,                // coral-light / -dark
+        ink: tokens.primitives.ink,                    // ink-1..4
+        ledger: tokens.primitives.ledger,
+        bordr: tokens.primitives.border.default,       // class: border-bordr
+        rule: tokens.primitives.border.rule,           // class: border-rule
+
+        // Semantic helpers
+        brand: tokens.primitives.herb[600],            // class: bg-brand
+        finance: tokens.primitives.herb[800],
+
+        // Signals
+        ok: tokens.primitives.signal.ok,
+        'ok-bg': tokens.primitives.signal.okBg,
+        due: tokens.primitives.signal.due,
+        'due-bg': tokens.primitives.signal.dueBg,
+        info: tokens.primitives.signal.info,
+        'info-bg': tokens.primitives.signal.infoBg,
+
+        // Mobile-money / bank rails
+        rails: tokens.primitives.rails,
       },
       fontFamily: {
-        display: ['Cormorant Garamond', 'Times New Roman', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
+      fontWeight: {
+        '200': '200',
+        '300': '300',
+        '400': '400',
+        '500': '500',
+        '600': '600',
+        '700': '700',
+        '800': '800',
+      },
       borderRadius: {
+        none: tokens.radius.none,
         sm: tokens.radius.sm,
         md: tokens.radius.md,
         lg: tokens.radius.lg,
+        full: tokens.radius.full,
       },
       boxShadow: {
         soft: tokens.elevation.soft,
         brand: tokens.elevation.brand,
+        trust: tokens.elevation.trust,
       },
       letterSpacing: {
-        widest2: '0.28em',
-        widest3: '0.3em',
-        widest4: '0.36em',
+        tightest: tokens.typography.letterSpacing.tightest,
+        tight: tokens.typography.letterSpacing.tight,
+        wide: tokens.typography.letterSpacing.wide,
+        wider: tokens.typography.letterSpacing.wider,
+        widest: tokens.typography.letterSpacing.widest,
       },
       maxWidth: { wrap: '1200px' },
     },

@@ -20,7 +20,7 @@ function Hero() {
       className="relative overflow-hidden px-6 lg:px-12"
       style={{
         background:
-          'radial-gradient(ellipse at top, var(--w-blush-50), var(--w-ivory) 60%)',
+          'radial-gradient(ellipse at top, var(--w-herb-50), var(--w-linen) 60%)',
         padding: '120px 0 140px',
       }}
     >
@@ -29,36 +29,46 @@ function Hero() {
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 10% 20%, rgba(232,169,150,0.25), transparent 35%), radial-gradient(circle at 90% 80%, rgba(232,217,184,0.35), transparent 40%)',
+            'radial-gradient(circle at 15% 25%, rgba(168,188,151,0.26), transparent 40%), radial-gradient(circle at 88% 80%, rgba(210,148,105,0.18), transparent 40%)',
         }}
       />
       <div className="relative max-w-wrap mx-auto">
-        <div className="ornament justify-center">— Design System · 2026 —</div>
-        <h1 className="mt-6 font-display font-light text-center text-blush-900 leading-[0.98] tracking-tight text-[clamp(3.5rem,7.5vw,7rem)]">
-          The day that <em className="italic text-blush-600 font-normal">begins</em>
-          <br />a lifetime together.
+        <div className="eyebrow">Design System v0.3 · Sage edition · Weddings &amp; the money behind them</div>
+        <h1 className="mt-6 font-sans font-light text-herb-900 leading-[1.02] tracking-tightest text-[clamp(2.75rem,6vw,5.5rem)] max-w-5xl">
+          A garden, <em className="not-italic font-extrabold text-herb-600">two families,</em> —
+          <br />
+          and <span className="text-herb-800 font-bold">every shilling accounted for.</span>
         </h1>
-        <p className="font-display italic text-xl text-ink-2 text-center max-w-xl mx-auto mt-8 leading-relaxed">
-          Planning, invitations, RSVPs, vendors, and gifting. Composed with the restraint of a
-          letterpressed invitation and the rhythm of a garden ceremony.
+        <p className="font-sans text-lg text-ink-2 max-w-2xl mt-7 leading-relaxed">
+          East Africa&apos;s wedding planning, vendor marketplace, and payments platform.
+          Built to hold an invitation, a vendor directory, and an escrowed payment schedule on the
+          same page — without any of them feeling out of place.
         </p>
-        <div className="flex flex-wrap gap-4 justify-center mt-12">
+        <div className="flex flex-wrap gap-4 mt-9">
           <Link href="/contact" className="btn btn-primary">
             Start planning
           </Link>
           <Link href="/features" className="btn btn-outline">
-            See the look
+            See the system
           </Link>
         </div>
-        <div className="grid sm:grid-cols-3 gap-10 max-w-3xl mx-auto mt-20 text-center">
+        <div className="grid sm:grid-cols-4 gap-0 mt-14 py-6 border-y border-rule">
           {[
-            ['500+', 'Verified vendors'],
-            ['7', 'Service categories'],
-            ['TZ · KE', 'Active markets'],
-          ].map(([n, l]) => (
-            <div key={l}>
-              <div className="font-display font-normal text-4xl text-blush-700">{n}</div>
-              <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-2">{l}</div>
+            ['2,400+', 'Verified vendors'],
+            ['TSh 4.2bn', 'In escrow YTD'],
+            ['6 cities', 'Dar · Arusha · Nairobi…'],
+            ['M-Pesa · Tigo · Airtel', 'Mobile money rails'],
+          ].map(([n, l], i) => (
+            <div
+              key={l}
+              className={`px-6 ${i < 3 ? 'border-r border-rule' : ''}`}
+            >
+              <div className="font-sans font-bold text-3xl text-herb-800 tracking-tight tabular-nums">
+                {n}
+              </div>
+              <div className="text-[11px] uppercase tracking-wide text-ink-3 mt-1.5 font-medium">
+                {l}
+              </div>
             </div>
           ))}
         </div>
@@ -82,14 +92,14 @@ function Principles() {
     {
       title: 'Warmth over gloss',
       body:
-        'Blush, champagne, and sage. No hard gradients or neon; the palette is a garden at dusk.',
+        'Eucalyptus, linen, and warm coral. No hard gradients or neon — the palette is a garden at dusk.',
     },
   ];
   return (
     <Section tone="paper">
       <SectionHead
         eyebrow="Principles"
-        title={<>Set like a table, <em className="italic text-blush-600">not a grid.</em></>}
+        title={<>Set like a table, <em className="not-italic font-extrabold text-herb-600">not a grid.</em></>}
       />
       <div className="grid md:grid-cols-3 gap-6">
         {items.map((p) => (
@@ -97,7 +107,7 @@ function Principles() {
             key={p.title}
             className="bg-paper border border-bordr rounded-lg p-10 text-center shadow-soft"
           >
-            <div className="w-12 h-12 rounded-full bg-blush-100 grid place-items-center mx-auto mb-5 text-blush-600">
+            <div className="w-12 h-12 rounded-full bg-herb-100 grid place-items-center mx-auto mb-5 text-herb-600">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 4L14 10H20L15 14L17 20L12 16L7 20L9 14L4 10H10Z"
@@ -107,7 +117,7 @@ function Principles() {
                 />
               </svg>
             </div>
-            <div className="font-display font-medium text-2xl">{p.title}</div>
+            <div className="font-sans font-medium text-2xl">{p.title}</div>
             <p className="mt-4 text-sm text-ink-3 leading-relaxed">{p.body}</p>
           </div>
         ))}
@@ -132,7 +142,7 @@ function ForCouples() {
         eyebrow="For couples"
         title={
           <>
-            Every stage of the journey. <em className="italic text-blush-600">One quiet place.</em>
+            Every stage of the journey. <em className="not-italic font-extrabold text-herb-600">One quiet place.</em>
           </>
         }
       />
@@ -142,10 +152,10 @@ function ForCouples() {
             key={f.t}
             className={`bg-paper border border-bordr rounded-lg p-8 flex flex-col gap-3 ${i === 0 ? 'md:col-span-2' : ''}`}
           >
-            <div className="font-mono text-[11px] font-bold text-blush-600">
+            <div className="font-mono text-[11px] font-bold text-herb-600">
               {(i + 1).toString().padStart(2, '0')}
             </div>
-            <div className="font-display text-2xl font-medium">{f.t}</div>
+            <div className="font-sans text-2xl font-medium">{f.t}</div>
             <p className="text-sm text-ink-2 leading-relaxed">{f.b}</p>
           </div>
         ))}
@@ -166,9 +176,9 @@ function ForVendors() {
     <Section tone="paper">
       <div className="grid lg:grid-cols-[1fr_1.3fr] gap-20 items-start">
         <div className="lg:sticky lg:top-32">
-          <div className="ornament">— For vendors —</div>
-          <h2 className="mt-4 font-display font-light text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-tight">
-            A professional storefront. <em className="italic text-blush-600">A leads engine.</em>
+          <div className="eyebrow">For vendors</div>
+          <h2 className="mt-4 font-sans font-light text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-tight">
+            A professional storefront. <em className="not-italic font-extrabold text-herb-600">A leads engine.</em>
           </h2>
           <p className="mt-6 text-ink-2 leading-relaxed max-w-md">
             Put your services in front of every couple actively planning a wedding in Tanzania.
@@ -185,9 +195,9 @@ function ForVendors() {
               key={t}
               className={`grid grid-cols-[60px_1fr] gap-8 items-start py-8 border-t border-bordr ${i === features.length - 1 ? 'border-b' : ''}`}
             >
-              <div className="font-mono text-[13px] text-blush-600 font-bold pt-1">0{i + 1}.</div>
+              <div className="font-mono text-[13px] text-herb-600 font-bold pt-1">0{i + 1}.</div>
               <div>
-                <div className="font-display text-2xl font-medium">{t}</div>
+                <div className="font-sans text-2xl font-medium">{t}</div>
                 <p className="mt-2 text-ink-2 leading-relaxed">{b}</p>
               </div>
             </div>
@@ -225,7 +235,7 @@ function Testimonials() {
         eyebrow="Real weddings"
         title={
           <>
-            Real couples. <em className="italic text-blush-600">Real ceremonies.</em>
+            Real couples. <em className="not-italic font-extrabold text-herb-600">Real ceremonies.</em>
           </>
         }
       />
@@ -235,13 +245,13 @@ function Testimonials() {
             key={q.who}
             className="bg-paper border border-champagne rounded-lg p-10 relative shadow-soft"
           >
-            <div className="font-display italic text-blush-300 text-6xl leading-none">"</div>
-            <blockquote className="font-display text-xl text-ink-1 leading-relaxed mt-2">
+            <div className="font-sans text-herb-300 text-6xl leading-none">"</div>
+            <blockquote className="font-sans text-xl text-ink-1 leading-relaxed mt-2">
               {q.quote}
             </blockquote>
             <figcaption className="mt-6 pt-4 border-t border-bordr">
-              <div className="font-display text-lg">{q.who}</div>
-              <div className="text-xs uppercase tracking-widest3 text-ink-3 mt-1">{q.sub}</div>
+              <div className="font-sans text-lg">{q.who}</div>
+              <div className="text-xs uppercase tracking-widest text-ink-3 mt-1">{q.sub}</div>
             </figcaption>
           </figure>
         ))}
@@ -258,25 +268,25 @@ function Testimonials() {
 function CTA() {
   return (
     <section
-      className="relative overflow-hidden text-blush-50"
+      className="relative overflow-hidden text-herb-50"
       style={{
         background:
-          'linear-gradient(135deg, var(--w-blush-700) 0%, var(--w-blush-900) 100%)',
+          'linear-gradient(135deg, var(--w-herb-700) 0%, var(--w-herb-900) 100%)',
         padding: '140px 24px',
       }}
     >
       <div className="relative max-w-wrap mx-auto text-center">
-        <div className="ornament justify-center text-blush-300">— Start planning —</div>
-        <h2 className="mt-4 font-display font-light text-[clamp(2.4rem,5vw,4rem)] leading-tight text-blush-50">
-          Trust, structure, and convenience. <em className="italic text-blush-300">This market has long needed them.</em>
+        <div className="eyebrow justify-center text-herb-300">Start planning</div>
+        <h2 className="mt-4 font-sans font-light text-[clamp(2.4rem,5vw,4rem)] leading-tight text-herb-50">
+          Trust, structure, and convenience. <em className="not-italic font-extrabold text-herb-300">This market has long needed them.</em>
         </h2>
         <div className="flex flex-wrap gap-4 justify-center mt-12">
-          <Link href="/contact" className="btn btn-primary !bg-paper !text-blush-700 hover:!bg-blush-50">
+          <Link href="/contact" className="btn btn-primary !bg-paper !text-herb-700 hover:!bg-herb-50">
             Start planning
           </Link>
           <Link
             href="/contact?topic=vendor"
-            className="btn btn-outline !text-blush-50 !border-blush-300 hover:!bg-blush-700"
+            className="btn btn-outline !text-herb-50 !border-herb-300 hover:!bg-herb-700"
           >
             Become a vendor
           </Link>

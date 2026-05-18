@@ -70,7 +70,7 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
       <section
         className="px-6 lg:px-12 pt-32 pb-16"
         style={{
-          background: 'radial-gradient(ellipse at top, var(--w-blush-50), var(--w-ivory) 70%)',
+          background: 'radial-gradient(ellipse at top, var(--w-herb-50), var(--w-linen) 70%)',
         }}
       >
         <div className="max-w-wrap mx-auto">
@@ -82,18 +82,18 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
               </span>
             )}
             {vendor.fastResponder && (
-              <span className="tag" style={{ background: 'var(--w-blush-100)', color: 'var(--w-blush-700)' }}>
+              <span className="tag" style={{ background: 'var(--w-herb-100)', color: 'var(--w-herb-700)' }}>
                 Fast responder
               </span>
             )}
           </div>
-          <h1 className="font-display font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-blush-900">
+          <h1 className="font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             {vendor.businessName}
           </h1>
-          <div className="mt-4 text-[11px] uppercase tracking-widest3 text-ink-3">
+          <div className="mt-4 text-[11px] uppercase tracking-widest text-ink-3">
             {vendor.category.replace('_', ' ')} · {vendor.serviceAreas.join(' · ')}
           </div>
-          <p className="font-display italic text-xl text-ink-2 mt-6 max-w-3xl leading-relaxed">
+          <p className="font-sans text-xl text-ink-2 mt-6 max-w-3xl leading-relaxed">
             {vendor.description}
           </p>
           <div className="flex flex-wrap gap-4 mt-10">
@@ -110,8 +110,8 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
       <Section tone="paper" id="packages">
         <div className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
           <div className="lg:sticky lg:top-32">
-            <div className="ornament">— Packages —</div>
-            <h2 className="font-display font-light text-4xl mt-4 text-blush-900">Pricing.</h2>
+            <div className="eyebrow">Packages</div>
+            <h2 className="font-sans font-light text-4xl mt-4 text-herb-900">Pricing.</h2>
             <p className="text-ink-2 mt-4 leading-relaxed">
               All packages can be customised. Deposits are paid through Malipopay; the platform fee is
               included in the price shown.
@@ -124,12 +124,12 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
                 className={`grid grid-cols-[1fr_auto] gap-8 items-start py-8 border-t border-bordr ${i === pkgs.length - 1 ? 'border-b' : ''}`}
               >
                 <div>
-                  <div className="font-display text-2xl text-blush-900">{p.name}</div>
+                  <div className="font-sans text-2xl text-herb-900">{p.name}</div>
                   <p className="text-ink-2 leading-relaxed mt-2">{p.description}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest3 text-ink-3">From</div>
-                  <div className="font-display text-3xl text-blush-700">
+                  <div className="text-[10px] uppercase tracking-widest text-ink-3">From</div>
+                  <div className="font-sans text-3xl text-herb-700">
                     TZS {p.priceTzs.toLocaleString('en-TZ')}
                   </div>
                 </div>
@@ -147,8 +147,8 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
             ['Themes', vendor.themes.length > 0 ? vendor.themes.length.toString() : 'All'],
           ].map(([l, v]) => (
             <div key={l} className="text-center">
-              <div className="font-display text-5xl text-blush-700">{v}</div>
-              <div className="text-[10px] uppercase tracking-widest3 text-ink-3 mt-3">{l}</div>
+              <div className="font-sans text-5xl text-herb-700">{v}</div>
+              <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-3">{l}</div>
             </div>
           ))}
         </div>

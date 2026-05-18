@@ -30,10 +30,10 @@ export function ContactForm() {
 
   if (submitted) {
     return (
-      <div className="bg-blush-50 border border-champagne rounded-lg p-12 text-center">
-        <div className="font-display italic text-blush-300 text-6xl leading-none">"</div>
-        <div className="font-display text-3xl text-blush-900 mt-2">Thank you.</div>
-        <p className="font-display italic text-lg text-ink-2 mt-4 max-w-md mx-auto leading-relaxed">
+      <div className="bg-herb-50 border border-champagne rounded-lg p-12 text-center">
+        <div className="font-sans text-herb-300 text-6xl leading-none">"</div>
+        <div className="font-sans text-3xl text-herb-900 mt-2">Thank you.</div>
+        <p className="font-sans text-lg text-ink-2 mt-4 max-w-md mx-auto leading-relaxed">
           We will write back within one business day. In the meantime, browse the vendor directory
           or have a look at real wedding stories.
         </p>
@@ -56,8 +56,8 @@ export function ContactForm() {
               onClick={() => setTopic(opt.value)}
               className={`text-left px-4 py-3 rounded-md border text-sm transition ${
                 topic === opt.value
-                  ? 'border-blush-600 bg-blush-50 text-blush-800'
-                  : 'border-bordr bg-paper text-ink-2 hover:border-blush-300'
+                  ? 'border-herb-600 bg-herb-50 text-herb-800'
+                  : 'border-bordr bg-paper text-ink-2 hover:border-herb-300'
               }`}
             >
               {opt.label}
@@ -94,12 +94,12 @@ export function ContactForm() {
           required
           rows={5}
           placeholder="Tell us a little about what you need..."
-          className="mt-2 w-full rounded-md border border-bordr bg-paper px-4 py-3 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-blush-500"
+          className="mt-2 w-full rounded-md border border-bordr bg-paper px-4 py-3 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-herb-500"
         />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-[11px] uppercase tracking-widest3 text-ink-3">
+        <p className="text-[11px] uppercase tracking-widest text-ink-3">
           We reply within one business day.
         </p>
         <button type="submit" className="btn btn-primary">
@@ -112,7 +112,7 @@ export function ContactForm() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] uppercase tracking-widest3 text-ink-3 font-medium">{children}</span>
+    <span className="text-[10px] uppercase tracking-widest text-ink-3 font-medium">{children}</span>
   );
 }
 
@@ -137,7 +137,7 @@ function Field({
         type={type}
         placeholder={placeholder}
         required={required}
-        className="mt-2 w-full rounded-md border border-bordr bg-paper px-4 py-3 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-blush-500"
+        className="mt-2 w-full rounded-md border border-bordr bg-paper px-4 py-3 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-herb-500"
       />
     </label>
   );
