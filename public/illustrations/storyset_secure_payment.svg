@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="none">
+  <title>Secure payment</title>
+  <ellipse cx="200" cy="280" rx="150" ry="12" fill="#4F6A42" opacity="0.10"/>
+  <circle cx="200" cy="150" r="115" fill="#4F6A42" opacity="0.08"/>
+  <path d="M200 60 L290 96 L290 162 Q290 220 200 254 Q110 220 110 162 L110 96 Z" fill="#4F6A42"/>
+  <path d="M200 60 L290 96 L290 162 Q290 220 200 254 Q110 220 110 162 L110 96 Z" stroke="#263238" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <circle cx="200" cy="148" r="48" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <path d="M178 148 L194 164 L224 134" stroke="#4F6A42" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="56" y="200" width="80" height="50" rx="4" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <rect x="56" y="210" width="80" height="8" fill="#4F6A42"/>
+  <rect x="64" y="228" width="22" height="6" rx="3" fill="#A8BC97"/>
+  <rect x="64" y="238" width="42" height="4" rx="2" fill="#C9D6BC"/>
+  <rect x="264" y="200" width="80" height="50" rx="4" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <rect x="264" y="210" width="80" height="8" fill="#4F6A42"/>
+  <rect x="272" y="228" width="22" height="6" rx="3" fill="#A8BC97"/>
+  <rect x="272" y="238" width="42" height="4" rx="2" fill="#C9D6BC"/>
+  <circle cx="60" cy="100" r="5" fill="#A8BC97"/>
+  <circle cx="340" cy="120" r="5" fill="#A8BC97"/>
+</svg>

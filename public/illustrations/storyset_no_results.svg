@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="none">
+  <title>No results</title>
+  <ellipse cx="200" cy="280" rx="150" ry="12" fill="#4F6A42" opacity="0.10"/>
+  <circle cx="200" cy="150" r="110" fill="#4F6A42" opacity="0.08"/>
+  <rect x="90" y="80" width="170" height="140" rx="6" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <rect x="106" y="100" width="100" height="6" rx="3" fill="#C9D6BC"/>
+  <rect x="106" y="118" width="138" height="6" rx="3" fill="#E2E9DA"/>
+  <rect x="106" y="136" width="118" height="6" rx="3" fill="#E2E9DA"/>
+  <rect x="106" y="154" width="80" height="6" rx="3" fill="#E2E9DA"/>
+  <rect x="106" y="172" width="138" height="6" rx="3" fill="#E2E9DA"/>
+  <rect x="106" y="190" width="60" height="6" rx="3" fill="#E2E9DA"/>
+  <circle cx="266" cy="184" r="52" fill="#F2F5EE" stroke="#263238" stroke-width="3"/>
+  <circle cx="266" cy="184" r="36" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <line x1="302" y1="220" x2="334" y2="252" stroke="#263238" stroke-width="8" stroke-linecap="round"/>
+  <line x1="248" y1="172" x2="284" y2="196" stroke="#4F6A42" stroke-width="3" stroke-linecap="round"/>
+  <line x1="248" y1="196" x2="284" y2="172" stroke="#4F6A42" stroke-width="3" stroke-linecap="round"/>
+</svg>
