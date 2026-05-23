@@ -3,7 +3,7 @@ export function Wordmark({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
   const colorKicker = tone === 'dark' ? 'text-ink-3' : 'text-herb-100';
   return (
     <div className="flex items-baseline gap-4">
-      <div className="grid place-items-center w-12 h-12 rounded-lg bg-gradient-to-br from-herb-400 to-herb-600 shadow-brand">
+      <div className="grid place-items-center w-12 h-12 rounded-lg bg-gradient-to-b from-herb-600 to-herb-700 shadow-soft">
         <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
           <circle cx="13" cy="16" r="8" stroke="#fff" strokeWidth="2" fill="none" />
           <circle cx="19" cy="16" r="8" stroke="#fff" strokeWidth="2" fill="none" />

@@ -5,11 +5,11 @@ import { SiteFooter } from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Wedding by Lockwood — Plan your perfect day',
+    default: 'Wedding by Lockwood · Plan your perfect day',
     template: '%s | Wedding by Lockwood',
   },
   description:
-    "East Africa's dedicated wedding planning platform — verified vendors, bookings, budget, guest list, and a personalised wedding website. One place, every stage.",
+    "East Africa's dedicated wedding planning platform. Verified vendors, bookings, budget, guest list, and a personalised wedding website. One place, every stage.",
   openGraph: {
     type: 'website',
     locale: 'en_TZ',

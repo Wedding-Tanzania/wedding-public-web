@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Primitives — herb (sage) */
+    /* Primitives: herb (sage) */
     --w-herb-50:  #F2F5EE;
     --w-herb-100: #E2E9DA;
     --w-herb-200: #C9D6BC;
@@ -73,7 +73,7 @@
 }
 
 @layer components {
-  /* Eyebrow pill — replaces the old "ornament" horizontal rule */
+  /* Eyebrow pill: replaces the old "ornament" horizontal rule */
   .eyebrow {
     display: inline-flex;
     align-items: center;
@@ -162,7 +162,7 @@
     border: 1px solid var(--w-border);
   }
 
-  /* Rail chip — mobile money / bank channel pill */
+  /* Rail chip: mobile money / bank channel pill */
   .rail-chip {
     display: inline-flex;
     align-items: center;

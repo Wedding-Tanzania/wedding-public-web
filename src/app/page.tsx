@@ -35,14 +35,14 @@ function Hero() {
       <div className="relative max-w-wrap mx-auto">
         <div className="eyebrow">Design System v0.3 · Sage edition · Weddings &amp; the money behind them</div>
         <h1 className="mt-6 font-sans font-light text-herb-900 leading-[1.02] tracking-tightest text-[clamp(2.75rem,6vw,5.5rem)] max-w-5xl">
-          A garden, <em className="not-italic font-extrabold text-herb-600">two families,</em> —
+          A garden, <em className="not-italic font-extrabold text-herb-600">two families,</em>
           <br />
           and <span className="text-herb-800 font-bold">every shilling accounted for.</span>
         </h1>
         <p className="font-sans text-lg text-ink-2 max-w-2xl mt-7 leading-relaxed">
           East Africa&apos;s wedding planning, vendor marketplace, and payments platform.
           Built to hold an invitation, a vendor directory, and an escrowed payment schedule on the
-          same page — without any of them feeling out of place.
+          same page, without any of them feeling out of place.
         </p>
         <div className="flex flex-wrap gap-4 mt-9">
           <Link href="/contact" className="btn btn-primary">
@@ -92,7 +92,7 @@ function Principles() {
     {
       title: 'Warmth over gloss',
       body:
-        'Eucalyptus, linen, and warm coral. No hard gradients or neon — the palette is a garden at dusk.',
+        'Eucalyptus, linen, and warm coral. No hard gradients or neon. The palette is a garden at dusk.',
     },
   ];
   return (

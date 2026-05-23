@@ -62,7 +62,7 @@ export default function AboutPage() {
               problem of infrastructure. The culture is beautiful and intact. The infrastructure
               just hadn't been written yet.
             </p>
-            <p className="not-italic font-extrabold text-herb-700">— And so it begins.</p>
+            <p className="not-italic font-extrabold text-herb-700">And so it begins.</p>
           </div>
         </div>
       </Section>

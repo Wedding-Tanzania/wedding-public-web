@@ -143,7 +143,7 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
         <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {[
             ['Years', String(vendor.yearsInBusiness ?? 'New')],
-            ['Reviews', `${vendor.reviewCount} (${vendor.rating?.toFixed(1) ?? '—'} ★)`],
+            ['Reviews', `${vendor.reviewCount} (${vendor.rating?.toFixed(1) ?? '·'} ★)`],
             ['Themes', vendor.themes.length > 0 ? vendor.themes.length.toString() : 'All'],
           ].map(([l, v]) => (
             <div key={l} className="text-center">

@@ -252,7 +252,7 @@ function VendorCard({ v }: { v: Vendor }) {
       href={`/vendors/${v.slug}`}
       className="group block bg-paper border border-bordr rounded-lg overflow-hidden shadow-soft hover:shadow-brand transition"
     >
-      <div className="h-44 bg-gradient-to-br from-herb-100 via-paper to-champagne relative">
+      <div className="h-44 bg-gradient-to-b from-herb-50 to-paper relative">
         {v.verified && (
           <div className="absolute top-3 right-3 bg-paper text-herb-700 text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest border border-herb-100">
             ✓ Verified
