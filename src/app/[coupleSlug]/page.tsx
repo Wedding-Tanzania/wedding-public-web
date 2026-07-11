@@ -92,7 +92,11 @@ export default async function CoupleStoryPage({
   }
 
   const { story, couple } = data;
-  const wd = couple !== undefined ? new Date(couple.weddingDate) : null;
+  const wdRaw = couple !== undefined ? new Date(couple.weddingDate) : null;
+  // new Date(bad) is not null, so guard against an invalid date to avoid rendering
+  // "Invalid Date" and a NaN countdown.
+  const wd =
+    wdRaw !== null && !Number.isNaN(wdRaw.getTime()) ? wdRaw : null;
   const nameA = couple !== undefined ? firstName(couple.partnerA) : 'The';
   const nameB = couple !== undefined ? firstName(couple.partnerB) : 'Couple';
 
