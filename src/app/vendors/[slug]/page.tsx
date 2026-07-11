@@ -12,18 +12,21 @@ const samplePackages = [
     name: 'Half-day ceremony',
     description: 'Six hours of coverage with two photographers. Online gallery and 60 hi-res edits.',
     priceTzs: 2_800_000,
+    inclusions: [],
   },
   {
     id: 'p2',
     name: 'Full-day',
     description: 'Twelve hours. Two photographers + assistant. Online gallery, 120 hi-res edits, USB drive.',
     priceTzs: 4_500_000,
+    inclusions: [],
   },
   {
     id: 'p3',
     name: 'Two-day celebration',
     description: 'Kitchen party + ceremony + reception. Photo + 4-min motion edit.',
     priceTzs: 7_200_000,
+    inclusions: [],
   },
 ];
 
@@ -107,8 +110,8 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
         </div>
       </section>
 
-      <Section tone="paper" id="packages">
-        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
+      <Section tone="paper">
+        <div id="packages" className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
           <div className="lg:sticky lg:top-32">
             <div className="eyebrow">Packages</div>
             <h2 className="font-sans font-light text-4xl mt-4 text-herb-900">Pricing.</h2>
