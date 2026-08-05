@@ -1,66 +1,65 @@
 import Link from 'next/link';
+import { Wordmark } from './Wordmark';
 
 const cols = [
   {
-    title: 'Plan',
+    title: 'Platform',
     links: [
       { href: '/features', label: 'Features' },
-      { href: '/vendors', label: 'Vendor directory' },
-      { href: '/testimonials', label: 'Real weddings' },
       { href: '/pricing', label: 'Pricing' },
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/testimonials', label: 'Stories' },
     ],
   },
   {
-    title: 'For vendors',
+    title: 'Kamati',
     links: [
-      { href: '/vendors/join', label: 'Become a vendor' },
-      { href: 'https://vendors.wedding.co.tz', label: 'Vendor portal' },
-      { href: '/contact?topic=vendor', label: 'Sales enquiry' },
+      { href: '/contact', label: 'Create wedding' },
+      { href: '/features', label: 'Join committee' },
+      { href: '/features#michango', label: 'Michango guide' },
     ],
   },
   {
-    title: 'Company',
+    title: 'Vendors',
+    links: [
+      { href: '/vendors/join', label: 'Join as vendor' },
+      { href: 'https://vendors.wedding.co.tz', label: 'Vendor portal' },
+      { href: '/press', label: 'Resources' },
+    ],
+  },
+  {
+    title: 'Lockwood',
     links: [
       { href: '/about', label: 'About' },
-      { href: '/about#story', label: 'Our story' },
-      { href: '/contact', label: 'Contact' },
       { href: '/press', label: 'Press' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
+      { href: '/contact', label: 'Contact' },
+      { href: '/security', label: 'Security' },
       { href: '/privacy', label: 'Privacy' },
       { href: '/terms', label: 'Terms' },
-      { href: '/security', label: 'Security' },
     ],
   },
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="bg-herb-900 text-herb-200 mt-32">
-      <div className="max-w-wrap mx-auto px-6 lg:px-12 pt-20 pb-12">
-        <div className="grid lg:grid-cols-[1.4fr_repeat(4,1fr)] gap-10">
+    <footer className="bg-linen text-ink-2 border-t border-bordr">
+      <div className="max-w-wrap mx-auto px-6 lg:px-12 pt-20 pb-14">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div>
-            <div className="font-sans text-3xl text-herb-50">Wedding</div>
-            <div className="text-[10px] uppercase tracking-widest text-herb-300 mt-1">
-              by Lockwood
-            </div>
-            <p className="font-sans text-lg text-herb-200 mt-6 max-w-xs leading-relaxed">
-              For the day that begins a lifetime together. Built in Dar es Salaam, made for East
-              Africa.
-            </p>
+            <Wordmark tone="dark" />
           </div>
           {cols.map((col) => (
             <div key={col.title}>
-              <div className="text-[10px] uppercase tracking-widest text-herb-400">
+              <div className="font-mono text-[9px] font-medium uppercase tracking-[0.1em] text-ink-3">
                 {col.title}
               </div>
-              <ul className="mt-4 space-y-3 text-sm text-herb-200">
+              <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="hover:text-herb-50">
+                  <li key={`${col.title}-${l.href}-${l.label}`}>
+                    <Link
+                      href={l.href}
+                      className="font-sans font-semibold text-[13px] text-ink-2 hover:text-ink-1"
+                    >
                       {l.label}
                     </Link>
                   </li>
@@ -69,11 +68,9 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="border-t border-herb-800 mt-16 pt-8 flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-widest text-herb-400">
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-4 font-mono text-[9px] font-medium uppercase tracking-[0.04em] text-ink-3">
+          <div>Wedding by Lockwood · built on Malipopay rails · Dar es Salaam</div>
           <div>© {new Date().getFullYear()} Lockwood Technology Tanzania</div>
-          <div className="font-sans normal-case tracking-normal text-herb-300 text-base">
-            Payments powered by Malipopay
-          </div>
         </div>
       </div>
     </footer>

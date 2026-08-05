@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { Wordmark } from './Wordmark';
 
 const navItems = [
-  { href: '/features', label: 'Features' },
   { href: '/vendors', label: 'Vendors' },
+  { href: '/features', label: 'Features' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/testimonials', label: 'Stories' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
 ];
 
 export function SiteNav() {
@@ -28,7 +27,7 @@ export function SiteNav() {
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Link href="https://app.wedding.co.tz" className="btn btn-outline !py-3 !px-5 !text-[11px]">
-            Sign in
+            Log in
           </Link>
           <Link href="/contact" className="btn btn-primary !py-3 !px-5 !text-[11px]">
             Start planning
