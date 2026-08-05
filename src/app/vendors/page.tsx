@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { Vendor } from '@wedding/shared-types';
+import type { Vendor } from '@/lib/types';
 import { apiGet } from '@/lib/api';
 import { Section, SectionHead } from '@/components/Section';
 
