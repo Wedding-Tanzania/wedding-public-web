@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og';
-import type { Couple } from '@wedding/shared-types';
 import { apiGet } from '@/lib/api';
 
 export const runtime = 'edge';
@@ -7,18 +6,28 @@ export const alt = 'Wedding.co.tz couple page';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
+interface CoupleOg {
+  partnerA: string;
+  partnerB: string;
+  weddingDate: string;
+}
+
+function firstName(full: string): string {
+  return full.trim().split(/\s+/)[0] ?? full;
+}
+
 export default async function OgImage({ params }: { params: { coupleSlug: string } }) {
-  let couple: Couple | null = null;
+  let couple: CoupleOg | null = null;
   try {
-    const data = await apiGet<{ couple: Couple }>(`/public/couples/${params.coupleSlug}`);
-    couple = data.couple;
+    const data = await apiGet<{ couple?: CoupleOg }>(`/story/${params.coupleSlug}`);
+    couple = data.couple ?? null;
   } catch {
     couple = null;
   }
 
   const title =
     couple !== null
-      ? `${couple.partnerAFirstName} & ${couple.partnerBFirstName}`
+      ? `${firstName(couple.partnerA)} & ${firstName(couple.partnerB)}`
       : 'Wedding.co.tz';
   const subtitle =
     couple !== null
@@ -35,13 +44,13 @@ export default async function OgImage({ params }: { params: { coupleSlug: string
         style={{
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #A80754 0%, #1D2040 100%)',
+          background: 'linear-gradient(135deg, #4F6A42 0%, #2A3A24 100%)',
           color: 'white',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: 'DM Sans, sans-serif',
+          fontFamily: 'Manrope, sans-serif',
         }}
       >
         <div style={{ fontSize: 28, opacity: 0.8, letterSpacing: 4 }}>WEDDING.CO.TZ</div>

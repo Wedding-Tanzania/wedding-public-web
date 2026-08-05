@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="none">
+  <title>Empty inbox</title>
+  <ellipse cx="200" cy="270" rx="160" ry="14" fill="#4F6A42" opacity="0.10"/>
+  <circle cx="200" cy="150" r="120" fill="#4F6A42" opacity="0.08"/>
+  <rect x="110" y="118" width="180" height="120" rx="6" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <path d="M110 124 L200 184 L290 124" stroke="#263238" stroke-width="3" fill="none"/>
+  <rect x="110" y="118" width="180" height="120" rx="6" fill="none" stroke="#263238" stroke-width="3"/>
+  <rect x="140" y="80" width="120" height="58" rx="4" fill="#E2E9DA" stroke="#263238" stroke-width="2.5"/>
+  <rect x="156" y="96" width="60" height="6" rx="3" fill="#4F6A42"/>
+  <rect x="156" y="112" width="80" height="6" rx="3" fill="#A8BC97"/>
+  <circle cx="320" cy="80" r="22" fill="#4F6A42"/>
+  <path d="M310 80 L317 87 L330 73" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="80" cy="200" r="6" fill="#4F6A42"/>
+  <circle cx="64" cy="170" r="4" fill="#A8BC97"/>
+  <circle cx="336" cy="190" r="5" fill="#A8BC97"/>
+</svg>

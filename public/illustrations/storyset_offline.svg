@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="none">
+  <title>Offline</title>
+  <ellipse cx="200" cy="280" rx="150" ry="12" fill="#4F6A42" opacity="0.10"/>
+  <circle cx="200" cy="150" r="115" fill="#4F6A42" opacity="0.08"/>
+  <path d="M120 180 Q200 100 280 180" stroke="#C9D6BC" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M148 200 Q200 148 252 200" stroke="#A8BC97" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M176 220 Q200 196 224 220" stroke="#4F6A42" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <circle cx="200" cy="234" r="8" fill="#4F6A42"/>
+  <line x1="100" y1="80" x2="300" y2="260" stroke="#263238" stroke-width="6" stroke-linecap="round"/>
+  <line x1="100" y1="80" x2="300" y2="260" stroke="#B57850" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="320" cy="100" r="5" fill="#A8BC97"/>
+  <circle cx="80" cy="220" r="5" fill="#A8BC97"/>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="none">
+  <title>Celebrate</title>
+  <ellipse cx="200" cy="280" rx="150" ry="12" fill="#4F6A42" opacity="0.10"/>
+  <circle cx="200" cy="150" r="115" fill="#4F6A42" opacity="0.08"/>
+  <path d="M120 230 L180 90 L220 90 L280 230 Z" fill="#4F6A42"/>
+  <path d="M120 230 L180 90 L220 90 L280 230 Z" stroke="#263238" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <circle cx="200" cy="70" r="14" fill="#FFFFFF" stroke="#263238" stroke-width="3"/>
+  <rect x="194" y="40" width="12" height="24" rx="3" fill="#263238"/>
+  <g fill="#A8BC97">
+    <rect x="146" y="124" width="14" height="6" rx="3" transform="rotate(20 153 127)"/>
+    <rect x="234" y="138" width="14" height="6" rx="3" transform="rotate(-15 241 141)"/>
+    <rect x="162" y="180" width="14" height="6" rx="3" transform="rotate(35 169 183)"/>
+    <rect x="226" y="194" width="14" height="6" rx="3" transform="rotate(-25 233 197)"/>
+  </g>
+  <g fill="#3A4F32">
+    <circle cx="178" cy="156" r="4"/>
+    <circle cx="218" cy="170" r="4"/>
+    <circle cx="190" cy="206" r="4"/>
+    <circle cx="220" cy="120" r="4"/>
+  </g>
+  <g stroke="#4F6A42" stroke-width="3" stroke-linecap="round">
+    <line x1="60" y1="60" x2="76" y2="76"/>
+    <line x1="76" y1="60" x2="60" y2="76"/>
+    <line x1="324" y1="80" x2="340" y2="96"/>
+    <line x1="340" y1="80" x2="324" y2="96"/>
+    <line x1="50" y1="180" x2="50" y2="200"/>
+    <line x1="40" y1="190" x2="60" y2="190"/>
+    <line x1="350" y1="180" x2="350" y2="200"/>
+    <line x1="340" y1="190" x2="360" y2="190"/>
+  </g>
+</svg>
