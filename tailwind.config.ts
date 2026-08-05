@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import tokens from '../tokens.json';
+import tokens from './tokens.json';
 
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
