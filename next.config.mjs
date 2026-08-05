@@ -9,12 +9,15 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1',
-    // On Netlify, DEPLOY_PRIME_URL is the branch or preview URL and URL is the
-    // production domain. Without them the localhost fallback would be baked
-    // into the sitemap, robots host and OG tags at build time.
+    // On Netlify, URL is the custom domain and DEPLOY_PRIME_URL is the per-deploy
+    // address (main--site.netlify.app even on production), so production must
+    // prefer URL and only previews should use DEPLOY_PRIME_URL. Without this the
+    // localhost fallback gets baked into the sitemap, robots host and OG tags.
     NEXT_PUBLIC_SITE_URL:
       process.env.NEXT_PUBLIC_SITE_URL ||
-      process.env.DEPLOY_PRIME_URL ||
+      (process.env.CONTEXT === 'production'
+        ? process.env.URL
+        : process.env.DEPLOY_PRIME_URL) ||
       process.env.URL ||
       'http://localhost:3000',
   },
