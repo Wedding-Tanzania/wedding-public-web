@@ -1,124 +1,109 @@
+import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Section, SectionHead } from '@/components/Section';
+import { Section } from '@/components/Section';
+import { IconCalendarHeart, IconGift, IconGlasses } from '@/components/icons';
+
+export const metadata: Metadata = {
+  title: 'Panga harusi pamoja',
+  description:
+    'One shared workspace for the couple and kamati ya harusi: budget, pledges, M-Pesa Changisha collections, guests and trusted vendors. Money goes straight to your own account, never ours.',
+};
 
 export default function HomePage() {
   return (
     <main>
       <Hero />
-      <Principles />
-      <ForCouples />
-      <ForVendors />
-      <Testimonials />
-      <CTA />
+      <FeatureCards />
+      <Invitations />
+      <PaymentRails />
+      <TreasurerShowcase />
+      <VendorCta />
     </main>
   );
 }
 
 function Hero() {
   return (
-    <section
-      className="relative overflow-hidden px-6 lg:px-12"
-      style={{
-        background:
-          'radial-gradient(ellipse at top, var(--w-herb-50), var(--w-linen) 60%)',
-        padding: '120px 0 140px',
-      }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 15% 25%, rgba(168,188,151,0.26), transparent 40%), radial-gradient(circle at 88% 80%, rgba(210,148,105,0.18), transparent 40%)',
-        }}
-      />
-      <div className="relative max-w-wrap mx-auto">
-        <div className="eyebrow">Design System v0.3 · Sage edition · Weddings &amp; the money behind them</div>
-        <h1 className="mt-6 font-sans font-light text-herb-900 leading-[1.02] tracking-tightest text-[clamp(2.75rem,6vw,5.5rem)] max-w-5xl">
-          A garden, <em className="not-italic font-extrabold text-herb-600">two families,</em>
+    <section className="bg-herb-800 px-6 lg:px-12 py-20 lg:py-24">
+      <div className="max-w-wrap mx-auto">
+        <div className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-herb-100">
+          Tanzania&apos;s wedding &amp; michango platform
+        </div>
+        <h1 className="mt-6 max-w-3xl font-sans font-bold text-[clamp(2rem,5vw,3rem)] leading-[1.15] text-paper text-balance">
+          Panga harusi pamoja.
           <br />
-          and <span className="text-herb-800 font-bold">every shilling accounted for.</span>
+          Kusanya michango kwa amani.
         </h1>
-        <p className="font-sans text-lg text-ink-2 max-w-2xl mt-7 leading-relaxed">
-          East Africa&apos;s wedding planning, vendor marketplace, and payments platform.
-          Built to hold an invitation, a vendor directory, and an escrowed payment schedule on the
-          same page, without any of them feeling out of place.
+        <p className="mt-6 max-w-xl font-sans text-base leading-relaxed text-herb-100">
+          One shared workspace for the couple and kamati ya harusi: budget, pledges, M-Pesa
+          Changisha collections, guests and trusted vendors. Money goes straight to your own
+          account, never ours.
         </p>
-        <div className="flex flex-wrap gap-4 mt-9">
+        <div className="mt-9 flex flex-wrap gap-4">
           <Link href="/contact" className="btn btn-primary">
-            Start planning
+            Create your wedding · free
           </Link>
-          <Link href="/features" className="btn btn-outline">
-            See the system
+          <Link
+            href="/vendors/join"
+            className="btn text-herb-100 ring-1 ring-inset ring-herb-200/40 hover:ring-herb-200/70"
+          >
+            I run a wedding business
           </Link>
         </div>
-        <div className="grid sm:grid-cols-4 gap-0 mt-14 py-6 border-y border-rule">
-          {[
-            ['2,400+', 'Verified vendors'],
-            ['TSh 4.2bn', 'In escrow YTD'],
-            ['6 cities', 'Dar · Arusha · Nairobi…'],
-            ['M-Pesa · Tigo · Airtel', 'Mobile money rails'],
-          ].map(([n, l], i) => (
-            <div
-              key={l}
-              className={`px-6 ${i < 3 ? 'border-r border-rule' : ''}`}
-            >
-              <div className="font-sans font-bold text-3xl text-herb-800 tracking-tight tabular-nums">
-                {n}
-              </div>
-              <div className="text-[11px] uppercase tracking-wide text-ink-3 mt-1.5 font-medium">
-                {l}
-              </div>
-            </div>
-          ))}
+        <div className="mt-14 flex flex-wrap gap-x-12 gap-y-6">
+          <HeroStat value="TSh 4.2bn" label="Collected YTD" />
+          <HeroStat value="1,284" label="Active weddings" />
+          <HeroStat value="~1%" label="Payment cost" />
         </div>
       </div>
     </section>
   );
 }
 
-function Principles() {
-  const items = [
-    {
-      title: 'Tactile, not digital',
-      body:
-        'Surfaces feel like paper. Serifs carry voice. Chrome recedes; content is invited forward.',
-    },
-    {
-      title: 'Composed, not crowded',
-      body:
-        'Generous margins, centred axis, restrained rules. Let each element breathe its own air.',
-    },
-    {
-      title: 'Warmth over gloss',
-      body:
-        'Eucalyptus, linen, and warm coral. No hard gradients or neon. The palette is a garden at dusk.',
-    },
-  ];
+function HeroStat({ value, label }: { value: string; label: string }) {
   return (
-    <Section tone="paper">
-      <SectionHead
-        eyebrow="Principles"
-        title={<>Set like a table, <em className="not-italic font-extrabold text-herb-600">not a grid.</em></>}
-      />
-      <div className="grid md:grid-cols-3 gap-6">
-        {items.map((p) => (
+    <div className="flex flex-col gap-1">
+      <span className="font-sans font-bold text-[22px] text-paper num-tabular">{value}</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.06em] text-ink-4">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+const features = [
+  {
+    icon: IconCalendarHeart,
+    title: 'Kamati in one workspace',
+    body: 'Chairperson, katibu, mweka hazina and members plan together with roles and approvals, not WhatsApp chaos.',
+  },
+  {
+    icon: IconGift,
+    title: 'Michango bila wasiwasi',
+    body: 'Pledges tracked, M-Pesa Changisha + Mixx Mchango + bank collections auto-matched. Cash recorded too. Every shilling accounted.',
+  },
+  {
+    icon: IconGlasses,
+    title: 'Vendors you can trust',
+    body: 'Verified businesses with real reviews, quotes, and resource-aware booking so your date is actually secured.',
+  },
+];
+
+function FeatureCards() {
+  return (
+    <Section tone="ivory" className="!py-20">
+      <div className="grid gap-6 md:grid-cols-3">
+        {features.map((f) => (
           <div
-            key={p.title}
-            className="bg-paper border border-bordr rounded-lg p-10 text-center shadow-soft"
+            key={f.title}
+            className="rounded-lg bg-paper ring-1 ring-inset ring-bordr p-7 flex flex-col items-start gap-3"
           >
-            <div className="w-12 h-12 rounded-full bg-herb-100 grid place-items-center mx-auto mb-5 text-herb-600">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 4L14 10H20L15 14L17 20L12 16L7 20L9 14L4 10H10Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="font-sans font-medium text-2xl">{p.title}</div>
-            <p className="mt-4 text-sm text-ink-3 leading-relaxed">{p.body}</p>
+            <span className="grid place-items-center w-11 h-11 rounded-md bg-herb-100 text-herb-600">
+              <f.icon size={24} />
+            </span>
+            <span className="font-sans font-bold text-xl leading-tight text-ink-1">{f.title}</span>
+            <span className="font-sans text-sm leading-relaxed text-ink-2">{f.body}</span>
           </div>
         ))}
       </div>
@@ -126,171 +111,248 @@ function Principles() {
   );
 }
 
-function ForCouples() {
-  const features = [
-    { t: 'Vendor Marketplace', b: 'Browse and compare hundreds of verified vendors across venues, catering, photography, decor, entertainment, transport, and more.' },
-    { t: 'Reviews & Ratings', b: 'Authentic reviews from real couples, verified by the platform. Every decision informed.' },
-    { t: 'Budget Planner', b: 'Set a total budget and track spending across every vendor and category in real time.' },
-    { t: 'Checklist & Timeline', b: 'A customisable planning checklist with milestone reminders, from engagement to honeymoon.' },
-    { t: 'Booking & Payments', b: 'Reserve vendors and pay deposits directly. Mobile money, card, or bank transfer, powered by Malipopay.' },
-    { t: 'Wedding Website', b: 'Every couple gets a personalised story page to share details, RSVPs, and contribution links.' },
-    { t: 'Guest Management', b: 'Track RSVPs, dietary requirements, seating preferences, and plus-ones from a single guest list.' },
-  ];
+const inviteBullets = [
+  { head: 'Digital cards', body: 'Six templates · Swahili + English · print-ready PDF' },
+  { head: 'QR gate check-in', body: 'Every card has a unique №, scan or type to verify' },
+  { head: 'RSVP tracking', body: 'Confirmations, declines with reasons, reminders' },
+  { head: 'Changia gifts', body: 'M-Pesa, Mixx, Airtel, banks, straight to the couple' },
+  { head: 'Story page', body: 'Countdown, ratiba, dress code, gallery, directions' },
+];
+
+function Invitations() {
   return (
     <Section tone="cream">
-      <SectionHead
-        eyebrow="For couples"
-        title={
-          <>
-            Every stage of the journey. <em className="not-italic font-extrabold text-herb-600">One quiet place.</em>
-          </>
-        }
-      />
-      <div className="grid md:grid-cols-3 gap-5">
-        {features.map((f, i) => (
-          <div
-            key={f.t}
-            className={`bg-paper border border-bordr rounded-lg p-8 flex flex-col gap-3 ${i === 0 ? 'md:col-span-2' : ''}`}
-          >
-            <div className="font-mono text-[11px] font-bold text-herb-600">
-              {(i + 1).toString().padStart(2, '0')}
-            </div>
-            <div className="font-sans text-2xl font-medium">{f.t}</div>
-            <p className="text-sm text-ink-2 leading-relaxed">{f.b}</p>
+      <div className="grid gap-14 lg:grid-cols-2 items-center">
+        <div className="flex flex-col items-start gap-5 max-w-lg">
+          <div className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-herb-600">
+            Mialiko ya kidijitali · digital invitations
           </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function ForVendors() {
-  const features = [
-    ['Verified vendor profile', 'A professional, searchable business page with portfolio, packages, pricing, and contact.'],
-    ['Lead inbox', 'All enquiries delivered directly, with tools to respond, quote, and convert.'],
-    ['Booking calendar', 'Manage availability, prevent double-bookings, and see upcoming events in one view.'],
-    ['Analytics dashboard', 'See how many couples viewed your profile, where they came from, and what packages they enquired about.'],
-    ['Payment collection', 'Accept deposits and full payments through the platform, settled via Malipopay.'],
-  ];
-  return (
-    <Section tone="paper">
-      <div className="grid lg:grid-cols-[1fr_1.3fr] gap-20 items-start">
-        <div className="lg:sticky lg:top-32">
-          <div className="eyebrow">For vendors</div>
-          <h2 className="mt-4 font-sans font-light text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-tight">
-            A professional storefront. <em className="not-italic font-extrabold text-herb-600">A leads engine.</em>
+          <h2 className="font-sans font-bold text-[clamp(1.7rem,3.5vw,2.125rem)] leading-[1.25] text-ink-1">
+            Kadi, ukurasa wa harusi,
+            <br className="hidden sm:block" /> na QR getini: vyote pamoja.
           </h2>
-          <p className="mt-6 text-ink-2 leading-relaxed max-w-md">
-            Put your services in front of every couple actively planning a wedding in Tanzania.
-            Wedding by Lockwood is a digital shopfront and a conversion machine, built for the way
-            vendors here actually operate.
+          <p className="font-sans text-[15px] leading-relaxed text-ink-2">
+            Design a card, send it by WhatsApp, SMS or print, and check guests in at the gate with
+            one scan.
           </p>
-          <Link href="/contact?topic=vendor" className="btn btn-primary mt-8">
-            Become a vendor
+          <div className="flex flex-col gap-3">
+            {inviteBullets.map((b) => (
+              <div key={b.head} className="flex gap-3 items-baseline">
+                <span className="w-2 h-2 mt-1.5 rounded-full bg-herb-600 flex-shrink-0 self-start" />
+                <span>
+                  <span className="font-sans font-semibold text-sm text-ink-1">{b.head}</span>{' '}
+                  <span className="font-sans font-medium text-xs text-ink-3">{b.body}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/contact"
+            className="mt-2 inline-flex items-center bg-herb-600 px-7 py-3.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-paper hover:bg-herb-700 transition-colors"
+          >
+            Tengeneza kadi yako · start free
           </Link>
         </div>
-        <div>
-          {features.map(([t, b], i) => (
-            <div
-              key={t}
-              className={`grid grid-cols-[60px_1fr] gap-8 items-start py-8 border-t border-bordr ${i === features.length - 1 ? 'border-b' : ''}`}
-            >
-              <div className="font-mono text-[13px] text-herb-600 font-bold pt-1">0{i + 1}.</div>
-              <div>
-                <div className="font-sans text-2xl font-medium">{t}</div>
-                <p className="mt-2 text-ink-2 leading-relaxed">{b}</p>
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col gap-4 items-center justify-self-center lg:justify-self-end">
+          <InviteCardMock />
+          <div className="flex flex-wrap justify-center gap-2.5">
+            <MiniTemplateCard variant="forest" />
+            <MiniTemplateCard variant="linen" />
+            <MiniTemplateCard variant="paper" />
+          </div>
+          <span className="font-mono text-[8px] font-medium uppercase tracking-[0.1em] text-ink-3">
+            Templates sita · chagua mtindo wako
+          </span>
         </div>
       </div>
     </Section>
   );
 }
 
-function Testimonials() {
-  const quotes = [
-    {
-      quote:
-        'We planned a 320-guest wedding in five months without a planner. The vendor reviews saved us from three bad decisions.',
-      who: 'Amani & Nyota',
-      sub: 'Married December 2026 · Oyster Bay Gardens',
-    },
-    {
-      quote:
-        'I went from cold WhatsApp leads to a booked diary in eight weeks. The lead inbox is the whole game.',
-      who: 'Faraja Mwakatumbula',
-      sub: 'Founder, Kilima Gardens Estate',
-    },
-    {
-      quote:
-        'Our families could pledge from Mwanza, Arusha, and London on the same page. Money landed straight in our Changisha.',
-      who: 'Hassan & Asha',
-      sub: 'Married April 2026 · Zanzibar coastal',
-    },
-  ];
+function InviteCardMock() {
+  return (
+    <div className="w-[198px] h-[347px] bg-herb-900 flex flex-col gap-[8.7px] px-[17px] pt-[21px] pb-[18.6px] justify-center items-center shadow-[0_24px_60px_rgba(26,37,22,0.35)]">
+      <span className="relative block w-[30px] h-[30px] rounded-full shadow-[inset_0_0_0_0.62px_#D9C7A8]">
+        <span className="absolute inset-0 flex items-center justify-center font-mono font-medium text-[6.8px] text-[#D9C7A8]">
+          A·J
+        </span>
+      </span>
+      <span className="font-mono font-medium text-[5px] tracking-[0.16em] text-herb-200">
+        PAMOJA NA FAMILIA ZETU
+      </span>
+      <span className="flex flex-col gap-[1.2px] items-center">
+        <span className="font-sans font-medium text-[27px] leading-[1.1] text-paper">Amina</span>
+        <span className="font-sans font-medium text-sm leading-none text-[#D9C7A8]">&amp;</span>
+        <span className="font-sans font-medium text-[27px] leading-[1.1] text-paper">Juma</span>
+      </span>
+      <span className="font-mono font-medium text-[4.7px] tracking-[0.1em] text-herb-200 text-center">
+        TUNAYO FURAHA KUWAALIKA KWENYE HARUSI
+      </span>
+      <span className="font-mono font-medium text-[4.7px] tracking-[0.1em] text-[#D9C7A8]">
+        JUMAMOSI · 12 DESEMBA 2026 · 09:00
+      </span>
+      <span className="font-mono font-medium text-[4.7px] tracking-[0.1em] text-herb-200">
+        St Joseph Cathedral · Dar es Salaam
+      </span>
+      <span className="w-[25px] h-px bg-[#D9C7A8]/60" />
+      <Image
+        src="/img/qr.png"
+        alt="Invitation QR check-in code"
+        width={47}
+        height={47}
+        className="rounded-[2.6px]"
+      />
+      <span className="font-mono font-medium text-[4.3px] tracking-[0.14em] text-herb-200">
+        SCAN AT THE GATE
+      </span>
+      <span className="font-mono font-medium text-[5.6px] tracking-[0.08em] text-[#D9C7A8]">
+        CARD № 0142-118
+      </span>
+    </div>
+  );
+}
+
+const miniCardStyles = {
+  forest: {
+    wrap: 'bg-herb-800 shadow-[inset_0_0_0_1.26px_#4F6A42]',
+    name: 'text-paper',
+    date: 'text-herb-200',
+    rule: 'bg-[#D9C7A8]/70',
+  },
+  linen: {
+    wrap: 'bg-linen shadow-[inset_0_0_0_1.26px_#D9C7A8]',
+    name: 'text-ink-1',
+    date: 'text-[#8C733D]',
+    rule: 'bg-[#8C733D]/50',
+  },
+  paper: {
+    wrap: 'bg-paper shadow-[inset_0_0_0_1.26px_#E0DCC8]',
+    name: 'text-ink-1',
+    date: 'text-ink-3',
+    rule: 'bg-bordr',
+  },
+} as const;
+
+function MiniTemplateCard({ variant }: { variant: keyof typeof miniCardStyles }) {
+  const s = miniCardStyles[variant];
+  return (
+    <span
+      className={`w-[108px] h-[59px] rounded-[5px] flex flex-col gap-[3px] items-center justify-center ${s.wrap}`}
+    >
+      <span className={`font-sans font-semibold text-[8px] ${s.name}`}>Amina &amp; Juma</span>
+      <span className={`font-mono font-medium text-[3.5px] tracking-[0.08em] ${s.date}`}>
+        JUMAMOSI · 12 DESEMBA 2026
+      </span>
+      <span className={`w-[11px] h-[0.5px] ${s.rule}`} />
+      <Image src="/img/qr.png" alt="" width={13} height={13} className="rounded-[0.7px]" />
+    </span>
+  );
+}
+
+const rails = [
+  { label: 'MPESA', dot: 'bg-rails-mpesa' },
+  { label: 'TIGO', dot: 'bg-rails-tigo' },
+  { label: 'AIRTEL', dot: 'bg-rails-airtel' },
+  { label: 'HALOPESA', dot: 'bg-rails-halo' },
+  { label: 'CRDB', dot: 'bg-rails-crdb' },
+  { label: 'NMB', dot: 'bg-rails-nmb' },
+];
+
+function PaymentRails() {
+  return (
+    <section className="bg-paper px-6 lg:px-12 py-9">
+      <div className="max-w-wrap mx-auto flex flex-wrap items-center gap-x-3.5 gap-y-3">
+        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.06em] text-ink-3">
+          Collect with
+        </span>
+        {rails.map((r) => (
+          <span key={r.label} className="rail-chip">
+            <span className={`dot ${r.dot}`} />
+            {r.label}
+          </span>
+        ))}
+        <span className="flex-grow" />
+        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.04em] text-herb-600">
+          Powered by Malipopay · direct to your account
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function TreasurerShowcase() {
   return (
     <Section tone="cream">
-      <SectionHead
-        eyebrow="Real weddings"
-        title={
-          <>
-            Real couples. <em className="not-italic font-extrabold text-herb-600">Real ceremonies.</em>
-          </>
-        }
-      />
-      <div className="grid md:grid-cols-3 gap-6">
-        {quotes.map((q) => (
-          <figure
-            key={q.who}
-            className="bg-paper border border-champagne rounded-lg p-10 relative shadow-soft"
-          >
-            <div className="font-sans text-herb-300 text-6xl leading-none">"</div>
-            <blockquote className="font-sans text-xl text-ink-1 leading-relaxed mt-2">
-              {q.quote}
-            </blockquote>
-            <figcaption className="mt-6 pt-4 border-t border-bordr">
-              <div className="font-sans text-lg">{q.who}</div>
-              <div className="text-xs uppercase tracking-widest text-ink-3 mt-1">{q.sub}</div>
-            </figcaption>
-          </figure>
-        ))}
-      </div>
-      <div className="text-center mt-12">
-        <Link href="/testimonials" className="btn btn-outline">
-          Read more stories
-        </Link>
+      <div className="grid gap-14 lg:grid-cols-2 items-center">
+        <div className="flex flex-col gap-6 max-w-md">
+          <h2 className="font-sans font-bold text-[clamp(1.9rem,4vw,2.5rem)] leading-[1.15] text-ink-1 text-balance">
+            Mweka hazina anaona kila kitu.
+          </h2>
+          <p className="font-sans text-base leading-relaxed text-ink-2">
+            Live dashboard: planned budget, pledges, money received, outstanding and spent. Smart
+            alerts tell you the guest count your cash can actually support.
+          </p>
+        </div>
+        <DashboardMock />
       </div>
     </Section>
   );
 }
 
-function CTA() {
+const dashTiles = [
+  { value: 'TSh 18.2M', label: 'Pledged' },
+  { value: 'TSh 11.4M', label: 'Received' },
+  { value: 'TSh 6.8M', label: 'Outstanding' },
+  { value: 'TSh 7.9M', label: 'Spent' },
+];
+
+const dashRows = [
+  { main: 'TSh 250,000 · M-Pesa · matched to pledge', sub: 'Joseph Kileo · just now' },
+  { main: 'TSh 100,000 · cash · recorded by hazina', sub: 'Mary Lyimo · today' },
+  { main: 'Pledge TSh 500,000 · due 30 Sep', sub: 'Karim Gulam · 1 hr ago' },
+];
+
+function DashboardMock() {
   return (
-    <section
-      className="relative overflow-hidden text-herb-50"
-      style={{
-        background:
-          'linear-gradient(135deg, var(--w-herb-700) 0%, var(--w-herb-900) 100%)',
-        padding: '140px 24px',
-      }}
-    >
-      <div className="relative max-w-wrap mx-auto text-center">
-        <div className="eyebrow justify-center text-herb-300">Start planning</div>
-        <h2 className="mt-4 font-sans font-light text-[clamp(2.4rem,5vw,4rem)] leading-tight text-herb-50">
-          Trust, structure, and convenience. <em className="not-italic font-extrabold text-herb-300">This market has long needed them.</em>
+    <div className="w-full max-w-xl rounded-lg bg-paper ring-1 ring-inset ring-bordr shadow-[0_20px_50px_rgba(42,58,36,0.12)] p-6 flex flex-col gap-3">
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.05em] text-ink-3">
+        Finance &amp; contributions · Amina &amp; Juma
+      </span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {dashTiles.map((t) => (
+          <span key={t.label} className="rounded-md bg-herb-50 p-3 flex flex-col gap-0.5">
+            <span className="font-sans font-bold text-base text-ink-1 num-tabular">{t.value}</span>
+            <span className="font-mono text-[7px] font-medium uppercase tracking-[0.04em] text-ink-3">
+              {t.label}
+            </span>
+          </span>
+        ))}
+      </div>
+      {dashRows.map((r) => (
+        <span
+          key={r.main}
+          className="rounded-md bg-paper ring-1 ring-inset ring-bordr px-3 py-2.5 flex flex-col gap-0.5"
+        >
+          <span className="font-sans font-semibold text-[13px] text-ink-1">{r.main}</span>
+          <span className="font-mono text-[7.5px] font-medium uppercase tracking-[0.02em] text-ink-3">
+            {r.sub}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function VendorCta() {
+  return (
+    <section className="bg-herb-800 px-6 lg:px-12 py-20 lg:py-24">
+      <div className="max-w-wrap mx-auto flex flex-col items-start gap-9">
+        <h2 className="max-w-2xl font-sans font-bold text-[clamp(1.7rem,3.5vw,2.125rem)] leading-[1.2] text-paper text-balance">
+          Una biashara ya harusi? Jiunge na wauzaji 2,400+.
         </h2>
-        <div className="flex flex-wrap gap-4 justify-center mt-12">
-          <Link href="/contact" className="btn btn-primary !bg-paper !text-herb-700 hover:!bg-herb-50">
-            Start planning
-          </Link>
-          <Link
-            href="/contact?topic=vendor"
-            className="btn btn-outline !text-herb-50 !border-herb-300 hover:!bg-herb-700"
-          >
-            Become a vendor
-          </Link>
-        </div>
+        <Link href="/vendors/join" className="btn btn-primary">
+          List your business
+        </Link>
       </div>
     </section>
   );
