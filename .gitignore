@@ -11,3 +11,6 @@ out
 
 # TS incremental build info
 tsconfig.tsbuildinfo
+
+# Local agent/editor scratch, not shared config
+.claude/
