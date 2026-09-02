@@ -178,10 +178,27 @@ async function readError(res: Response): Promise<ApiError> {
  * another handset comes back through the code. Wrapped in try/catch because
  * private mode and a full quota both throw rather than returning null.
  */
+/**
+ * Versioned on purpose. A blob written by an earlier build carries no phone and
+ * no outstanding balance, and restoring one produced a screen with two empty
+ * fields and a reference that could be long dead. Bumping the key drops those
+ * rather than trying to repair them.
+ */
+const REMEMBERED_KEY = 'changia:v2:';
+
 function remembered(slug: string): PledgeResult | null {
   try {
-    const raw = window.localStorage.getItem(`changia:${slug}`);
-    return raw === null ? null : (JSON.parse(raw) as PledgeResult);
+    const raw = window.localStorage.getItem(`${REMEMBERED_KEY}${slug}`);
+    if (raw === null) return null;
+    const saved = JSON.parse(raw) as PledgeResult;
+    // A reference is only good until its bill expires. Showing an expired one
+    // is worse than showing nothing: the guest quotes it at a counter and is
+    // turned away, which is the very failure this cache exists to prevent.
+    if (saved.expiresAt !== undefined && new Date(saved.expiresAt) <= new Date()) {
+      window.localStorage.removeItem(`${REMEMBERED_KEY}${slug}`);
+      return null;
+    }
+    return saved;
   } catch {
     return null;
   }
@@ -191,7 +208,7 @@ function remember(slug: string, result: PledgeResult): void {
   try {
     // Their own number on their own device. It is what stops a returning guest
     // meeting an empty phone field on a screen that never showed them one.
-    window.localStorage.setItem(`changia:${slug}`, JSON.stringify(result));
+    window.localStorage.setItem(`${REMEMBERED_KEY}${slug}`, JSON.stringify(result));
   } catch {
     // Nothing to recover: the reference is also in the guest's SMS.
   }
@@ -239,9 +256,9 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         // context, so payment details cannot go stale behind it.
         const saved = remembered(slug);
         if (saved !== null) {
-          setResult({ ...saved, ...data });
-          setFullName(saved.fullName ?? '');
-          setStep('done');
+          // Fresh context over the saved pledge: payment details and the test
+          // banner must never be served from a cache, only the pledge itself.
+          hydrate({ ...saved, ...data });
         }
         setPhase('ready');
       } catch {
@@ -253,21 +270,35 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
     };
   }, [slug]);
 
-  function land(data: PledgeResult): void {
+  /**
+   * Fill the paid step from a pledge.
+   *
+   * Every route into that step goes through here: pledging, coming back with a
+   * code, and restoring from this device. The restore path used to set the
+   * result and the step directly and skip the rest, so a returning guest met an
+   * empty amount box and an empty phone box on a screen that had never asked
+   * them for either.
+   */
+  function hydrate(data: PledgeResult): void {
     setResult(data);
     setCtx(data);
-    remember(slug, data);
     setStep('done');
     // Default to the whole balance. Most people send all of it, and the ones
     // who do not can type over it.
     setSendAmount(formatAmountInput(String(data.outstanding ?? data.pledge.amount)));
-    // Prefer what the server holds. A guest returning on their own device has
-    // no `phone` in state, and posting an empty one used to 400 on a screen
-    // that showed no phone field at all.
-    setPayFrom(data.payerPhone ?? phone.trim() ?? '');
+    // Prefer what the server holds; fall back to whatever the guest has already
+    // typed on this visit.
+    setPayFrom(data.payerPhone ?? phone.trim());
+    setFullName(data.fullName ?? fullName);
     setPushState('idle');
     setProofState('idle');
     setError(null);
+  }
+
+  /** A pledge straight from the server, so it is worth remembering. */
+  function land(data: PledgeResult): void {
+    remember(slug, data);
+    hydrate(data);
   }
 
   async function submitPledge(): Promise<void> {
@@ -407,8 +438,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       }
       const data = (await res.json()) as PledgeResult;
       setPhone(lookupPhone.trim());
-      setFullName(data.fullName ?? '');
-      land(data);
+      land({ ...data, payerPhone: data.payerPhone ?? lookupPhone.trim() });
     } catch {
       setError('We could not reach the server. Please check your connection.');
     } finally {
