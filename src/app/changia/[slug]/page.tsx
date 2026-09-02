@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { tsh, formatAmountInput, parseAmountInput } from '@/lib/money';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -40,6 +41,8 @@ interface PledgeResult extends ChangiaContext {
   expiresAt?: string;
   /** What is still owed on the pledge, after anything already paid. */
   outstanding?: number;
+  /** The number this pledge was made with, so the push field starts filled. */
+  payerPhone?: string;
 }
 
 interface ApiError {
@@ -73,10 +76,6 @@ function formatDate(iso: string): string {
     month: 'long',
     year: 'numeric',
   });
-}
-
-function tsh(amount: number): string {
-  return `TSh ${amount.toLocaleString('en-GB')}`;
 }
 
 /** The lines a contributor needs in order to actually send the money. */
@@ -190,6 +189,8 @@ function remembered(slug: string): PledgeResult | null {
 
 function remember(slug: string, result: PledgeResult): void {
   try {
+    // Their own number on their own device. It is what stops a returning guest
+    // meeting an empty phone field on a screen that never showed them one.
     window.localStorage.setItem(`changia:${slug}`, JSON.stringify(result));
   } catch {
     // Nothing to recover: the reference is also in the guest's SMS.
@@ -214,6 +215,11 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const [pushState, setPushState] = useState<'idle' | 'sent' | 'in_flight'>('idle');
   const [sendAmount, setSendAmount] = useState('');
   const [sentAmount, setSentAmount] = useState(0);
+  // Whose handset the prompt goes to. Its own field, because it need not be
+  // the number that pledged: somebody settles a relative's michango from their
+  // own phone, and until the API was fixed doing so quietly rang the wrong one.
+  const [payFrom, setPayFrom] = useState('');
+  const [sentTo, setSentTo] = useState('');
   const [proofState, setProofState] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle');
 
   useEffect(() => {
@@ -254,14 +260,18 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
     setStep('done');
     // Default to the whole balance. Most people send all of it, and the ones
     // who do not can type over it.
-    setSendAmount(String(data.outstanding ?? data.pledge.amount));
+    setSendAmount(formatAmountInput(String(data.outstanding ?? data.pledge.amount)));
+    // Prefer what the server holds. A guest returning on their own device has
+    // no `phone` in state, and posting an empty one used to 400 on a screen
+    // that showed no phone field at all.
+    setPayFrom(data.payerPhone ?? phone.trim() ?? '');
     setPushState('idle');
     setProofState('idle');
     setError(null);
   }
 
   async function submitPledge(): Promise<void> {
-    const value = Number(amount.replace(/[^\d]/g, ''));
+    const value = parseAmountInput(amount);
     if (fullName.trim() === '' || phone.trim() === '') {
       setError('Please give your name and phone number.');
       return;
@@ -298,13 +308,18 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   async function startPush(): Promise<void> {
     if (result === null) return;
     const owed = result.outstanding ?? result.pledge.amount;
-    const value = Number(sendAmount.replace(/[^\d]/g, ''));
+    const value = parseAmountInput(sendAmount);
     if (!Number.isFinite(value) || value < MIN_AMOUNT) {
       setError(`The smallest payment is ${tsh(MIN_AMOUNT)}.`);
       return;
     }
     if (value > owed) {
       setError(`Only ${tsh(owed)} is still owed on this pledge.`);
+      return;
+    }
+    const chargeTo = payFrom.trim();
+    if (chargeTo === '') {
+      setError('Which number should we send the prompt to?');
       return;
     }
     setBusy(true);
@@ -314,7 +329,9 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          phone: phone.trim() === '' ? lookupPhone.trim() : phone.trim(),
+          // The number in the field, not the one that pledged. Somebody paying
+          // a relative's michango from their own handset is ordinary.
+          phone: chargeTo,
           pledgeId: result.pledge.id,
           amount: value,
         }),
@@ -329,7 +346,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         // its word and correct the field rather than arguing with the guest.
         if (body.details?.outstanding !== undefined) {
           const owedNow = body.details.outstanding;
-          setSendAmount(String(owedNow));
+          setSendAmount(formatAmountInput(String(owedNow)));
           setResult({ ...result, outstanding: owedNow });
         }
         setError(
@@ -340,6 +357,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         return;
       }
       setSentAmount(body.amount ?? value);
+      setSentTo(chargeTo);
       setPushState(body.status === 'in_flight' ? 'in_flight' : 'sent');
     } catch {
       setError('We could not reach the server. Use the details below instead.');
@@ -448,7 +466,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const channels = ctx?.paymentChannels ?? [];
   // What is still owed, and what the guest has typed over it.
   const owed = result === null ? 0 : (result.outstanding ?? result.pledge.amount);
-  const typed = Number(sendAmount.replace(/[^\d]/g, '')) || 0;
+  const typed = parseAmountInput(sendAmount);
   const errorNote =
     error === null ? null : (
       <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
@@ -547,8 +565,8 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                   <input
                     className={inputClass}
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="200000"
+                    onChange={(e) => setAmount(formatAmountInput(e.target.value))}
+                    placeholder="200,000"
                     inputMode="numeric"
                   />
                 </label>
@@ -723,8 +741,8 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                         five-way chooser was sending. */}
                     <p className={labelClass}>Pay now from your phone</p>
                     <p className="mb-3 text-[11px] text-ink-3">
-                      We will send a prompt to {phone.trim() === '' ? 'your phone' : phone.trim()}.
-                      Approve it and the money is on its way.
+                      Approve the prompt on the handset below and the money is
+                      on its way.
                     </p>
 
                     {/* Editable, because nobody has to give it all at once.
@@ -735,18 +753,37 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                       <input
                         className={inputClass}
                         value={sendAmount}
-                        onChange={(e) => setSendAmount(e.target.value)}
+                        onChange={(e) =>
+                          setSendAmount(formatAmountInput(e.target.value))
+                        }
                         inputMode="numeric"
                       />
                     </label>
                     {owed > 0 && (
-                      <p className="mt-1 mb-3 text-[11px] text-ink-3">
+                      <p className="mt-1 text-[11px] text-ink-3">
                         {owed === result.pledge.amount
                           ? `You pledged ${tsh(result.pledge.amount)}. Send less now and the rest whenever you like.`
                           : `${tsh(result.pledge.amount - owed)} of ${tsh(result.pledge.amount)} already received. ${tsh(owed)} still to go.`}
                       </p>
                     )}
 
+                    {/* Its own field: paying a relative's michango from your
+                        own handset is ordinary, and the prompt has to reach
+                        the phone that is actually going to approve it. */}
+                    <label className="mt-3 block">
+                      <span className={labelClass}>Send the prompt to</span>
+                      <input
+                        className={inputClass}
+                        value={payFrom}
+                        onChange={(e) => setPayFrom(e.target.value)}
+                        placeholder="0713 445 566"
+                        inputMode="tel"
+                        autoComplete="tel"
+                      />
+                      <span className="mt-1 block text-[11px] text-ink-3">
+                        Paying for someone else? Put your own number here.
+                      </span>
+                    </label>
                     <button
                       onClick={() => void startPush()}
                       disabled={busy}
@@ -759,13 +796,13 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
 
                 {pushState === 'sent' && (
                   <p className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-sm text-ink-1">
-                    Check your phone and approve the {tsh(sentAmount)} payment.
+                    Check {sentTo} and approve the {tsh(sentAmount)} payment.
                     It can take a moment to arrive.
                   </p>
                 )}
                 {pushState === 'in_flight' && (
                   <p className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-sm text-ink-1">
-                    A request is already on its way to your phone. It can take a
+                    A request is already on its way to {sentTo}. It can take a
                     moment.
                   </p>
                 )}
