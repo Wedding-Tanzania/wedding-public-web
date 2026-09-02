@@ -25,13 +25,19 @@ interface ChangiaContext {
   referencePrefix?: string;
   ussdShortCode?: string;
   stkAvailable: boolean;
+  paymentsLive: boolean;
   proofUploadAvailable: boolean;
 }
 
 interface PledgeResult extends ChangiaContext {
+  alreadyPledged: boolean;
   pledge: { id: string; amount: number; contactId: string };
+  fullName?: string;
   intentId?: string;
   reference?: string;
+  malipopayReference?: string;
+  channels?: { mobile: boolean; bank: boolean };
+  expiresAt?: string;
 }
 
 interface ApiError {
@@ -41,14 +47,8 @@ interface ApiError {
 }
 
 type Phase = 'loading' | 'ready' | 'notfound' | 'error';
-
-const PROVIDERS: { value: string; label: string; dot: string }[] = [
-  { value: 'mpesa', label: 'M-Pesa', dot: 'bg-rails-mpesa' },
-  { value: 'mixx_yas', label: 'Mixx by Yas', dot: 'bg-rails-tigo' },
-  { value: 'airtel', label: 'Airtel Money', dot: 'bg-rails-airtel' },
-  { value: 'halotel', label: 'Halopesa', dot: 'bg-rails-halo' },
-  { value: 'ttcl', label: 'T-Pesa', dot: 'bg-rails-crdb' },
-];
+/** The form, the pledge, or the two steps of coming back to an old one. */
+type Step = 'pledge' | 'done' | 'lookup-phone' | 'lookup-code';
 
 const BANK_LABEL: Record<string, string> = { crdb: 'CRDB', nmb: 'NMB' };
 
@@ -158,6 +158,8 @@ const inputClass =
   'w-full rounded-lg border border-bordr bg-paper px-3 py-2.5 text-sm text-ink-1 outline-none focus:border-brand';
 const labelClass =
   'mb-1 block text-xs font-semibold uppercase tracking-[0.06em] text-ink-2';
+const primaryButton =
+  'w-full bg-herb-700 py-3.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-paper disabled:opacity-50';
 
 /** Reads {code, message, details} off a failed response, tolerating non-JSON. */
 async function readError(res: Response): Promise<ApiError> {
@@ -168,10 +170,35 @@ async function readError(res: Response): Promise<ApiError> {
   }
 }
 
+/**
+ * The pledge this device last made for this couple.
+ *
+ * Only ever a convenience: the authoritative copy is the SMS, and anybody on
+ * another handset comes back through the code. Wrapped in try/catch because
+ * private mode and a full quota both throw rather than returning null.
+ */
+function remembered(slug: string): PledgeResult | null {
+  try {
+    const raw = window.localStorage.getItem(`changia:${slug}`);
+    return raw === null ? null : (JSON.parse(raw) as PledgeResult);
+  } catch {
+    return null;
+  }
+}
+
+function remember(slug: string, result: PledgeResult): void {
+  try {
+    window.localStorage.setItem(`changia:${slug}`, JSON.stringify(result));
+  } catch {
+    // Nothing to recover: the reference is also in the guest's SMS.
+  }
+}
+
 export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
   const [phase, setPhase] = useState<Phase>('loading');
   const [ctx, setCtx] = useState<ChangiaContext | null>(null);
+  const [step, setStep] = useState<Step>('pledge');
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -180,8 +207,9 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PledgeResult | null>(null);
 
-  const [provider, setProvider] = useState('mpesa');
-  const [pushState, setPushState] = useState<'idle' | 'sent' | 'failed'>('idle');
+  const [lookupPhone, setLookupPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [pushState, setPushState] = useState<'idle' | 'sent' | 'in_flight'>('idle');
   const [proofState, setProofState] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle');
 
   useEffect(() => {
@@ -196,6 +224,15 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         const data = (await res.json()) as ChangiaContext;
         if (cancelled) return;
         setCtx(data);
+        // A guest who pledged on this device gets their screen back without
+        // asking for a code. The stored copy is merged under the fresh
+        // context, so payment details cannot go stale behind it.
+        const saved = remembered(slug);
+        if (saved !== null) {
+          setResult({ ...saved, ...data });
+          setFullName(saved.fullName ?? '');
+          setStep('done');
+        }
         setPhase('ready');
       } catch {
         if (!cancelled) setPhase('error');
@@ -205,6 +242,16 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       cancelled = true;
     };
   }, [slug]);
+
+  function land(data: PledgeResult): void {
+    setResult(data);
+    setCtx(data);
+    remember(slug, data);
+    setStep('done');
+    setPushState('idle');
+    setProofState('idle');
+    setError(null);
+  }
 
   async function submitPledge(): Promise<void> {
     const value = Number(amount.replace(/[^\d]/g, ''));
@@ -226,25 +273,14 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       });
       if (!res.ok) {
         const body = await readError(res);
-        if (body.code === 'PLEDGE_BELOW_PAID') {
-          const paid = body.details?.alreadyPaid;
-          setError(
-            paid === undefined
-              ? 'You have already paid more than that.'
-              : `You have already paid ${tsh(paid)} towards this. Your pledge cannot be less than that.`,
-          );
-        } else if (res.status === 429) {
-          setError('That is a lot of tries in one minute. Please wait a moment.');
-        } else {
-          setError(body.message ?? 'We could not save that just now. Please try again.');
-        }
+        setError(
+          res.status === 429
+            ? 'That is a lot of tries in one minute. Please wait a moment.'
+            : (body.message ?? 'We could not save that just now. Please try again.'),
+        );
         return;
       }
-      const data = (await res.json()) as PledgeResult;
-      setResult(data);
-      setCtx(data);
-      setPushState('idle');
-      setProofState('idle');
+      land((await res.json()) as PledgeResult);
     } catch {
       setError('We could not reach the server. Please check your connection.');
     } finally {
@@ -261,22 +297,74 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          phone: phone.trim(),
-          amount: result.pledge.amount,
-          provider,
+          phone: phone.trim() === '' ? lookupPhone.trim() : phone.trim(),
           pledgeId: result.pledge.id,
         }),
       });
+      const body = (await res.json().catch(() => ({}))) as ApiError & {
+        status?: string;
+      };
       if (!res.ok) {
-        const body = await readError(res);
-        setError(body.message ?? 'We could not start the payment. Use the details below instead.');
-        setPushState('failed');
+        setError(
+          body.code === 'NUMBER_NOT_WHITELISTED'
+            ? 'This number is not enabled for test payments yet. Use the details below instead.'
+            : (body.message ?? 'We could not start the payment. Use the details below instead.'),
+        );
         return;
       }
-      setPushState('sent');
+      setPushState(body.status === 'in_flight' ? 'in_flight' : 'sent');
     } catch {
       setError('We could not reach the server. Use the details below instead.');
-      setPushState('failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startLookup(): Promise<void> {
+    if (lookupPhone.trim() === '') {
+      setError('Enter the number you pledged with.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/changia/${slug}/lookup`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone: lookupPhone.trim() }),
+      });
+      if (!res.ok) {
+        setError('We could not send a code just now. Please try again.');
+        return;
+      }
+      setStep('lookup-code');
+    } catch {
+      setError('We could not reach the server. Please check your connection.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyLookup(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/changia/${slug}/lookup/verify`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone: lookupPhone.trim(), code: code.trim() }),
+      });
+      if (!res.ok) {
+        const body = await readError(res);
+        setError(body.message ?? 'That code is not right, or it has expired.');
+        return;
+      }
+      const data = (await res.json()) as PledgeResult;
+      setPhone(lookupPhone.trim());
+      setFullName(data.fullName ?? '');
+      land(data);
+    } catch {
+      setError('We could not reach the server. Please check your connection.');
     } finally {
       setBusy(false);
     }
@@ -330,6 +418,12 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   }
 
   const channels = ctx?.paymentChannels ?? [];
+  const errorNote =
+    error === null ? null : (
+      <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
+        {error}
+      </p>
+    );
 
   return (
     <main className="grid min-h-screen place-items-center bg-linen px-6 py-16">
@@ -374,7 +468,17 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
               )}
             </div>
 
-            {result === null ? (
+            {/* Said once, at the top, because a guest who reads it after a
+                failed push has already had the bad experience. */}
+            {ctx.stkAvailable && !ctx.paymentsLive && (
+              <p className="mt-6 rounded-md border border-due/40 bg-due-bg px-4 py-3 text-sm text-due">
+                Payments here are still in test mode while the couple&apos;s
+                account is approved. You can pledge, and pay using the details
+                below.
+              </p>
+            )}
+
+            {step === 'pledge' && (
               <div className="mt-8 space-y-4">
                 <p className="text-sm text-ink-2">
                   Tell the couple what you would like to give. You will get your
@@ -418,18 +522,24 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                   />
                 </label>
 
-                {error !== null && (
-                  <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
-                    {error}
-                  </p>
-                )}
+                {errorNote}
 
                 <button
                   onClick={() => void submitPledge()}
                   disabled={busy}
-                  className="w-full bg-herb-700 py-3.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-paper disabled:opacity-50"
+                  className={primaryButton}
                 >
                   {busy ? 'Saving…' : 'Set my pledge'}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setStep('lookup-phone');
+                    setError(null);
+                  }}
+                  className="w-full text-center text-sm text-herb-700 underline"
+                >
+                  I have already pledged
                 </button>
 
                 {channels.length === 0 ? (
@@ -452,12 +562,98 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                   </div>
                 )}
               </div>
-            ) : (
+            )}
+
+            {/*
+              Coming back is two steps on purpose. This link is forwarded around
+              a WhatsApp group whose members already hold each other's numbers,
+              so showing a pledge for any number typed in would let any of them
+              read what anyone else promised.
+            */}
+            {step === 'lookup-phone' && (
+              <div className="mt-8 space-y-4">
+                <p className="text-sm text-ink-2">
+                  Enter the number you pledged with and we will text you a
+                  six-digit code.
+                </p>
+                <label className="block">
+                  <span className={labelClass}>Your phone number</span>
+                  <input
+                    className={inputClass}
+                    value={lookupPhone}
+                    onChange={(e) => setLookupPhone(e.target.value)}
+                    placeholder="0713 445 566"
+                    inputMode="tel"
+                    autoComplete="tel"
+                  />
+                </label>
+                {errorNote}
+                <button
+                  onClick={() => void startLookup()}
+                  disabled={busy}
+                  className={primaryButton}
+                >
+                  {busy ? 'Sending…' : 'Send me a code'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep('pledge');
+                    setError(null);
+                  }}
+                  className="w-full text-center text-sm text-herb-700 underline"
+                >
+                  Back
+                </button>
+              </div>
+            )}
+
+            {step === 'lookup-code' && (
+              <div className="mt-8 space-y-4">
+                <p className="text-sm text-ink-2">
+                  We sent a code to {lookupPhone}. Enter it to see your pledge.
+                </p>
+                <label className="block">
+                  <span className={labelClass}>Six-digit code</span>
+                  <input
+                    className={`${inputClass} text-center font-mono text-lg tracking-[0.4em]`}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                  />
+                </label>
+                {errorNote}
+                <button
+                  onClick={() => void verifyLookup()}
+                  disabled={busy || code.length < 6}
+                  className={primaryButton}
+                >
+                  {busy ? 'Checking…' : 'Open my pledge'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep('lookup-phone');
+                    setCode('');
+                    setError(null);
+                  }}
+                  className="w-full text-center text-sm text-herb-700 underline"
+                >
+                  Use a different number
+                </button>
+              </div>
+            )}
+
+            {step === 'done' && result !== null && (
               <div className="mt-8 space-y-4">
                 <div className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-center">
                   <p className="text-sm text-ink-1">
-                    Asante {fullName.trim()}. Your pledge of{' '}
-                    <strong>{tsh(result.pledge.amount)}</strong> is recorded.
+                    {fullName.trim() === '' ? 'Asante' : `Asante ${fullName.trim()}`}
+                    {result.alreadyPledged
+                      ? '. You have already pledged '
+                      : '. Your pledge of '}
+                    <strong>{tsh(result.pledge.amount)}</strong>
+                    {result.alreadyPledged ? '.' : ' is recorded.'}
                   </p>
                 </div>
 
@@ -469,40 +665,42 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                 {result.reference !== undefined && (
                   <div className="rounded-md border border-brand/40 bg-linen px-4 py-4">
                     <p className="text-sm text-ink-1">
-                      Quote this reference with your payment so the couple can
-                      match it to you.
+                      {result.channels?.bank === true
+                        ? 'Quote this reference at a CRDB or NMB counter, or in the M-Pesa "Acc" field, and the couple will see it against your name.'
+                        : 'Quote this reference with your payment so the couple can match it to you.'}
                     </p>
                     <div className="mt-2">
                       <CopyRow label="Your reference" value={result.reference} />
+                      {result.malipopayReference !== undefined && (
+                        <CopyRow
+                          label="Or this one"
+                          value={result.malipopayReference}
+                        />
+                      )}
                     </div>
+                    <p className="mt-2 text-[11px] text-ink-3">
+                      We also texted it to you, so it is on your phone when you
+                      are standing at the counter.
+                    </p>
                   </div>
                 )}
 
-                {ctx.stkAvailable && pushState !== 'sent' && (
+                {ctx.stkAvailable && pushState === 'idle' && (
                   <div className="rounded-md border border-bordr px-4 py-4">
+                    {/* No network picker. Malipopay reads the network from the
+                        number itself, and never accepted the field the old
+                        five-way chooser was sending. */}
                     <p className={labelClass}>Pay now from your phone</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {PROVIDERS.map((p) => (
-                        <button
-                          key={p.value}
-                          onClick={() => setProvider(p.value)}
-                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                            provider === p.value
-                              ? 'border-brand bg-herb-50 text-herb-700'
-                              : 'border-bordr text-ink-2 hover:bg-herb-50'
-                          }`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${p.dot}`} />
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="mb-3 text-[11px] text-ink-3">
+                      We will send a prompt to {phone.trim() === '' ? 'your phone' : phone.trim()}.
+                      Approve it and the money is on its way.
+                    </p>
                     <button
                       onClick={() => void startPush()}
                       disabled={busy}
-                      className="mt-3 w-full bg-herb-700 py-3 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-paper disabled:opacity-50"
+                      className={primaryButton}
                     >
-                      {busy ? 'Starting…' : `Send ${tsh(result.pledge.amount)}`}
+                      {busy ? 'Sending…' : `Send ${tsh(result.pledge.amount)}`}
                     </button>
                   </div>
                 )}
@@ -511,6 +709,12 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                   <p className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-sm text-ink-1">
                     Check your phone and approve the payment. It can take a
                     moment to arrive.
+                  </p>
+                )}
+                {pushState === 'in_flight' && (
+                  <p className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-sm text-ink-1">
+                    A request is already on its way to your phone. It can take a
+                    moment.
                   </p>
                 )}
 
@@ -566,21 +770,17 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                     </p>
                   ))}
 
-                {error !== null && (
-                  <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
-                    {error}
-                  </p>
-                )}
+                {errorNote}
 
-                <button
-                  onClick={() => {
-                    setResult(null);
-                    setError(null);
-                  }}
-                  className="w-full border border-bordr py-3 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-2"
-                >
-                  Change my pledge
-                </button>
+                {/*
+                  No way back to the form. A pledge is a public commitment, and
+                  the person who made it should not be able to quietly reduce
+                  it; the couple can correct a genuine mistake in the app,
+                  where the change is attributable.
+                */}
+                <p className="text-center text-[11px] text-ink-3">
+                  Need to change this? Ask the couple.
+                </p>
               </div>
             )}
 
