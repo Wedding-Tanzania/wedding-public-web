@@ -38,12 +38,14 @@ interface PledgeResult extends ChangiaContext {
   malipopayReference?: string;
   channels?: { mobile: boolean; bank: boolean };
   expiresAt?: string;
+  /** What is still owed on the pledge, after anything already paid. */
+  outstanding?: number;
 }
 
 interface ApiError {
   code?: string;
   message?: string;
-  details?: { alreadyPaid?: number };
+  details?: { alreadyPaid?: number; outstanding?: number };
 }
 
 type Phase = 'loading' | 'ready' | 'notfound' | 'error';
@@ -210,6 +212,8 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const [lookupPhone, setLookupPhone] = useState('');
   const [code, setCode] = useState('');
   const [pushState, setPushState] = useState<'idle' | 'sent' | 'in_flight'>('idle');
+  const [sendAmount, setSendAmount] = useState('');
+  const [sentAmount, setSentAmount] = useState(0);
   const [proofState, setProofState] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle');
 
   useEffect(() => {
@@ -248,6 +252,9 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
     setCtx(data);
     remember(slug, data);
     setStep('done');
+    // Default to the whole balance. Most people send all of it, and the ones
+    // who do not can type over it.
+    setSendAmount(String(data.outstanding ?? data.pledge.amount));
     setPushState('idle');
     setProofState('idle');
     setError(null);
@@ -290,6 +297,16 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
 
   async function startPush(): Promise<void> {
     if (result === null) return;
+    const owed = result.outstanding ?? result.pledge.amount;
+    const value = Number(sendAmount.replace(/[^\d]/g, ''));
+    if (!Number.isFinite(value) || value < MIN_AMOUNT) {
+      setError(`The smallest payment is ${tsh(MIN_AMOUNT)}.`);
+      return;
+    }
+    if (value > owed) {
+      setError(`Only ${tsh(owed)} is still owed on this pledge.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -299,12 +316,22 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         body: JSON.stringify({
           phone: phone.trim() === '' ? lookupPhone.trim() : phone.trim(),
           pledgeId: result.pledge.id,
+          amount: value,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as ApiError & {
         status?: string;
+        amount?: number;
+        outstanding?: number;
       };
       if (!res.ok) {
+        // The server knows the real balance; if it disagrees with ours, take
+        // its word and correct the field rather than arguing with the guest.
+        if (body.details?.outstanding !== undefined) {
+          const owedNow = body.details.outstanding;
+          setSendAmount(String(owedNow));
+          setResult({ ...result, outstanding: owedNow });
+        }
         setError(
           body.code === 'NUMBER_NOT_WHITELISTED'
             ? 'This number is not enabled for test payments yet. Use the details below instead.'
@@ -312,6 +339,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
         );
         return;
       }
+      setSentAmount(body.amount ?? value);
       setPushState(body.status === 'in_flight' ? 'in_flight' : 'sent');
     } catch {
       setError('We could not reach the server. Use the details below instead.');
@@ -418,6 +446,9 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   }
 
   const channels = ctx?.paymentChannels ?? [];
+  // What is still owed, and what the guest has typed over it.
+  const owed = result === null ? 0 : (result.outstanding ?? result.pledge.amount);
+  const typed = Number(sendAmount.replace(/[^\d]/g, '')) || 0;
   const errorNote =
     error === null ? null : (
       <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
@@ -695,20 +726,41 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                       We will send a prompt to {phone.trim() === '' ? 'your phone' : phone.trim()}.
                       Approve it and the money is on its way.
                     </p>
+
+                    {/* Editable, because nobody has to give it all at once.
+                        Whatever is sent comes off the same pledge, and the
+                        reference above stays the one to quote. */}
+                    <label className="block">
+                      <span className={labelClass}>Amount to send now</span>
+                      <input
+                        className={inputClass}
+                        value={sendAmount}
+                        onChange={(e) => setSendAmount(e.target.value)}
+                        inputMode="numeric"
+                      />
+                    </label>
+                    {owed > 0 && (
+                      <p className="mt-1 mb-3 text-[11px] text-ink-3">
+                        {owed === result.pledge.amount
+                          ? `You pledged ${tsh(result.pledge.amount)}. Send less now and the rest whenever you like.`
+                          : `${tsh(result.pledge.amount - owed)} of ${tsh(result.pledge.amount)} already received. ${tsh(owed)} still to go.`}
+                      </p>
+                    )}
+
                     <button
                       onClick={() => void startPush()}
                       disabled={busy}
                       className={primaryButton}
                     >
-                      {busy ? 'Sending…' : `Send ${tsh(result.pledge.amount)}`}
+                      {busy ? 'Sending…' : `Send ${tsh(typed > 0 ? typed : owed)}`}
                     </button>
                   </div>
                 )}
 
                 {pushState === 'sent' && (
                   <p className="rounded-md border border-brand/40 bg-ok-bg px-4 py-4 text-sm text-ink-1">
-                    Check your phone and approve the payment. It can take a
-                    moment to arrive.
+                    Check your phone and approve the {tsh(sentAmount)} payment.
+                    It can take a moment to arrive.
                   </p>
                 )}
                 {pushState === 'in_flight' && (
