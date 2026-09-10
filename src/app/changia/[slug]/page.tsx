@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { tsh, formatAmountInput, parseAmountInput } from '@/lib/money';
+import { normalizeTzPhone, localDigits, formatLocal, TZ_PHONE_MESSAGE } from '@/lib/phone';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -54,6 +55,43 @@ interface ApiError {
 type Phase = 'loading' | 'ready' | 'notfound' | 'error';
 /** The form, the pledge, or the two steps of coming back to an old one. */
 type Step = 'pledge' | 'done' | 'lookup-phone' | 'lookup-code';
+
+/**
+ * A phone box that already says +255, so people type the nine digits they know
+ * rather than guessing whether the site wants "0713..." or "+255713...".
+ * Anything pasted is accepted and reduced to the same nine digits.
+ */
+function PhoneBox({
+  value,
+  onChange,
+  autoFocus,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <span className="mt-1 flex gap-2">
+      <span
+        aria-hidden
+        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-bordr bg-herb-50 px-3 text-sm text-ink-1"
+      >
+        <span>🇹🇿</span>
+        <span className="font-mono">+255</span>
+      </span>
+      <input
+        className={inputClass}
+        value={formatLocal(localDigits(value))}
+        onChange={(e) => onChange(localDigits(e.target.value))}
+        placeholder="755 123 456"
+        inputMode="tel"
+        autoComplete="tel"
+        autoFocus={autoFocus}
+      />
+    </span>
+  );
+}
+
 
 const BANK_LABEL: Record<string, string> = { crdb: 'CRDB', nmb: 'NMB' };
 
@@ -288,7 +326,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
     setSendAmount(formatAmountInput(String(data.outstanding ?? data.pledge.amount)));
     // Prefer what the server holds; fall back to whatever the guest has already
     // typed on this visit.
-    setPayFrom(data.payerPhone ?? phone.trim());
+    setPayFrom(data.payerPhone ?? phone);
     setFullName(data.fullName ?? fullName);
     setPushState('idle');
     setProofState('idle');
@@ -303,8 +341,8 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
 
   async function submitPledge(): Promise<void> {
     const value = parseAmountInput(amount);
-    if (fullName.trim() === '' || phone.trim() === '') {
-      setError('Please give your name and phone number.');
+    if (fullName.trim() === '' || normalizeTzPhone(phone) === null) {
+      setError(`Please give your name and phone number. ${TZ_PHONE_MESSAGE}.`);
       return;
     }
     if (!Number.isFinite(value) || value < MIN_AMOUNT || value > MAX_AMOUNT) {
@@ -317,7 +355,11 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       const res = await fetch(`${API_BASE}/changia/${slug}/pledge`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ fullName: fullName.trim(), phone: phone.trim(), amount: value }),
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          phone: normalizeTzPhone(phone),
+          amount: value,
+        }),
       });
       if (!res.ok) {
         const body = await readError(res);
@@ -348,8 +390,8 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       setError(`Only ${tsh(owed)} is still owed on this pledge.`);
       return;
     }
-    const chargeTo = payFrom.trim();
-    if (chargeTo === '') {
+    const chargeTo = normalizeTzPhone(payFrom);
+    if (chargeTo === null) {
       setError('Which number should we send the prompt to?');
       return;
     }
@@ -408,7 +450,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       const res = await fetch(`${API_BASE}/changia/${slug}/lookup`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ phone: lookupPhone.trim() }),
+        body: JSON.stringify({ phone: normalizeTzPhone(lookupPhone) }),
       });
       if (!res.ok) {
         setError('We could not send a code just now. Please try again.');
@@ -429,7 +471,10 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
       const res = await fetch(`${API_BASE}/changia/${slug}/lookup/verify`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ phone: lookupPhone.trim(), code: code.trim() }),
+        body: JSON.stringify({
+          phone: normalizeTzPhone(lookupPhone),
+          code: code.trim(),
+        }),
       });
       if (!res.ok) {
         const body = await readError(res);
@@ -577,14 +622,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
 
                 <label className="block">
                   <span className={labelClass}>Your phone number</span>
-                  <input
-                    className={inputClass}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0713 445 566"
-                    inputMode="tel"
-                    autoComplete="tel"
-                  />
+                  <PhoneBox value={phone} onChange={setPhone} />
                   <span className="mt-1 block text-[11px] text-ink-3">
                     This is how the couple matches your contribution to you.
                   </span>
@@ -657,14 +695,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                 </p>
                 <label className="block">
                   <span className={labelClass}>Your phone number</span>
-                  <input
-                    className={inputClass}
-                    value={lookupPhone}
-                    onChange={(e) => setLookupPhone(e.target.value)}
-                    placeholder="0713 445 566"
-                    inputMode="tel"
-                    autoComplete="tel"
-                  />
+                  <PhoneBox value={lookupPhone} onChange={setLookupPhone} />
                 </label>
                 {errorNote}
                 <button
@@ -802,14 +833,7 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                         the phone that is actually going to approve it. */}
                     <label className="mt-3 block">
                       <span className={labelClass}>Send the prompt to</span>
-                      <input
-                        className={inputClass}
-                        value={payFrom}
-                        onChange={(e) => setPayFrom(e.target.value)}
-                        placeholder="0713 445 566"
-                        inputMode="tel"
-                        autoComplete="tel"
-                      />
+                      <PhoneBox value={payFrom} onChange={setPayFrom} />
                       <span className="mt-1 block text-[11px] text-ink-3">
                         Paying for someone else? Put your own number here.
                       </span>
