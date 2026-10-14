@@ -80,7 +80,15 @@ export default async function RsvpPage({ params }: { params: { token: string } }
         )}
 
         <section className="rounded-lg border border-bordr bg-paper p-6 shadow-soft">
-          <RsvpForm token={params.token} status={ctx.status} rsvpOpen={ctx.rsvpOpen} />
+          <RsvpForm
+            token={params.token}
+            status={ctx.status}
+            rsvpOpen={ctx.rsvpOpen}
+            guestName={ctx.guestName}
+            firstName={ctx.guestName.split(/\s+/)[0] ?? ctx.guestName}
+            coupleNames={card !== undefined ? `${card.partnerA} & ${card.partnerB}` : ctx.weddingName}
+            partyAllowed={card?.partyAllowed}
+          />
         </section>
 
         <p className="text-center text-[10px] uppercase tracking-widest text-ink-3">A wedding by Lockwood</p>
