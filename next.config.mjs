@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // The card image reads its fonts from disk at request time. Name them, so
+    // the serverless bundle on Netlify carries them.
+    outputFileTracingIncludes: {
+      '/rsvp/[token]/card.png': ['./src/app/rsvp/_card-image/fonts/**'],
+      '/rsvp/preview/[id]/card.png': ['./src/app/rsvp/_card-image/fonts/**'],
+    },
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.wedding.co.tz' },
