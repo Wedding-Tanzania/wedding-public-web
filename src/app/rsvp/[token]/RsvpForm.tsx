@@ -8,6 +8,13 @@ export type Status = 'invited' | 'accepted' | 'maybe' | 'declined' | 'expired';
 type Answer = 'accepted' | 'maybe' | 'declined';
 type Phase = 'ask' | 'details' | 'sending' | 'done' | 'closed' | 'error';
 
+/** What the guest already told us, from the API. */
+export interface SavedReply {
+  partySize: number | null;
+  dietaryNotes: string | null;
+  message: string | null;
+}
+
 const DIETARY = ['Halal', 'Vegetarian', 'No pork', 'Allergy'];
 
 const ANSWERS: { key: Answer; label: string; sw: string }[] = [
@@ -21,8 +28,10 @@ const btnBase =
 
 /**
  * The reply half of the RSVP page. The page renders the card on the server
- * and hands this the invitation's current state, so the guest sees their
- * earlier answer and can change it; the latest answer wins on the server.
+ * and hands this the invitation's current state. A guest who has already
+ * answered (here or by WhatsApp button) lands on their confirmation, not on
+ * the question again; "Update your reply" reopens it pre-filled. The latest
+ * answer wins on the server.
  */
 export function RsvpForm({
   token,
@@ -32,6 +41,7 @@ export function RsvpForm({
   coupleNames,
   partyAllowed,
   firstName,
+  reply,
 }: {
   token: string;
   status: Status;
@@ -40,14 +50,19 @@ export function RsvpForm({
   coupleNames: string;
   partyAllowed?: number;
   firstName: string;
+  reply?: SavedReply;
 }) {
   const answered: Answer | null =
     status === 'accepted' || status === 'maybe' || status === 'declined' ? status : null;
-  const [phase, setPhase] = useState<Phase>(status === 'expired' ? 'error' : !rsvpOpen ? 'closed' : 'ask');
+  const [phase, setPhase] = useState<Phase>(
+    status === 'expired' ? 'error' : !rsvpOpen ? 'closed' : answered !== null ? 'done' : 'ask',
+  );
   const [answer, setAnswer] = useState<Answer | null>(answered);
-  const [partySize, setPartySize] = useState(Math.min(2, partyAllowed ?? 1));
-  const [dietary, setDietary] = useState<string[]>([]);
-  const [message, setMessage] = useState('');
+  const [partySize, setPartySize] = useState(reply?.partySize ?? Math.min(2, partyAllowed ?? 1));
+  const [dietary, setDietary] = useState<string[]>(
+    (reply?.dietaryNotes ?? '').split(',').map((d) => d.trim()).filter((d) => DIETARY.includes(d)),
+  );
+  const [message, setMessage] = useState(reply?.message ?? '');
   const [error, setError] = useState<string | null>(null);
   const max = partyAllowed ?? 20;
 
@@ -98,6 +113,14 @@ export function RsvpForm({
     return <p className="text-center text-sm text-ink-2">This invitation has expired. Please contact {coupleNames}.</p>;
   }
   if (phase === 'closed') {
+    if (answered !== null) {
+      const label = ANSWERS.find((a) => a.key === answered)?.label;
+      return (
+        <p className="text-center text-sm text-ink-2">
+          Your answer: <span className="font-semibold text-ink-1">{label}</span>. RSVPs are now closed; please contact the couple directly to change it.
+        </p>
+      );
+    }
     return (
       <p className="text-center text-sm text-ink-2">
         RSVPs for this wedding are closed. Please reach out to the couple directly if you need to update your reply.
@@ -119,6 +142,11 @@ export function RsvpForm({
         </div>
         <p className="font-sans text-3xl font-light text-herb-900">Asante, {firstName}.</p>
         <p className="text-sm text-ink-2">{line}</p>
+        {message.trim() !== '' && (
+          <blockquote className="mx-auto max-w-xs rounded-md bg-herb-50 px-4 py-3 text-left text-sm italic text-ink-2">
+            &ldquo;{message.trim()}&rdquo;
+          </blockquote>
+        )}
         <p className="text-xs text-ink-3">
           Plans changed?{' '}
           <button type="button" onClick={() => setPhase('ask')} className="text-herb-700 underline">
