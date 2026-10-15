@@ -15,6 +15,7 @@ const staticRoutes: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap
   { path: '/press',         changeFrequency: 'monthly', priority: 0.5 },
   { path: '/security',      changeFrequency: 'yearly',  priority: 0.4 },
   { path: '/privacy',       changeFrequency: 'yearly',  priority: 0.3 },
+  { path: '/delete-account', changeFrequency: 'yearly', priority: 0.3 },
   { path: '/terms',         changeFrequency: 'yearly',  priority: 0.3 },
 ];
 
