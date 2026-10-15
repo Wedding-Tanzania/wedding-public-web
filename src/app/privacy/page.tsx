@@ -161,7 +161,12 @@ export default function PrivacyPage() {
               <a className="text-herb-700 underline" href="mailto:privacy@wedding.co.tz">
                 privacy@wedding.co.tz
               </a>{' '}
-              with enough detail for us to verify the request. We respond within 30 days.
+              with enough detail for us to verify the request. We respond within 30 days. To
+              delete your account, see{' '}
+              <Link href="/delete-account" className="text-herb-700 underline">
+                Delete your account
+              </Link>
+              .
             </p>
           </div>
 
