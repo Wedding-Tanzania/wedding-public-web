@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { InvitationCard } from '@/components/card/InvitationCard';
 import { cardDesignFor, type InvitationCardView } from '@/lib/card';
 import { qrSvg } from '@/lib/qr';
-import { RsvpForm, type Status } from './RsvpForm';
+import { RsvpForm, type SavedReply, type Status } from './RsvpForm';
+import { SaveCardButton } from './SaveCardButton';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
 
@@ -11,6 +12,8 @@ interface RsvpContext {
   guestName: string;
   status: Status;
   rsvpOpen: boolean;
+  /** Present once the guest has answered, on the page or by WhatsApp. */
+  reply?: SavedReply;
   card?: InvitationCardView;
 }
 
@@ -63,13 +66,10 @@ export default async function RsvpPage({ params }: { params: { token: string } }
           <>
             <InvitationCard card={card} qrSvg={svg} />
             <div className="flex justify-center">
-              <a
+              <SaveCardButton
                 href={`/rsvp/${params.token}/card.png`}
-                download={`invitation-${card.cardNumber}.png`}
-                className="border border-bordr bg-paper px-5 py-3 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-ink-1 hover:bg-herb-50"
-              >
-                Save card to phone
-              </a>
+                fileName={`invitation-${card.cardNumber}.png`}
+              />
             </div>
           </>
         ) : (
@@ -88,6 +88,7 @@ export default async function RsvpPage({ params }: { params: { token: string } }
             firstName={ctx.guestName.split(/\s+/)[0] ?? ctx.guestName}
             coupleNames={card !== undefined ? `${card.partnerA} & ${card.partnerB}` : ctx.weddingName}
             partyAllowed={card?.partyAllowed}
+            reply={ctx.reply}
           />
         </section>
 
