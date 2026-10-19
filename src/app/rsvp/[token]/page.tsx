@@ -15,6 +15,7 @@ interface RsvpContext {
   /** Present once the guest has answered, on the page or by WhatsApp. */
   reply?: SavedReply;
   card?: InvitationCardView;
+  calendar?: { googleUrl: string; icsUrl: string; startsAt?: string; allDay?: boolean };
 }
 
 async function load(token: string): Promise<RsvpContext | null> {
@@ -89,6 +90,7 @@ export default async function RsvpPage({ params }: { params: { token: string } }
             coupleNames={card !== undefined ? `${card.partnerA} & ${card.partnerB}` : ctx.weddingName}
             partyAllowed={card?.partyAllowed}
             reply={ctx.reply}
+            calendar={ctx.calendar}
           />
         </section>
 

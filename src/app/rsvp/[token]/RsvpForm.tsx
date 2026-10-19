@@ -39,6 +39,7 @@ export function RsvpForm({
   rsvpOpen,
   guestName,
   coupleNames,
+  calendar,
   partyAllowed,
   firstName,
   reply,
@@ -48,6 +49,8 @@ export function RsvpForm({
   rsvpOpen: boolean;
   guestName: string;
   coupleNames: string;
+  /** Present when the API can hand out the day as a calendar entry. */
+  calendar?: { googleUrl: string; icsUrl: string; startsAt?: string; allDay?: boolean };
   partyAllowed?: number;
   firstName: string;
   reply?: SavedReply;
@@ -146,6 +149,28 @@ export function RsvpForm({
           <blockquote className="mx-auto max-w-xs rounded-md bg-herb-50 px-4 py-3 text-left text-sm italic text-ink-2">
             &ldquo;{message.trim()}&rdquo;
           </blockquote>
+        )}
+        {answer === 'accepted' && calendar !== undefined && (
+          <div className="space-y-2 pt-2" id="calendar">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-3">Save the day</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <a
+                href={calendar.googleUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center border border-herb-700 px-5 py-3 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-herb-700"
+              >
+                Add to Google Calendar
+              </a>
+              <a
+                href={calendar.icsUrl}
+                className="inline-flex items-center justify-center border border-bordr px-5 py-3 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-2"
+              >
+                Apple, Outlook (.ics)
+              </a>
+            </div>
+            <p className="text-xs text-ink-3">The calendar file reminds you the day before and 30 minutes before.</p>
+          </div>
         )}
         <p className="text-xs text-ink-3">
           Plans changed?{' '}
