@@ -2,6 +2,11 @@ import type { Metadata } from 'next';
 import { InvitationCard } from '@/components/card/InvitationCard';
 import { cardDesignFor, type InvitationCardView } from '@/lib/card';
 import { qrSvg } from '@/lib/qr';
+import { InviteCard } from '@/components/invite/InviteCard';
+import { ScaledCard } from '@/components/invite/ScaledCard';
+import { qrPath } from '@/lib/invite/qr';
+import type { DesignFields } from '@/lib/invite/types';
+import { normalise } from '@/lib/invite/wcz';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
 
@@ -13,7 +18,8 @@ export const metadata: Metadata = {
 /** The couple's half-hour preview: their card, with a placeholder guest. */
 export default async function CardPreviewPage({ params }: { params: { id: string } }) {
   const res = await fetch(`${API_BASE}/card-preview/${encodeURIComponent(params.id)}`, { cache: 'no-store' });
-  const card = res.ok ? ((await res.json()) as { card: InvitationCardView }).card : null;
+  const body = res.ok ? ((await res.json()) as { card: InvitationCardView } & DesignFields) : null;
+  const card = body?.card ?? null;
 
   if (card === null) {
     return (
@@ -33,7 +39,21 @@ export default async function CardPreviewPage({ params }: { params: { id: string
         <p className="rounded-md border border-bordr bg-paper px-4 py-3 text-center text-sm text-ink-2">
           This is a preview. Each guest&apos;s card shows their own name, card number and QR.
         </p>
-        <InvitationCard card={card} qrSvg={svg} />
+        {body?.designSaved === true && body.design != null ? (
+          <div className="overflow-hidden rounded-lg shadow-soft">
+            <ScaledCard initialWidth={400}>
+              <InviteCard
+                design={normalise(body.design)}
+                lang={body.design.lang}
+                guest={{ name: card.guestName, seats: card.partyAllowed ?? 2, cardNumber: card.cardNumber }}
+                qr={qrPath(card.rsvpUrl)}
+                web
+              />
+            </ScaledCard>
+          </div>
+        ) : (
+          <InvitationCard card={card} qrSvg={svg} />
+        )}
         <div className="flex justify-center">
           <a
             href={`/rsvp/preview/${params.id}/card.png`}

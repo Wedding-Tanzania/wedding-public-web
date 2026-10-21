@@ -1,28 +1,33 @@
 import type { Metadata } from 'next';
-import { InvitationCard } from '@/components/card/InvitationCard';
-import { cardDesignFor, type InvitationCardView } from '@/lib/card';
-import { qrSvg } from '@/lib/qr';
-import { RsvpForm, type SavedReply, type Status } from './RsvpForm';
-import { SaveCardButton } from './SaveCardButton';
+import { InvitePage } from '@/components/invite/InvitePage';
+import { LegacyRsvpPage, type LegacyRsvpContext } from '@/components/story/LegacyRsvpPage';
+import { normalise } from '@/lib/invite/wcz';
+import type { CalendarLinks, DesignFields, InviteGuestView, PublicStoryExtras } from '@/lib/invite/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
 
-interface RsvpContext {
-  weddingName: string;
-  guestName: string;
-  status: Status;
-  rsvpOpen: boolean;
-  /** Present once the guest has answered, on the page or by WhatsApp. */
-  reply?: SavedReply;
-  card?: InvitationCardView;
-  calendar?: { googleUrl: string; icsUrl: string; startsAt?: string; allDay?: boolean };
-}
+type RsvpContext = LegacyRsvpContext &
+  DesignFields & {
+    guest?: InviteGuestView;
+    extras?: PublicStoryExtras | null;
+    storySlug?: string | null;
+  };
 
 async function load(token: string): Promise<RsvpContext | null> {
   // Never cached: the reply state changes the moment a guest answers.
   const res = await fetch(`${API_BASE}/rsvp/${encodeURIComponent(token)}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return (await res.json()) as RsvpContext;
+}
+
+async function guestbookFor(slug: string): Promise<{ id: string; name: string; message: string; createdAt?: string }[]> {
+  try {
+    const res = await fetch(`${API_BASE}/story/${encodeURIComponent(slug)}/guestbook`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    return ((await res.json()) as { items: { id: string; name: string; message: string; createdAt?: string }[] }).items;
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
@@ -48,54 +53,38 @@ export default async function RsvpPage({ params }: { params: { token: string } }
     return (
       <main className="grid min-h-[70vh] place-items-center bg-linen px-6 py-16">
         <div className="w-full max-w-md rounded-lg border border-bordr bg-paper p-10 text-center shadow-soft">
-          <h1 className="font-sans text-2xl font-bold text-ink-1">Invitation not found</h1>
+          <h1 className="font-sans text-2xl font-bold text-ink-1">Mwaliko haukupatikana · Invitation not found</h1>
           <p className="mt-3 text-sm text-ink-2">
-            This link is invalid or has expired. Please check the link in your invitation, or contact the couple.
+            Kiungo hiki si sahihi au muda wake umeisha. This link is invalid or has expired. Please check the link in your invitation, or contact the couple.
           </p>
         </div>
       </main>
     );
   }
 
-  const card = ctx.card;
-  const svg = card !== undefined ? await qrSvg(card.rsvpUrl, cardDesignFor(card.templateKey).palette.ink) : null;
+  // Weddings that never saved a design keep the page and card they have today.
+  if (ctx.designSaved !== true || ctx.design == null || ctx.guest === undefined) {
+    return <LegacyRsvpPage ctx={ctx} params={params} />;
+  }
 
+  const slug = ctx.storySlug ?? null;
+  const guestbook = slug !== null ? await guestbookFor(slug) : [];
+  const calendar: CalendarLinks | null = ctx.calendar ?? null;
   return (
-    <main className="bg-linen px-4 py-10 sm:py-16">
-      <div className="mx-auto w-full max-w-[400px] space-y-6">
-        {card !== undefined && svg !== null ? (
-          <>
-            <InvitationCard card={card} qrSvg={svg} />
-            <div className="flex justify-center">
-              <SaveCardButton
-                href={`/rsvp/${params.token}/card.png`}
-                fileName={`invitation-${card.cardNumber}.png`}
-              />
-            </div>
-          </>
-        ) : (
-          <div className="text-center">
-            <div className="eyebrow justify-center">{ctx.weddingName}</div>
-            <h1 className="mt-4 font-sans text-3xl font-light text-herb-900">Hello, {ctx.guestName}</h1>
-          </div>
-        )}
-
-        <section className="rounded-lg border border-bordr bg-paper p-6 shadow-soft">
-          <RsvpForm
-            token={params.token}
-            status={ctx.status}
-            rsvpOpen={ctx.rsvpOpen}
-            guestName={ctx.guestName}
-            firstName={ctx.guestName.split(/\s+/)[0] ?? ctx.guestName}
-            coupleNames={card !== undefined ? `${card.partnerA} & ${card.partnerB}` : ctx.weddingName}
-            partyAllowed={card?.partyAllowed}
-            reply={ctx.reply}
-            calendar={ctx.calendar}
-          />
-        </section>
-
-        <p className="text-center text-[10px] uppercase tracking-widest text-ink-3">A wedding by Lockwood</p>
-      </div>
-    </main>
+    <InvitePage
+      design={normalise(ctx.design)}
+      token={params.token}
+      guest={ctx.guest}
+      status={ctx.status}
+      reply={ctx.reply ?? null}
+      rsvpOpen={ctx.rsvpOpen}
+      calendar={calendar}
+      rsvpUrl={ctx.card?.rsvpUrl ?? null}
+      accounts={ctx.accounts ?? []}
+      extras={ctx.extras ?? null}
+      slug={slug}
+      guestbook={guestbook}
+      cardPngUrl={`/rsvp/${params.token}/card.png`}
+    />
   );
 }

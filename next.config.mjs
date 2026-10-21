@@ -5,8 +5,8 @@ const nextConfig = {
     // The card image reads its fonts from disk at request time. Name them, so
     // the serverless bundle on Netlify carries them.
     outputFileTracingIncludes: {
-      '/rsvp/[token]/card.png': ['./src/app/rsvp/_card-image/fonts/**'],
-      '/rsvp/preview/[id]/card.png': ['./src/app/rsvp/_card-image/fonts/**'],
+      '/rsvp/[token]/card.png': ['./src/app/rsvp/_card-image/fonts/**', './src/app/_invite-card/fonts/**'],
+      '/rsvp/preview/[id]/card.png': ['./src/app/rsvp/_card-image/fonts/**', './src/app/_invite-card/fonts/**'],
     },
   },
   images: {
