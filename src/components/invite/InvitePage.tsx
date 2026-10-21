@@ -272,7 +272,9 @@ export function InvitePage(props: InvitePageProps) {
                 height={152}
                 loading="lazy"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                style={{ border: 0, borderRadius: 12, maxWidth: 400 }}
+                // In this centred column a replaced element shrinks to its own
+                // 300px-ish width; stretch it to the column instead.
+                style={{ border: 0, borderRadius: 12, alignSelf: 'stretch', width: '100%', maxWidth: 400, marginInline: 'auto' }}
               />
             )}
             {kind !== null && (
