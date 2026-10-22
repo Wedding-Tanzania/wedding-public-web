@@ -128,6 +128,25 @@ export interface Venue {
   name: string;
   addr: string;
   time: string;
+  /** Public R2 URL of a venue photo (the couple's upload, or a linked venue vendor's cover), or null. */
+  photo?: string | null;
+  /** A short blurb for guests, per language. */
+  sw?: string;
+  en?: string;
+}
+/** One celebration colour: swatch, names in both languages, optional outfit photo. */
+export interface Attire {
+  hex: string;
+  sw: string;
+  en: string;
+  photo: string | null;
+}
+/** One "A note for our guests" row. */
+export interface Note {
+  sw: string;
+  en: string;
+  bodySw: string;
+  bodyEn: string;
 }
 export interface RatibaItem {
   t: string;
@@ -173,6 +192,7 @@ export type SectionKey =
   | 'rsvp'
   | 'song'
   | 'countdown'
+  | 'quote'
   | 'calendar'
   | 'verse'
   | 'ratiba'
@@ -181,9 +201,11 @@ export type SectionKey =
   | 'story'
   | 'gallery'
   | 'michango'
-  | 'kamati';
+  | 'kamati'
+  | 'notes'
+  | 'wishes';
 
-export type WordKey = 'host' | 'invite' | 'verse' | 'verseRef' | 'closing' | 'dressNote' | 'kanga';
+export type WordKey = 'host' | 'invite' | 'verse' | 'verseRef' | 'closing' | 'dressNote' | 'kanga' | 'quote' | 'quoteBy' | 'tagline';
 
 export interface PageRecipe {
   open: 'envelope' | 'curtain' | 'tear' | 'photo' | 'spin' | 'fade' | 'unfold' | 'none';
@@ -212,8 +234,13 @@ export interface InviteDesign {
   reception: Venue;
   rsvpBy: string;
   ratiba: RatibaItem[];
+  /** Dress-code colours, hex. Mirrors attire[].hex; the card image reads this. */
   dress: string[];
+  /** The celebration colours with names and outfit photos; empty means derive from `dress`. */
+  attire: Attire[];
   story: StoryStop[];
+  /** "A note for our guests" rows; empty means the defaults. */
+  notes: Note[];
   michango: { mpesa: string; tigo: string; airtel: string; name: string };
   kamati: KamatiContact[];
   words: { sw: Partial<Record<WordKey, string>>; en: Partial<Record<WordKey, string>> };
@@ -250,6 +277,7 @@ export const SECTION_KEYS: SectionKey[] = [
   'rsvp',
   'song',
   'countdown',
+  'quote',
   'calendar',
   'verse',
   'ratiba',
@@ -259,6 +287,8 @@ export const SECTION_KEYS: SectionKey[] = [
   'gallery',
   'michango',
   'kamati',
+  'notes',
+  'wishes',
 ];
 
 // ---------------------------------------------------------------------------
@@ -353,8 +383,54 @@ export interface Strings {
   playStore: string;
   appPageNote: string;
   appOpenInvite: string;
-  H: Record<SectionKey | 'pass' | 'faqs' | 'party' | 'guestbook' | 'notes' | 'gifts' | 'travel', string>;
+  /** Default "A word from the couple" quote and its signature. */
+  quote: string;
+  quoteBy: string;
+  tagline: string;
+  openingInvite: string;
+  tapMusic: string;
+  musicPlaying: string;
+  scrollDiscover: string;
+  myPass: string;
+  keepReady: string;
+  yourPass: string;
+  entryFor: (n: number) => string;
+  tapEnlarge: string;
+  closeLabel: string;
+  openMapFor: (venue: string) => string;
+  venueBlurb: string;
+  /** The default line on the ceremony card (the reception has `venueBlurb`). */
+  venueBlurbCeremony: string;
+  wearColours: string;
+  men: string;
+  women: string;
+  viewFull: string;
+  viewLess: string;
+  notesLead: string;
+  defaultNotes: Note[];
+  rsvpContacts: string;
+  wishesLead: string;
+  wishesTitle: (couple: string) => string;
+  wishName: string;
+  wishNamePh: string;
+  wishMessage: string;
+  wishMessagePh: string;
+  sendWishes: string;
+  wishesSent: string;
+  wishesSentBody: string;
+  wishesMissing: string;
+  wishesFailed: string;
+  needChange: string;
+  updateResponse: string;
+  H: Record<SectionKey | 'pass' | 'faqs' | 'party' | 'guestbook' | 'gifts' | 'travel', string>;
 }
+
+/** The three guest notes every page shows until the couple writes their own. */
+export const DEFAULT_NOTES: Note[] = [
+  { sw: 'Watu wazima tu', en: 'Adults only', bodySw: 'Tunaomba kwa heshima sherehe iwe ya watu wazima pekee.', bodyEn: 'We kindly request an adults-only celebration.' },
+  { sw: 'Tafadhali wahi', en: 'Kindly be on time', bodySw: 'Kila wakati mzuri unastahili kuwahi.', bodyEn: 'Every beautiful moment is worth arriving for.' },
+  { sw: 'Mwaliko ni lazima', en: 'Invitation required', bodySw: 'Tafadhali kuwa na kadi yako ya QR tayari kwa kuskaniwa mlangoni.', bodyEn: 'Please have your personal QR entry pass ready for scanning.' },
+];
 
 export const STR: Record<Lang, Strings> = {
   sw: {
@@ -452,24 +528,63 @@ export const STR: Record<Lang, Strings> = {
     playStore: 'Google Play',
     appPageNote: 'App inakuja hivi karibuni kwenye App Store na Google Play. Kwa sasa, mwaliko wako unafunguka hapa kwenye kivinjari, hakuna haja ya kupakua chochote.',
     appOpenInvite: 'Fungua mwaliko wako kupitia kiungo ulichotumiwa kwa SMS au WhatsApp.',
+    quote: 'Kuwa nanyi tunapoanza sura hii mpya ni zaidi ya maneno yanavyoweza kueleza. Tunasubiri kwa hamu kusherehekea, kucheka na kutengeneza kumbukumbu zitakazodumu nasi muda mrefu baada ya siku hii nzuri.',
+    quoteBy: '',
+    tagline: 'Sura mpya nzuri inaanza',
+    openingInvite: 'Tunafungua mwaliko wako',
+    tapMusic: 'Gusa kwa muziki',
+    musicPlaying: 'Muziki unacheza',
+    scrollDiscover: 'Sogeza chini kuona zaidi',
+    myPass: 'Kadi ya kuingia',
+    keepReady: 'Iweke tayari kwa ajili ya sherehe',
+    yourPass: 'Kadi yako ya kuingia',
+    entryFor: (n) => (n === 1 ? 'Mtu mmoja' : n === 2 ? 'Kuingia watu wawili' : `Kuingia watu ${n}`),
+    tapEnlarge: 'Gusa kukuza',
+    closeLabel: 'Funga',
+    openMapFor: (venue) => `Fungua ramani ya ${venue.toLowerCase()}`,
+    venueBlurb: 'Karibuni kwenye jioni ya sherehe, chakula na kumbukumbu zisizosahaulika.',
+    venueBlurbCeremony: 'Karibuni mshuhudie tunapofunga ndoa yetu.',
+    wearColours: 'Sherehekeeni nasi kwa rangi hizi',
+    men: 'Wanaume',
+    women: 'Wanawake',
+    viewFull: 'Ona ratiba kamili',
+    viewLess: 'Ficha ratiba',
+    notesLead: 'Mambo ya kujua',
+    defaultNotes: DEFAULT_NOTES,
+    rsvpContacts: 'Wa kuwasiliana nao',
+    wishesLead: 'Andika baraka, kumbukumbu au maneno machache kwa miaka ijayo.',
+    wishesTitle: (couple) => `Waandikie ${couple}`,
+    wishName: 'Jina lako',
+    wishNamePh: 'Mfano: Mama Asha',
+    wishMessage: 'Ujumbe wako',
+    wishMessagePh: 'Hongereni sana! Mungu awabariki…',
+    sendWishes: 'Tuma salamu zako',
+    wishesSent: 'Salamu zimepokelewa',
+    wishesSentBody: 'Ujumbe wako umefika salama kwa maharusi.',
+    wishesMissing: 'Andika jina lako na salamu zako.',
+    wishesFailed: 'Imeshindikana kutuma. Jaribu tena.',
+    needChange: 'Unahitaji kubadilisha jibu lako?',
+    updateResponse: 'Badilisha jibu',
     H: {
       rsvp: 'Utafika?',
       song: 'Wimbo wetu',
       countdown: 'Zimebaki',
+      quote: 'Neno kutoka kwa maharusi',
       calendar: 'Tarehe',
       verse: 'Neno',
-      ratiba: 'Ratiba',
+      ratiba: 'Ratiba ya sherehe',
       venues: 'Mahali',
-      dress: 'Mavazi',
+      dress: 'Rangi za sherehe',
       story: 'Historia yetu',
       gallery: 'Picha',
       michango: 'Michango',
       kamati: 'Kamati ya harusi',
+      notes: 'Taarifa kwa wageni wetu',
+      wishes: 'Salamu kwa maharusi',
       pass: 'Kadi ya kuingia',
       faqs: 'Maswali',
       party: 'Wapambe',
       guestbook: 'Salamu',
-      notes: 'Taarifa muhimu',
       gifts: 'Zawadi',
       travel: 'Safari na malazi',
     },
@@ -569,24 +684,63 @@ export const STR: Record<Lang, Strings> = {
     playStore: 'Google Play',
     appPageNote: 'The app is coming soon to the App Store and Google Play. Until then your invitation opens right here in the browser, nothing to install.',
     appOpenInvite: 'Open your invitation from the link you got by SMS or WhatsApp.',
+    quote: 'To have you beside us as we begin this new chapter means more than words can express. We cannot wait to celebrate, laugh, and create memories that will remain with us long after this beautiful day.',
+    quoteBy: '',
+    tagline: 'A beautiful chapter begins',
+    openingInvite: 'Opening your invitation',
+    tapMusic: 'Tap for music',
+    musicPlaying: 'Music playing',
+    scrollDiscover: 'Scroll to discover',
+    myPass: 'My entry pass',
+    keepReady: 'Keep this ready for the celebration',
+    yourPass: 'Your entry pass',
+    entryFor: (n) => (n === 1 ? 'Single' : n === 2 ? 'Entry for two' : `Entry for ${n}`),
+    tapEnlarge: 'Tap to enlarge',
+    closeLabel: 'Close',
+    openMapFor: (venue) => `Open ${venue.toLowerCase()} map`,
+    venueBlurb: 'Join us for an evening of celebration, dinner and unforgettable memories.',
+    venueBlurbCeremony: 'Join us as we exchange our vows.',
+    wearColours: 'Celebrate with us in these colours',
+    men: 'Men',
+    women: 'Women',
+    viewFull: 'View full programme',
+    viewLess: 'Show less',
+    notesLead: 'Good to know',
+    defaultNotes: DEFAULT_NOTES,
+    rsvpContacts: 'RSVP contacts',
+    wishesLead: 'Share a blessing, a memory, or a few words for the years ahead.',
+    wishesTitle: (couple) => `Leave a note for ${couple}`,
+    wishName: 'Your name',
+    wishNamePh: 'e.g. Auntie Asha',
+    wishMessage: 'Your message',
+    wishMessagePh: 'Congratulations! Wishing you a lifetime of joy…',
+    sendWishes: 'Send your wishes',
+    wishesSent: 'Wishes received',
+    wishesSentBody: 'Your message is safely with the happy couple.',
+    wishesMissing: 'Add your name and your wishes.',
+    wishesFailed: 'Could not send. Please try again.',
+    needChange: 'Need to change your response?',
+    updateResponse: 'Update response',
     H: {
       rsvp: 'Will you attend?',
       song: 'Our song',
       countdown: 'Counting down',
+      quote: 'A word from the couple',
       calendar: 'The date',
       verse: 'Blessing',
-      ratiba: 'Programme',
+      ratiba: 'Celebration programme',
       venues: 'Venues',
-      dress: 'Dress code',
+      dress: 'Celebration colours',
       story: 'Our story',
       gallery: 'Photos',
       michango: 'Contributions',
       kamati: 'Wedding committee',
-      pass: 'Gate pass',
+      notes: 'A note for our guests',
+      wishes: 'Well wishes',
+      pass: 'Entry pass',
       faqs: 'Questions',
       party: 'Wedding party',
       guestbook: 'Wishes',
-      notes: 'Good to know',
       gifts: 'Gifts',
       travel: 'Travel and stay',
     },
@@ -597,6 +751,11 @@ export const STR: Record<Lang, Strings> = {
 // Page recipes: each template has its own web page rhythm.
 // ---------------------------------------------------------------------------
 
+/**
+ * Every template's page recipe. The programme is always the vertical timeline
+ * by default (with "View full programme" when it is long); a couple can still
+ * choose cards, a board or big times under Web page style.
+ */
 function R(
   open: PageRecipe['open'],
   hero: PageRecipe['hero'],
@@ -622,28 +781,28 @@ function R(
 
 export const PAGES: Record<string, PageRecipe> = {
   t01: R('envelope', 'card', 'center', 'alt', 'line', 'grid', 'boxes', 'band', 'pill'),
-  t02: R('curtain', 'type', 'frame', 'bands', 'ticket', 'mosaic', 'big', 'card', 'bar', ['verse', 'countdown']),
+  t02: R('curtain', 'type', 'frame', 'bands', 'line', 'mosaic', 'big', 'card', 'bar', ['verse', 'countdown']),
   t03: R('envelope', 'card', 'center', 'alt', 'line', 'prints', 'boxes', 'band', 'disc'),
-  t04: R('photo', 'photo', 'left', 'cards', 'cards', 'carousel', 'big', 'card', 'pill', ['countdown', 'rsvp', 'gallery']),
-  t05: R('curtain', 'photo', 'num', 'rules', 'big', 'mosaic', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
-  t06: R('fade', 'type', 'num', 'rules', 'big', 'grid', 'line', 'card', 'pill', ['countdown', 'verse']),
+  t04: R('photo', 'photo', 'left', 'cards', 'line', 'carousel', 'big', 'card', 'pill', ['countdown', 'rsvp', 'gallery']),
+  t05: R('curtain', 'photo', 'num', 'rules', 'line', 'mosaic', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
+  t06: R('fade', 'type', 'num', 'rules', 'line', 'grid', 'line', 'card', 'pill', ['countdown', 'verse']),
   t07: R('fade', 'date', 'left', 'alt', 'line', 'grid', 'big', 'band', 'bar', ['calendar', 'countdown']),
-  t08: R('envelope', 'card', 'center', 'bands', 'ticket', 'carousel', 'boxes', 'card', 'disc', ['calendar']),
+  t08: R('envelope', 'card', 'center', 'bands', 'line', 'carousel', 'boxes', 'card', 'disc', ['calendar']),
   t09: R('fade', 'card', 'center', 'cards', 'line', 'prints', 'boxes', 'band', 'disc'),
-  t10: R('curtain', 'card', 'left', 'alt', 'cards', 'mosaic', 'boxes', 'card', 'pill', ['story']),
-  t11: R('tear', 'card', 'num', 'rules', 'big', 'grid', 'line', 'ticket', 'bar', ['ratiba']),
-  t12: R('photo', 'photo', 'left', 'alt', 'cards', 'carousel', 'big', 'band', 'pill', ['gallery']),
+  t10: R('curtain', 'card', 'left', 'alt', 'line', 'mosaic', 'boxes', 'card', 'pill', ['story']),
+  t11: R('tear', 'card', 'num', 'rules', 'line', 'grid', 'line', 'ticket', 'bar', ['ratiba']),
+  t12: R('photo', 'photo', 'left', 'alt', 'line', 'carousel', 'big', 'band', 'pill', ['gallery']),
   t13: R('envelope', 'card', 'frame', 'cards', 'line', 'prints', 'boxes', 'card', 'disc', ['rsvp', 'verse']),
-  t14: R('fade', 'type', 'num', 'rules', 'ticket', 'mosaic', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
-  t15: R('tear', 'card', 'num', 'cards', 'ticket', 'carousel', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
-  t16: R('photo', 'card', 'center', 'bands', 'cards', 'prints', 'big', 'card', 'disc', ['gallery', 'story']),
+  t14: R('fade', 'type', 'num', 'rules', 'line', 'mosaic', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
+  t15: R('tear', 'card', 'num', 'cards', 'line', 'carousel', 'line', 'ticket', 'bar', ['rsvp', 'ratiba', 'venues']),
+  t16: R('photo', 'card', 'center', 'bands', 'line', 'prints', 'big', 'card', 'disc', ['gallery', 'story']),
   t17: R('fade', 'card', 'center', 'alt', 'line', 'grid', 'boxes', 'band', 'pill', ['verse']),
-  t18: R('curtain', 'photo', 'frame', 'bands', 'big', 'carousel', 'big', 'card', 'disc', ['countdown']),
-  t19: R('unfold', 'card', 'frame', 'bands', 'cards', 'mosaic', 'big', 'band', 'pill', ['rsvp', 'countdown', 'dress']),
+  t18: R('curtain', 'photo', 'frame', 'bands', 'line', 'carousel', 'big', 'card', 'disc', ['countdown']),
+  t19: R('unfold', 'card', 'frame', 'bands', 'line', 'mosaic', 'big', 'band', 'pill', ['rsvp', 'countdown', 'dress']),
   t20: R('curtain', 'card', 'left', 'cards', 'line', 'grid', 'boxes', 'card', 'pill', ['rsvp', 'gallery']),
-  t21: R('spin', 'vinyl', 'num', 'rules', 'big', 'carousel', 'line', 'ticket', 'disc', ['song']),
-  t22: R('fade', 'route', 'left', 'alt', 'ticket', 'prints', 'big', 'band', 'bar', ['story', 'countdown']),
-  t23: R('photo', 'card', 'center', 'cards', 'cards', 'mosaic', 'boxes', 'card', 'pill', ['gallery']),
+  t21: R('spin', 'vinyl', 'num', 'rules', 'line', 'carousel', 'line', 'ticket', 'disc', ['song']),
+  t22: R('fade', 'route', 'left', 'alt', 'line', 'prints', 'big', 'band', 'bar', ['story', 'countdown']),
+  t23: R('photo', 'card', 'center', 'cards', 'line', 'mosaic', 'boxes', 'card', 'pill', ['gallery']),
 };
 
 export function page(d: InviteDesign, tplId: string): PageRecipe & { custom: boolean } {
@@ -745,9 +904,99 @@ export function words(d: InviteDesign, lang: Lang) {
     closing: pick('closing', S.closing),
     dressNote: pick('dressNote', S.dressNote),
     kanga: pick('kanga', S.kanga),
+    quote: pick('quote', S.quote),
+    quoteBy: pick('quoteBy', `${d.names?.a ?? ''} & ${d.names?.b ?? ''}`),
+    tagline: pick('tagline', S.tagline),
     ceremony: S.ceremony[f],
     reception: S.reception,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Celebration colours and guest notes
+// ---------------------------------------------------------------------------
+
+/** Named colours a couple is likely to pick, with the nearest-match names guests read. */
+export const NAMED_COLOURS: { hex: string; en: string; sw: string }[] = [
+  { hex: '#8A9A5B', en: 'Sage green', sw: 'Kijani cha sage' },
+  { hex: '#4F6A42', en: 'Forest green', sw: 'Kijani kibichi' },
+  { hex: '#2E8B57', en: 'Emerald', sw: 'Kijani cha zumaridi' },
+  { hex: '#C9D6BC', en: 'Mint', sw: 'Kijani hafifu' },
+  { hex: '#808000', en: 'Olive', sw: 'Kijani cha zeituni' },
+  { hex: '#DCAE96', en: 'Dusty rose', sw: 'Waridi hafifu' },
+  { hex: '#F4C2C2', en: 'Blush pink', sw: 'Pinki hafifu' },
+  { hex: '#E75480', en: 'Pink', sw: 'Pinki' },
+  { hex: '#FF7F50', en: 'Coral', sw: 'Rangi ya matumbawe' },
+  { hex: '#B22222', en: 'Red', sw: 'Nyekundu' },
+  { hex: '#800020', en: 'Burgundy', sw: 'Nyekundu iliyokoza' },
+  { hex: '#800000', en: 'Maroon', sw: 'Maruni' },
+  { hex: '#F7E7CE', en: 'Champagne', sw: 'Shampeni' },
+  { hex: '#FFFDD0', en: 'Cream', sw: 'Krimu' },
+  { hex: '#F5F5DC', en: 'Beige', sw: 'Beji' },
+  { hex: '#D4AF37', en: 'Gold', sw: 'Dhahabu' },
+  { hex: '#A88D4A', en: 'Antique gold', sw: 'Dhahabu ya kale' },
+  { hex: '#FFD700', en: 'Yellow', sw: 'Njano' },
+  { hex: '#FF8C00', en: 'Orange', sw: 'Machungwa' },
+  { hex: '#B57850', en: 'Terracotta', sw: 'Udongo' },
+  { hex: '#8B4513', en: 'Brown', sw: 'Kahawia' },
+  { hex: '#C0C0C0', en: 'Silver', sw: 'Fedha' },
+  { hex: '#808080', en: 'Grey', sw: 'Kijivu' },
+  { hex: '#1F2A44', en: 'Navy', sw: 'Buluu iliyokoza' },
+  { hex: '#4169E1', en: 'Royal blue', sw: 'Buluu ya kifalme' },
+  { hex: '#87CEEB', en: 'Sky blue', sw: 'Buluu ya anga' },
+  { hex: '#B0C4DE', en: 'Dusty blue', sw: 'Buluu hafifu' },
+  { hex: '#008080', en: 'Teal', sw: 'Rangi ya bahari' },
+  { hex: '#40E0D0', en: 'Turquoise', sw: 'Turkuaz' },
+  { hex: '#6A0DAD', en: 'Purple', sw: 'Zambarau' },
+  { hex: '#C8A2C8', en: 'Lilac', sw: 'Zambarau hafifu' },
+  { hex: '#E6E6FA', en: 'Lavender', sw: 'Lavenda' },
+  { hex: '#FFFFFF', en: 'White', sw: 'Nyeupe' },
+  { hex: '#FFFFF0', en: 'Ivory', sw: 'Rangi ya pembe' },
+  { hex: '#1F2A1A', en: 'Black', sw: 'Nyeusi' },
+];
+
+/** The nearest named colour to a hex, in both languages. */
+export function colourName(c: string): { en: string; sw: string } {
+  const [r, g, b] = rgb(c);
+  let best = NAMED_COLOURS[0] as (typeof NAMED_COLOURS)[number];
+  let bestD = Infinity;
+  for (const n of NAMED_COLOURS) {
+    const [nr, ng, nb] = rgb(n.hex);
+    // Weighted RGB distance: the eye is most sensitive to green, least to blue.
+    const dd = 2 * (r - nr) ** 2 + 4 * (g - ng) ** 2 + 3 * (b - nb) ** 2;
+    if (dd < bestD) {
+      bestD = dd;
+      best = n;
+    }
+  }
+  return { en: best.en, sw: best.sw };
+}
+
+/** The celebration colours to show: the named ones, or the dress hexes named automatically. */
+export function attireOf(d: InviteDesign): Attire[] {
+  if (d.attire.length > 0) {
+    return d.attire.map((a) => {
+      const auto = colourName(a.hex);
+      return { hex: hex(a.hex), en: a.en || auto.en, sw: a.sw || auto.sw, photo: a.photo };
+    });
+  }
+  return d.dress.map((c) => ({ hex: hex(c), ...colourName(c), photo: null }));
+}
+
+/** The guest notes to show, in one language: the couple's rows, or the defaults. */
+export function notesOf(d: InviteDesign, lang: Lang): { title: string; body: string }[] {
+  const rows = d.notes.length > 0 ? d.notes : DEFAULT_NOTES;
+  return rows
+    .map((n) => ({
+      title: (lang === 'sw' ? n.sw : n.en) || n.en || n.sw,
+      body: (lang === 'sw' ? n.bodySw : n.bodyEn) || n.bodyEn || n.bodySw,
+    }))
+    .filter((n) => n.title !== '');
+}
+
+/** The venue blurb in one language, or the default line for a ceremony or a reception. */
+export function venueBlurb(v: Venue, lang: Lang, kind: 'ceremony' | 'reception' = 'reception'): string {
+  return (lang === 'sw' ? v.sw : v.en) || v.en || v.sw || (kind === 'ceremony' ? STR[lang].venueBlurbCeremony : STR[lang].venueBlurb);
 }
 
 /** A font size that keeps a line of names inside maxW at the given weight. */
@@ -884,6 +1133,7 @@ export const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
   rsvp: true,
   song: true,
   countdown: true,
+  quote: true,
   calendar: true,
   verse: true,
   ratiba: true,
@@ -893,12 +1143,14 @@ export const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
   gallery: true,
   michango: true,
   kamati: true,
+  notes: true,
+  wishes: true,
 };
 
 /** Fill every field a stored design may lack, so views never null-check. */
 export function normalise(input: Partial<InviteDesign> | null | undefined, fallback: Partial<InviteDesign> = {}): InviteDesign {
   const src = { ...fallback, ...(input ?? {}) };
-  const blankVenue: Venue = { name: '', addr: '', time: '' };
+  const blankVenue: Venue = { name: '', addr: '', time: '', photo: null, sw: '', en: '' };
   return {
     v: 1,
     tpl: byId[src.tpl ?? ''] ? (src.tpl as string) : 't03',
@@ -912,7 +1164,9 @@ export function normalise(input: Partial<InviteDesign> | null | undefined, fallb
     rsvpBy: src.rsvpBy ?? '',
     ratiba: src.ratiba ?? [],
     dress: src.dress ?? [],
+    attire: (src.attire ?? []).map((a) => ({ hex: a.hex, sw: a.sw ?? '', en: a.en ?? '', photo: a.photo ?? null })),
     story: src.story ?? [],
+    notes: (src.notes ?? []).map((n) => ({ sw: n.sw ?? '', en: n.en ?? '', bodySw: n.bodySw ?? '', bodyEn: n.bodyEn ?? '' })),
     michango: { mpesa: '', tigo: '', airtel: '', name: '', ...(src.michango ?? {}) },
     kamati: src.kamati ?? [],
     words: { sw: src.words?.sw ?? {}, en: src.words?.en ?? {} },
