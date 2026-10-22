@@ -1,17 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Guestbook } from '@/components/story/Guestbook';
 import { qrPath } from '@/lib/invite/qr';
 import type { CalendarLinks, InviteGuestView, PublicCollectionAccount, PublicStoryExtras } from '@/lib/invite/types';
 import {
   STR,
+  attireOf,
   calendar,
   city,
   cropFor,
   fit,
   fmtDate,
-  mapUrl,
   mix,
   page,
   photo,
@@ -25,12 +24,17 @@ import {
 } from '@/lib/invite/wcz';
 import { InviteCard } from './InviteCard';
 import { ScaledCard } from './ScaledCard';
+import { Attire } from './page/Attire';
 import { Countdown } from './page/Countdown';
+import { EntryPass, EntryPassButton, EntryPassDialog } from './page/EntryPass';
 import { Icon } from './page/Icon';
 import { Michango } from './page/Michango';
+import { Notes } from './page/Notes';
 import { PageHead } from './page/PageHead';
 import { Photo } from './page/Photo';
 import { Rsvp, type SavedReply } from './page/Rsvp';
+import { Venues } from './page/Venues';
+import { Wishes } from './page/Wishes';
 import { createDemoMelody, spotifyEmbed, streamKind } from './page/music';
 import { PalContext, labelStyle, monoStyle, nameStyle, palette, usePal, type Pal } from './page/palette';
 
@@ -55,19 +59,33 @@ export interface InvitePageProps {
   cardPngUrl: string | null;
 }
 
-type Stage = 'closed' | 'opening' | 'open';
+/**
+ * splash: the couple's monogram with "Opening your invitation", a moment
+ * long; closed: the template's opening waits for a tap; opening: it plays;
+ * open: the page.
+ */
+type Stage = 'splash' | 'closed' | 'opening' | 'open';
+
+/** How long the splash shows before the opening waits for the tap. */
+const SPLASH_MS = 1700;
 
 const CSS = `
 @keyframes wi-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
 @keyframes wi-eq { from { transform: scaleY(0.3) } to { transform: scaleY(1) } }
 @keyframes wi-in { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+@keyframes wi-ring { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes wi-fadein { from { opacity: 0 } to { opacity: 1 } }
+@keyframes wi-pulse { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+.wi-ring { animation: wi-ring 1.1s linear infinite; }
+.wi-splash { animation: wi-fadein 500ms ease both; }
+.wi-pulse { animation: wi-pulse 1.8s ease-in-out infinite; }
 .wi-spin { animation: wi-spin 5.2s linear infinite; animation-play-state: paused; }
 .wi-eq { animation: wi-eq 0.4s ease-in-out infinite alternate; animation-play-state: paused; transform-origin: 50% 100%; }
 .wi-eq:nth-child(2) { animation-duration: 0.53s } .wi-eq:nth-child(3) { animation-duration: 0.68s }
 [data-playing="1"] .wi-spin, [data-playing="1"] .wi-eq, [data-stage="opening"] .wi-spin { animation-play-state: running; }
 .wi-in { animation: wi-in 650ms cubic-bezier(.2,.7,.2,1) both; }
 body:has([data-invite-page]) > header, body:has([data-invite-page]) > footer { display: none; }
-@media (prefers-reduced-motion: reduce) { .wi-spin, .wi-eq, .wi-in { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .wi-spin, .wi-eq, .wi-in, .wi-ring, .wi-splash, .wi-pulse { animation: none !important; } }
 `;
 
 function initials(name: string): string {
@@ -106,11 +124,16 @@ export function InvitePage(props: InvitePageProps) {
   const guestName = guest?.name ?? `${a} & ${b}`;
 
   // ===== Opening =====
-  const [stage, setStage] = useState<Stage>(rc.open === 'none' ? 'open' : 'closed');
+  const [stage, setStage] = useState<Stage>(rc.open === 'none' ? 'open' : 'splash');
   const [vh, setVh] = useState(760);
   useEffect(() => {
     setVh(window.innerHeight || 760);
   }, []);
+  useEffect(() => {
+    if (stage !== 'splash') return;
+    const t = setTimeout(() => setStage('closed'), SPLASH_MS);
+    return () => clearTimeout(t);
+  }, [stage]);
 
   // ===== Music =====
   const m = d.music;
@@ -119,6 +142,9 @@ export function InvitePage(props: InvitePageProps) {
   const audio = useRef<HTMLAudioElement>(null);
   const musicOn = m.on && (file !== null || m.demo);
   const [playing, setPlaying] = useState(false);
+  const [passOpen, setPassOpen] = useState(false);
+  const openPass = useCallback(() => setPassOpen(true), []);
+  const closePass = useCallback(() => setPassOpen(false), []);
   const kind = m.link ? streamKind(m.link) : null;
   const embed = m.link ? spotifyEmbed(m.link) : null;
 
@@ -175,24 +201,28 @@ export function InvitePage(props: InvitePageProps) {
   const hasStory = d.story.length > 0 || (extras?.ourStory ?? '') !== '';
   const hasMichangoNumbers = props.accounts.length > 0 || d.michango.mpesa !== '' || d.michango.tigo !== '' || d.michango.airtel !== '';
   const future = Date.now() < Date.UTC(Number(d.date.slice(0, 4)), Number(d.date.slice(5, 7)) - 1, Number(d.date.slice(8, 10)) + 1);
+  const attire = attireOf(d);
   const avail: Record<SectionKey, boolean> = {
     rsvp: props.token !== null || (extras?.rsvpOpen ?? true),
     song: musicOn || kind !== null,
     countdown: future,
+    quote: w.quote !== '',
     calendar: true,
     verse: w.verse !== '',
     ratiba: d.ratiba.length > 0,
     venues: d.ceremony.name !== '' || d.reception.name !== '',
-    dress: d.dress.length > 0,
+    dress: attire.length > 0,
     story: hasStory,
     gallery: gal.length > 0,
     michango: props.token !== null || hasMichangoNumbers,
     kamati: d.kamati.length > 0,
+    notes: true,
+    wishes: props.slug !== null,
   };
   const keys = rc.order.filter((k) => d.sections[k] !== false && avail[k]);
 
   // Extra sections from the story page, styled like the rest.
-  type Extra = { k: 'faqs' | 'party' | 'gifts' | 'travel' | 'guestbook'; node: ReactNode };
+  type Extra = { k: 'faqs' | 'party' | 'gifts' | 'travel'; node: ReactNode };
   const extraList: Extra[] = [];
   if (extras !== null) {
     if (extras.faqs.length > 0) extraList.push({ k: 'faqs', node: <Faqs items={extras.faqs} /> });
@@ -200,9 +230,7 @@ export function InvitePage(props: InvitePageProps) {
     if ((extras.registryNote ?? '') !== '') extraList.push({ k: 'gifts', node: <Note text={extras.registryNote ?? ''} /> });
     if ((extras.travelNote ?? '') !== '') extraList.push({ k: 'travel', node: <Note text={extras.travelNote ?? ''} /> });
   }
-  if (props.slug !== null) {
-    extraList.push({ k: 'guestbook', node: <Guestbook slug={props.slug} initial={props.guestbook} /> });
-  }
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const total = keys.length + extraList.length;
   const wrapFor = (i: number): { style: CSSProperties; inv: boolean } => {
@@ -217,7 +245,7 @@ export function InvitePage(props: InvitePageProps) {
     const pal = wr.inv ? PI : P;
     return (
       <PalContext.Provider key={k} value={pal}>
-        <section data-reveal="1" aria-label={h} style={{ position: 'relative', color: pal.ink, ...wr.style, ...(wr.inv ? { background: pal.bg } : {}) }}>
+        <section id={`sec-${k}`} data-section={k} data-reveal="1" aria-label={h} style={{ position: 'relative', scrollMarginTop: 56, color: pal.ink, ...wr.style, ...(wr.inv ? { background: pal.bg } : {}) }}>
           <PageHead v={rc.head} k={kk} h={h} n={String(i + 1).padStart(2, '0')} />
           {body}
         </section>
@@ -285,7 +313,20 @@ export function InvitePage(props: InvitePageProps) {
           </div>
         );
       case 'countdown':
-        return <Countdown d={d} lang={lang} view={rc.count} />;
+        return (
+          <>
+            <Countdown d={d} lang={lang} view={rc.count} />
+            {w.tagline !== '' && <div style={{ textAlign: 'center', fontSize: 17, fontStyle: 'italic', fontWeight: 300, marginTop: 18, color: P.ink_(78) }}>{w.tagline}</div>}
+          </>
+        );
+      case 'quote':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 8px' }}>
+            <div aria-hidden style={{ width: 1, height: 26, background: P.accBg, opacity: 0.6, marginBottom: 18 }} />
+            <p style={{ fontSize: 19, fontWeight: 300, lineHeight: 1.55, fontStyle: 'italic', textWrap: 'balance', margin: 0 }}>{`“${w.quote}”`}</p>
+            {w.quoteBy !== '' && <div style={{ fontSize: 15, fontStyle: 'italic', color: P.ink_(72), marginTop: 18 }}>{w.quoteBy}</div>}
+          </div>
+        );
       case 'calendar':
         return <CalendarBlock d={d} lang={lang} links={props.calendar} />;
       case 'verse':
@@ -297,41 +338,24 @@ export function InvitePage(props: InvitePageProps) {
           </div>
         );
       case 'ratiba':
-        return <Ratiba d={d} lang={lang} view={rc.ratiba} />;
+        return <Programme d={d} lang={lang} view={rc.ratiba} />;
       case 'venues':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { label: w.ceremony, v: d.ceremony },
-              { label: w.reception, v: d.reception },
-            ]
-              .filter((x) => x.v.name !== '')
-              .map((x) => (
-                <div key={x.label} style={{ padding: 20, borderRadius: 16, background: P.panel, color: P.pink, boxShadow: `inset 0 0 0 1px ${P.pink_(12)}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-                    <div style={labelStyle(P, 11, 0.18, P.accPn)}>{x.label}</div>
-                    <div style={{ ...monoStyle(P, 13, 0), fontVariantNumeric: 'tabular-nums' }}>{x.v.time}</div>
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 4 }}>{x.v.name}</div>
-                  {x.v.addr !== '' && <div style={{ fontSize: 14, color: P.pink_(70) }}>{x.v.addr}</div>}
-                  <a href={mapUrl(x.v)} target="_blank" rel="noopener noreferrer" style={{ alignSelf: 'flex-start', marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', textDecoration: 'none', background: P.accent, color: P.onacc, fontFamily: P.sans, fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    <Icon name="LocationOn" size={16} />
-                    {S.openMap}
-                  </a>
-                </div>
-              ))}
-          </div>
+          <Venues
+            lang={lang}
+            items={[
+              { label: w.ceremony, kind: 'ceremony' as const, v: d.ceremony },
+              { label: w.reception, kind: 'reception' as const, v: d.reception },
+            ].filter((x) => x.v.name !== '')}
+          />
         );
       case 'dress':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 12 }}>
-              {d.dress.map((c, i) => (
-                <div key={i} title={c} style={{ width: 46, height: 46, borderRadius: '50%', background: c, boxShadow: `inset 0 0 0 1px rgba(31,42,26,0.14), 0 0 0 3px ${P.ink_(10)}` }} />
-              ))}
-            </div>
-            <div style={{ fontSize: 15, color: P.ink_(74), marginTop: 16, maxWidth: 340 }}>{w.dressNote}</div>
-          </div>
+        return <Attire items={attire} lang={lang} note={w.dressNote} />;
+      case 'notes':
+        return <Notes d={d} lang={lang} />;
+      case 'wishes':
+        return props.slug === null ? null : (
+          <Wishes slug={props.slug} couple={`${a} & ${b}`} lang={lang} initial={props.guestbook} guestName={guest?.name ?? null} onUpdateResponse={props.token !== null && keys.includes('rsvp') ? () => scrollTo('sec-rsvp') : null} />
         );
       case 'story':
         return (
@@ -387,6 +411,22 @@ export function InvitePage(props: InvitePageProps) {
 
   const op = stage !== 'open';
   const anim = stage === 'opening';
+  // With only a streaming link (no uploaded song), "Tap for music" takes the
+  // guest to the song section, where Spotify's own player sits.
+  const linkOnly = !musicOn && m.on && kind !== null && keys.includes('song');
+  const musicPill = musicOn || linkOnly ? (
+    <button
+      type="button"
+      onClick={musicOn ? toggle : () => scrollTo('sec-song')}
+      data-music-pill="1"
+      className={playing ? undefined : 'wi-pulse'}
+      aria-label={musicOn ? (playing ? S.pause : S.play) : S.tapMusic}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.45)', cursor: 'pointer', background: 'rgba(26,37,22,0.55)', color: '#FFFFFF', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: P.sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
+    >
+      <Icon name={playing ? 'Pause' : 'MusicNote'} size={14} />
+      {playing ? S.musicPlaying : S.tapMusic}
+    </button>
+  ) : null;
   const overlayText = { photo: '#FFFFFF', curtain: th.onacc, unfold: th.bg }[rc.open as string] ?? P.ink;
   const longer = a.length >= b.length + 2 ? a : `${b}xx`;
   const leftHero = rc.head === 'left' || rc.head === 'num';
@@ -411,7 +451,7 @@ export function InvitePage(props: InvitePageProps) {
           fontFamily: P.sans,
           fontWeight: th.bw,
           lineHeight: 1.45,
-          ...(stage === 'closed' ? { height: '100vh', overflow: 'hidden' } : {}),
+          ...(stage === 'closed' || stage === 'splash' ? { height: '100vh', overflow: 'hidden' } : {}),
         }}
       >
         {file !== null && <audio ref={audio} src={file} loop preload="none" onPause={() => setPlaying(false)} onPlay={() => setPlaying(true)} />}
@@ -419,7 +459,8 @@ export function InvitePage(props: InvitePageProps) {
           <style>{'[data-invite-overlay]{display:none!important}[data-invite-page]{height:auto!important;overflow:visible!important}'}</style>
         </noscript>
         <div style={{ maxWidth: 520, margin: '0 auto', position: 'relative', overflowX: 'clip' }}>
-          {op && (
+          {stage === 'splash' && <Splash P={P} h={Math.max(560, vh)} ini={ini} names={{ a, b }} label={S.openingInvite} host={w.host} />}
+          {op && stage !== 'splash' && (
             <Opening
               kind={rc.open}
               anim={anim}
@@ -480,6 +521,10 @@ export function InvitePage(props: InvitePageProps) {
                   <span style={{ fontWeight: 200 }}>&amp;</span> {b}
                 </h1>
                 <div style={monoStyle(P, 12, 0.16)}>{[dt.dots, d.ceremony.time, city(d.ceremony.addr)].filter(Boolean).join(' · ')}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
+                  <div style={{ ...labelStyle(P, 9, 0.22, 'rgba(255,255,255,0.75)') }}>{S.scrollDiscover}</div>
+                  {musicPill}
+                </div>
               </div>
             </div>
           )}
@@ -550,6 +595,14 @@ export function InvitePage(props: InvitePageProps) {
             </div>
           )}
 
+          {/* Under every hero but the full photo (which carries them itself): scroll hint and the music pill */}
+          {rc.hero !== 'photo' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 24px 0' }}>
+              <div style={labelStyle(P, 9, 0.22, P.ink_(55))}>{S.scrollDiscover}</div>
+              {musicPill !== null && <span style={{ display: 'inline-flex', borderRadius: 999, background: P.ink }}>{musicPill}</span>}
+            </div>
+          )}
+
           {/* Welcome */}
           <div style={{ padding: '30px 24px 26px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
             <div style={labelStyle(P, 11, 0.22, P.accBg)}>{S.welcome}</div>
@@ -563,28 +616,13 @@ export function InvitePage(props: InvitePageProps) {
           )}
           {extraList.map((x, j) => section(keys.length + j, x.k, S.H[x.k], SO.H[x.k], x.node))}
 
-          {/* Gate pass: only on a personal invitation */}
+          {/* Entry pass: only on a personal invitation */}
           {guest !== null && qr !== null && (
             <div data-reveal="1" style={{ padding: '44px 24px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
               <div style={{ width: '100%' }}>
                 <PageHead v={rc.head} k={SO.H.pass} h={S.H.pass} n={String(total + 1).padStart(2, '0')} />
               </div>
-              <div style={{ width: '100%', boxSizing: 'border-box', padding: 24, borderRadius: 16, background: P.panel, color: P.pink, boxShadow: `inset 0 0 0 1px ${P.pink_(12)}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 220, height: 220, borderRadius: 12, background: '#FFFFFF', overflow: 'hidden', boxShadow: `0 0 0 1px ${P.pink_(10)}` }}>
-                  <svg viewBox={qr.vb} width={220} height={220} role="img" aria-label={`QR ${guest.cardNumber}`} style={{ display: 'block', shapeRendering: 'crispEdges' }}>
-                    <path d={qr.d} fill="#1F2A1A" />
-                  </svg>
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 600, marginTop: 8, textWrap: 'balance' }}>{guest.name}</div>
-                <div style={{ ...monoStyle(P, 12, 0.06), fontVariantNumeric: 'tabular-nums' }}>{`${S.card} ${guest.cardNumber} · ${S.seats(guest.seats || 1)}`}</div>
-                <div style={{ fontSize: 13, color: P.pink_(70), maxWidth: 300 }}>{S.passNote}</div>
-              </div>
-              {props.cardPngUrl !== null && (
-                <a href={props.cardPngUrl} download={`invitation-${guest.cardNumber}.png`} style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 20px', textDecoration: 'none', background: 'transparent', color: P.ink, border: `1px solid ${P.ink_(34)}`, fontFamily: P.sans, fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  <Icon name="PictureAsPdf" size={16} />
-                  {S.download}
-                </a>
-              )}
+              <EntryPass guest={guest} qr={qr} lang={lang} cardPngUrl={props.cardPngUrl} onEnlarge={openPass} />
             </div>
           )}
 
@@ -597,32 +635,34 @@ export function InvitePage(props: InvitePageProps) {
             <div style={{ ...monoStyle(P, 10, 0.14, P.ink_(60)), textTransform: 'uppercase', marginTop: 10 }}>{S.madeWith}</div>
           </div>
 
-          {/* Players that float */}
-          {musicOn && rc.player === 'pill' && (
-            <div style={{ position: 'sticky', bottom: 14, zIndex: 9, display: 'flex', justifyContent: 'center', padding: '0 16px 4px', pointerEvents: 'none' }}>
-              <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 12, maxWidth: '100%', minWidth: 0, padding: '8px 8px 8px 16px', borderRadius: 999, background: `${P.ink}E6`, color: P.bg, boxShadow: '0 12px 30px rgba(26,37,22,0.28)', backdropFilter: 'blur(8px)' }}>
-                <Eq height={16} width={3} n={3} color={P.accent} />
-                <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{songTitle}</span>
-                  <span style={{ ...monoStyle(P, 9, 0.08), textTransform: 'uppercase', opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{songArtist}</span>
+          {/* What floats: the entry pass button at the left, the player at the right */}
+          {stage === 'open' && (guest !== null && qr !== null || (musicOn && rc.player !== 'bar')) && (
+            <div style={{ position: 'sticky', bottom: 14, zIndex: 9, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, padding: '0 14px 4px', pointerEvents: 'none' }}>
+              <div>{guest !== null && qr !== null && <EntryPassButton lang={lang} onOpen={openPass} />}</div>
+              {musicOn && rc.player === 'pill' && (
+                <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 10, maxWidth: '58%', minWidth: 0, padding: '6px 6px 6px 14px', borderRadius: 999, background: `${P.ink}E6`, color: P.bg, boxShadow: '0 12px 30px rgba(26,37,22,0.28)', backdropFilter: 'blur(8px)' }}>
+                  <Eq height={16} width={3} n={3} color={P.accent} />
+                  <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{songTitle}</span>
+                    <span style={{ ...monoStyle(P, 9, 0.08), textTransform: 'uppercase', opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{songArtist}</span>
+                  </div>
+                  <button type="button" onClick={toggle} aria-label={playerLabel} style={{ width: 36, height: 36, flex: 'none', borderRadius: '50%', border: 0, cursor: 'pointer', background: P.accent, color: P.onacc, display: 'grid', placeItems: 'center' }}>
+                    <Icon name={playerIcon} size={20} />
+                  </button>
                 </div>
-                <button type="button" onClick={toggle} aria-label={playerLabel} style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', border: 0, cursor: 'pointer', background: P.accent, color: P.onacc, display: 'grid', placeItems: 'center' }}>
-                  <Icon name={playerIcon} size={22} />
+              )}
+              {musicOn && rc.player === 'disc' && (
+                <button type="button" onClick={toggle} aria-label={playerLabel} style={{ pointerEvents: 'auto', position: 'relative', width: 56, height: 56, flex: 'none', borderRadius: '50%', border: 0, padding: 0, cursor: 'pointer', background: 'none', boxShadow: '0 10px 26px rgba(26,37,22,0.35)' }}>
+                  {vinyl(56, 22)}
+                  <span style={{ position: 'absolute', right: -4, bottom: -4, width: 26, height: 26, borderRadius: '50%', background: P.accent, color: P.onacc, display: 'grid', placeItems: 'center' }}>
+                    <Icon name={playerIcon} size={16} />
+                  </span>
                 </button>
-              </div>
-            </div>
-          )}
-          {musicOn && rc.player === 'disc' && (
-            <div style={{ position: 'sticky', bottom: 14, zIndex: 9, display: 'flex', justifyContent: 'flex-end', padding: '0 14px 4px', pointerEvents: 'none' }}>
-              <button type="button" onClick={toggle} aria-label={playerLabel} style={{ pointerEvents: 'auto', position: 'relative', width: 60, height: 60, borderRadius: '50%', border: 0, padding: 0, cursor: 'pointer', background: 'none', boxShadow: '0 10px 26px rgba(26,37,22,0.35)' }}>
-                {vinyl(60, 24)}
-                <span style={{ position: 'absolute', right: -4, bottom: -4, width: 26, height: 26, borderRadius: '50%', background: P.accent, color: P.onacc, display: 'grid', placeItems: 'center' }}>
-                  <Icon name={playerIcon} size={16} />
-                </span>
-              </button>
+              )}
             </div>
           )}
         </div>
+        {passOpen && guest !== null && qr !== null && <EntryPassDialog guest={guest} qr={qr} lang={lang} onClose={closePass} />}
       </div>
     </PalContext.Provider>
   );
@@ -682,6 +722,38 @@ function CalendarBlock({ d, lang, links }: { d: InviteDesign; lang: Lang; links:
         {links !== null && <div style={{ fontSize: 12, opacity: 0.7 }}>{S.calNote}</div>}
       </div>
     </>
+  );
+}
+
+/** Lines shown before "View full programme" expands the rest. */
+const PROGRAMME_PREVIEW = 4;
+
+/** The programme with a "View full programme" expander when it is long. */
+function Programme({ d, lang, view }: { d: InviteDesign; lang: Lang; view: 'line' | 'cards' | 'ticket' | 'big' }) {
+  const P = usePal();
+  const S = STR[lang];
+  const [full, setFull] = useState(false);
+  const long = d.ratiba.length > PROGRAMME_PREVIEW && view !== 'cards';
+  const shown = long && !full ? { ...d, ratiba: d.ratiba.slice(0, PROGRAMME_PREVIEW) } : d;
+  return (
+    <div data-programme={full ? 'full' : 'preview'}>
+      <Ratiba d={shown} lang={lang} view={view} />
+      {long && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+          <button
+            type="button"
+            onClick={() => setFull((f) => !f)}
+            aria-expanded={full}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', border: `1px solid ${P.ink_(30)}`, background: 'transparent', cursor: 'pointer', color: P.ink, fontFamily: P.sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+          >
+            {full ? S.viewLess : S.viewFull}
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden style={{ transform: full ? 'rotate(180deg)' : 'none' }}>
+              <path d="M7 10l5 5 5-5z" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -838,6 +910,22 @@ function Party({ items }: { items: { name: string; role: string; photoUrl: strin
 
 function Note({ text }: { text: string }) {
   return <p style={{ fontSize: 15, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{text}</p>;
+}
+
+/** The first moment: the couple's monogram and "Opening your invitation", while the page settles. */
+function Splash(p: { P: Pal; h: number; ini: { a: string; b: string }; names: { a: string; b: string }; label: string; host: string }) {
+  const { P } = p;
+  return (
+    <div data-invite-splash="1" className="wi-splash" aria-live="polite" style={{ position: 'absolute', left: 0, top: 0, right: 0, height: p.h, zIndex: 21, background: P.bg, color: P.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center', padding: 24 }}>
+      <div style={labelStyle(P, 10, 0.3, P.ink_(55))}>{p.host}</div>
+      <div style={{ ...nameStyle(P, 30, 1.1), fontWeight: 300 }}>{`${p.names.a} & ${p.names.b}`}</div>
+      <div style={{ position: 'relative', width: 64, height: 64, marginTop: 10 }}>
+        <div className="wi-ring" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px solid ${P.ink_(16)}`, borderTopColor: P.accBg }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', ...monoStyle(P, 12, 0.1, P.ink), fontWeight: 600 }}>{`${p.ini.a}${p.ini.b}`}</div>
+      </div>
+      <div style={{ ...labelStyle(P, 10, 0.26, P.ink_(60)), marginTop: 6 }}>{p.label}</div>
+    </div>
+  );
 }
 
 function Opening(p: {
