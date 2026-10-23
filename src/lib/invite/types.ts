@@ -3,7 +3,9 @@
  * wedding-shared-types (types/invite-design.ts) so this repo builds
  * standalone. The shared-types package stays the source of truth.
  */
-import type { InviteDesign } from './wcz';
+import type { CardKind, InviteDesign } from './wcz';
+
+export type { CardKind };
 
 /** Where guests pay or send gifts. Only the ones the couple shows guests. */
 export interface PublicCollectionAccount {
@@ -33,6 +35,12 @@ export interface InviteGuestView {
   id: string;
   name: string;
   seats: number;
+  /**
+   * Single or double, printed on the card. Required in shared-types; optional
+   * here because an API from before the kind existed leaves it out, and the
+   * card then reads as single.
+   */
+  kind?: CardKind;
   rsvp: GuestRsvp;
   coming: number | null;
   pledge: number;

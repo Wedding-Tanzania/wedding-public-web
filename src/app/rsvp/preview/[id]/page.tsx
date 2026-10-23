@@ -6,7 +6,7 @@ import { InviteCard } from '@/components/invite/InviteCard';
 import { ScaledCard } from '@/components/invite/ScaledCard';
 import { qrPath } from '@/lib/invite/qr';
 import type { DesignFields } from '@/lib/invite/types';
-import { normalise } from '@/lib/invite/wcz';
+import { cardKindForSeats, normalise } from '@/lib/invite/wcz';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
 
@@ -45,7 +45,7 @@ export default async function CardPreviewPage({ params }: { params: { id: string
               <InviteCard
                 design={normalise(body.design)}
                 lang={body.design.lang}
-                guest={{ name: card.guestName, seats: card.partyAllowed ?? 2, cardNumber: card.cardNumber }}
+                guest={{ name: card.guestName, seats: card.partyAllowed ?? 2, cardNumber: card.cardNumber, kind: cardKindForSeats(card.partyAllowed ?? 2) }}
                 qr={qrPath(card.rsvpUrl)}
                 web
               />
