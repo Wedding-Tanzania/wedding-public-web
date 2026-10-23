@@ -2,12 +2,29 @@
 
 import { useEffect, useRef } from 'react';
 import type { QrPath } from '@/lib/invite/qr';
-import { STR, type Lang } from '@/lib/invite/wcz';
+import { STR, cardKindLabel, type CardKind, type Lang } from '@/lib/invite/wcz';
 import type { InviteGuestView } from '@/lib/invite/types';
 import { Icon } from './Icon';
 import { labelStyle, monoStyle, usePal } from './palette';
 
 export const ENTRY_PASS_ID = 'entry-pass';
+
+/**
+ * SINGLE or DOUBLE on the page, the same dark pill the card image carries,
+ * so the gate reads the kind off a phone screen the way it reads it off
+ * the printed card. A faint white edge keeps it visible on the dark pass.
+ */
+export function KindPill({ kind }: { kind: CardKind | undefined }) {
+  const P = usePal();
+  return (
+    <span
+      data-card-kind={kind ?? 'single'}
+      style={{ display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 10px', borderRadius: 11, background: 'rgba(48,48,48,0.86)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.22)', color: '#FFFFFF', fontFamily: P.mono, fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}
+    >
+      {cardKindLabel(kind)}
+    </span>
+  );
+}
 
 /**
  * The guest's entry pass: the same QR the gate scanner reads, their name,
@@ -27,7 +44,10 @@ export function EntryPass({ guest, qr, lang, cardPngUrl, onEnlarge }: { guest: I
         <div style={{ ...labelStyle(P, 10, 0.26, P.accent), opacity: 0.95 }}>{S.keepReady}</div>
         <div style={{ fontSize: 30, fontWeight: 300, fontStyle: 'italic', letterSpacing: '-0.01em', marginTop: 4 }}>{S.yourPass}</div>
         <div style={{ fontSize: 20, fontWeight: 600, marginTop: 6, textWrap: 'balance', textAlign: 'center' }}>{guest.name}</div>
-        <div style={{ ...labelStyle(P, 11, 0.22, P.bg), opacity: 0.8 }}>{S.entryFor(seats)}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ ...labelStyle(P, 11, 0.22, P.bg), opacity: 0.8 }}>{S.entryFor(seats)}</div>
+          <KindPill kind={guest.kind} />
+        </div>
         <button
           type="button"
           onClick={onEnlarge}
@@ -86,7 +106,10 @@ export function EntryPassDialog({ guest, qr, lang, onClose }: { guest: InviteGue
       <div style={{ ...labelStyle(P, 11, 0.26, '#7E8A70') }}>{S.keepReady}</div>
       <div style={{ fontSize: 28, fontWeight: 300, fontStyle: 'italic' }}>{S.yourPass}</div>
       <div style={{ fontSize: 22, fontWeight: 600, textAlign: 'center' }}>{guest.name}</div>
-      <div style={{ ...labelStyle(P, 12, 0.22, '#4A5840') }}>{S.entryFor(seats)}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ ...labelStyle(P, 12, 0.22, '#4A5840') }}>{S.entryFor(seats)}</div>
+        <KindPill kind={guest.kind} />
+      </div>
       <svg viewBox={qr.vb} width="min(80vw, 420px)" height="min(80vw, 420px)" role="img" aria-label={`QR ${guest.cardNumber}`} style={{ display: 'block', shapeRendering: 'crispEdges', marginTop: 6 }}>
         <path d={qr.d} fill="#1F2A1A" />
       </svg>

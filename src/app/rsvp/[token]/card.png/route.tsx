@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   if (ctx.designSaved === true && ctx.design != null && ctx.guest !== undefined) {
     return renderInviteImage({
       design: normalise(ctx.design),
-      guest: { name: ctx.guest.name, seats: ctx.guest.seats, cardNumber: ctx.guest.cardNumber },
+      guest: { name: ctx.guest.name, seats: ctx.guest.seats, cardNumber: ctx.guest.cardNumber, kind: ctx.guest.kind },
       // The gate scanner reads the token out of this link; it is the same
       // link the legacy card's QR holds.
       qrText: card.rsvpUrl,

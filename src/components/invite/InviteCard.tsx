@@ -6,6 +6,7 @@ import {
   STR,
   alpha,
   calendar,
+  cardKindLabel,
   city,
   fit,
   fmtDate,
@@ -13,6 +14,7 @@ import {
   templateFor,
   theme,
   words,
+  type CardKind,
   type InviteDesign,
   type Lang,
   type SlotKey,
@@ -37,6 +39,8 @@ export interface CardGuest {
   name: string;
   seats: number;
   cardNumber: string;
+  /** SINGLE or DOUBLE on the pass; absent (an older API) reads as single. */
+  kind?: CardKind;
 }
 
 export interface CardFonts {
@@ -71,6 +75,8 @@ export interface InviteCardProps {
 export const CARD_W = 1080;
 export const CARD_H = 1350;
 export const COVER_H = 1010;
+/** Height of the SINGLE / DOUBLE pill; the bodies above the passes stop short of it. */
+const KIND_PILL_H = 44;
 
 /**
  * Fragments, unwrapped into plain lists. The image renderer lays a fragment
@@ -321,7 +327,8 @@ export function InviteCard(props: InviteCardProps) {
   let body: ReactNode = null;
   switch (t.id) {
     case 't01':
-      body = centerCol({ left: 90, right: 90, top: 90, height: 900, justifyContent: 'center' }, (
+      // Bodies above a pass end by about 940, clear of the kind pill at 952.
+      body = centerCol({ left: 90, right: 90, top: 90, height: 820, justifyContent: 'center' }, (
         <>
           <div style={label(24, 0.32, ink(72), { marginBottom: 40 })}>{w.host}</div>
           <div style={name(fs.st, 1.02)}>{a}</div>
@@ -341,7 +348,7 @@ export function InviteCard(props: InviteCardProps) {
         <>
           {rule({ left: 36, top: 36, right: 36, bottom: 36, border: `2px solid ${th.accent}` })}
           {rule({ left: 50, top: 50, right: 50, bottom: 50, border: `1px solid ${accT(50)}` })}
-          {centerCol({ left: 110, right: 110, top: 100, height: 880, justifyContent: 'center' }, (
+          {centerCol({ left: 110, right: 110, top: 100, height: 820, justifyContent: 'center' }, (
             <>
               <div style={box({ position: 'relative', width: 112, height: 68, marginBottom: 40 })}>
                 <div style={abs({ left: 0, top: 0, width: 68, height: 68, borderRadius: 34, border: `3px solid ${th.accent}` })} />
@@ -370,7 +377,7 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 240, top: 100, width: 600, height: 560 }, { radius: [300, 300, 0, 0], ring: { offset: 16, width: 2, color: th.accent } })}
-          {centerCol({ left: 90, right: 90, top: 718 }, (
+          {centerCol({ left: 90, right: 90, top: 700 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 20 })}
@@ -411,20 +418,21 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 540, top: 0, width: 540, height: 1350 })}
-          <div style={col({ position: 'absolute', left: 80, top: 90, width: 400, height: 880, alignItems: 'flex-start' })}>
-            <div style={box({ alignItems: 'flex-end', fontSize: 150, lineHeight: 0.8, fontWeight: th.nw, letterSpacing: -6, color: th.accent })}>
+          {/* Ends at 930 so the kind pill above the stacked pass has clear ground; spacing is tighter to fit. */}
+          <div style={col({ position: 'absolute', left: 80, top: 90, width: 400, height: 840, alignItems: 'flex-start' })}>
+            <div style={box({ alignItems: 'flex-end', fontSize: 130, lineHeight: 0.8, fontWeight: th.nw, letterSpacing: -5, color: th.accent })}>
               <span>{ini.a}</span>
-              <span style={{ fontWeight: 200, fontSize: 112, margin: '0 6px', color: ink(40) }}>/</span>
+              <span style={{ fontWeight: 200, fontSize: 98, margin: '0 6px', color: ink(40) }}>/</span>
               <span>{ini.b}</span>
             </div>
-            <div style={label(22, 0.28, ink(72), { lineHeight: 1.6, margin: '56px 0 24px' })}>{w.host}</div>
-            <div style={name(fs.st, 1.02)}>{a}</div>
-            <div style={text(48, th.accent, { fontWeight: 200, lineHeight: 1.2 })}>&amp;</div>
-            <div style={name(fs.st, 1.02)}>{b}</div>
-            <div style={text(28, ink(72), { lineHeight: 1.4, marginTop: 30 })}>{w.invite}</div>
-            <div style={col({ marginTop: 'auto', gap: 8 })}>
+            <div style={label(22, 0.28, ink(72), { lineHeight: 1.6, margin: '28px 0 14px' })}>{w.host}</div>
+            <div style={name(fs.st, 0.96)}>{a}</div>
+            <div style={text(48, th.accent, { fontWeight: 200, lineHeight: 1 })}>&amp;</div>
+            <div style={name(fs.st, 0.96)}>{b}</div>
+            <div style={text(28, ink(72), { lineHeight: 1.3, marginTop: 18 })}>{w.invite}</div>
+            <div style={col({ marginTop: 'auto', gap: 8, paddingTop: 24 })}>
               <div style={label(22, 0.28, th.accBg)}>{dt.weekday}</div>
-              <div style={text(56, th.ink, { fontWeight: 500, letterSpacing: -1.1, lineHeight: 1.05 })}>{`${dt.day} ${dt.month}`}</div>
+              <div style={text(50, th.ink, { fontWeight: 500, letterSpacing: -1, lineHeight: 1.05 })}>{`${dt.day} ${dt.month}`}</div>
               <div style={text(28, ink(72))}>{`${dt.year} · ${d.ceremony.time} · ${d.ceremony.name}`}</div>
             </div>
           </div>
@@ -438,7 +446,8 @@ export function InviteCard(props: InviteCardProps) {
           <div style={abs({ left: 120, top: 40, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.a}</div>
           <div style={abs({ left: 560, top: 330, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.b}</div>
           {rule({ left: 538, top: 110, width: 2, height: 700, backgroundColor: th.accent, transform: 'rotate(24deg)' })}
-          {centerCol({ left: 90, right: 90, top: 836 }, (
+          {/* Sits at 780, not 836: the date line would otherwise run into the kind pill. */}
+          {centerCol({ left: 90, right: 90, top: 780 }, (
             <>
               <div style={label(22, 0.34, th.accBg)}>{S.marrying}</div>
               <div style={{ ...text(fs.ol, th.ink, { fontWeight: 500, letterSpacing: -fs.ol * 0.02, marginTop: 18, whiteSpace: 'nowrap', gap: Math.round(fs.ol * 0.24) }) }}>
@@ -519,7 +528,7 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 270, top: 96, width: 540, height: 540 }, { radius: [270, 270, 270, 270], ring: { offset: 18, width: 2, color: th.accent } })}
-          {centerCol({ left: 90, right: 90, top: 700 }, (
+          {centerCol({ left: 90, right: 90, top: 688 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 22 })}
@@ -536,7 +545,7 @@ export function InviteCard(props: InviteCardProps) {
         <>
           {slot('cover', { left: 150, top: 90, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
           {slot('second', { left: 570, top: 150, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
-          {centerCol({ left: 90, right: 90, top: 770 }, (
+          {centerCol({ left: 90, right: 90, top: 730 }, (
             <>
               {oneLine(fs.ol, 1.05)}
               <div style={text(28, ink(72), { marginTop: 18, maxWidth: 860, justifyContent: 'center' })}>{w.invite}</div>
@@ -559,7 +568,7 @@ export function InviteCard(props: InviteCardProps) {
               <div style={label(24, 0.24, th.accBg, { marginTop: 24 })}>{`${dt.weekday} · ${dt.long}`}</div>
             </>
           ))}
-          <div style={col({ position: 'absolute', left: 150, right: 100, top: 340, height: 640, justifyContent: 'center' })}>
+          <div style={col({ position: 'absolute', left: 150, right: 100, top: 340, height: 600, justifyContent: 'center' })}>
             {rule({ left: 189, top: 70, bottom: 70, width: 2, backgroundColor: ink(16) })}
             {rat.map((r, i) => (
               <div key={i} style={box({ position: 'relative', alignItems: 'center', height: ratH })}>
@@ -597,7 +606,8 @@ export function InviteCard(props: InviteCardProps) {
             <div style={label(22, 0.24, ink(72), { marginTop: 24 })}>{`${dt.weekday} · ${dt.long}`}</div>
           </div>
           {slot('cover', { left: 0, top: 500, width: 1080, height: 360 }, { iconSize: 88 })}
-          <div style={box({ position: 'absolute', left: 90, right: 90, top: 896, gap: 60 })}>
+          {/* 880, not 896: leaves room for the kind pill above the pass rule. */}
+          <div style={box({ position: 'absolute', left: 90, right: 90, top: 880, gap: 60 })}>
             {[
               [w.ceremony, d.ceremony],
               [w.reception, d.reception],
@@ -623,7 +633,7 @@ export function InviteCard(props: InviteCardProps) {
               <span>{ini.b}</span>
             </div>
           </div>
-          {centerCol({ left: 90, right: 90, top: 326, height: 670 }, (
+          {centerCol({ left: 90, right: 90, top: 300, height: 640 }, (
             <>
               <div style={label(22, 0.32, ink(72))}>{w.host}</div>
               <div style={name(fs.st, 1.02, { marginTop: 30 })}>{a}</div>
@@ -668,7 +678,7 @@ export function InviteCard(props: InviteCardProps) {
             </div>
             <div style={text(32, ink(72), { lineHeight: 1.4, marginTop: 40, maxWidth: 780 })}>{`${w.host}, ${w.invite}.`}</div>
           </div>
-          <div style={box({ position: 'absolute', left: 90, right: 90, top: 690, flexWrap: 'wrap', columnGap: 40, borderTop: `1px solid ${ink(20)}` })}>
+          <div style={box({ position: 'absolute', left: 90, right: 90, top: 670, flexWrap: 'wrap', columnGap: 40, borderTop: `1px solid ${ink(20)}` })}>
             {cell(dt.weekday, dt.long, 0)}
             {cell(w.ceremony, `${d.ceremony.time} · ${d.ceremony.name}`, 1)}
             {cell(w.reception, `${d.reception.time} · ${d.reception.name}`, 2)}
@@ -772,7 +782,7 @@ export function InviteCard(props: InviteCardProps) {
         <>
           {slot('cover', { left: 0, top: 0, width: 1080, height: 760 }, { tint: accT(26), iconSize: 110, iconColor: th.accent })}
           {rule({ left: 0, top: 0, width: 1080, height: 770, backgroundImage: `linear-gradient(180deg, ${alpha(th.bg, 30)} 0%, ${alpha(th.bg, 0)} 22%, ${alpha(th.bg, 0)} 42%, ${th.bg} 94%)` })}
-          {centerCol({ left: 90, right: 90, top: 676 }, (
+          {centerCol({ left: 90, right: 90, top: 660 }, (
             <>
               <div style={label(22, 0.32, th.accBg)}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 24 })}
@@ -806,7 +816,8 @@ export function InviteCard(props: InviteCardProps) {
           </div>
           {rule({ left: 68, top: 68, right: 68, bottom: 68, backgroundColor: th.accent })}
           {rule({ left: 70, top: 70, right: 70, bottom: 70, backgroundColor: th.bg })}
-          {centerCol({ left: 112, right: 112, top: 108, height: 884 }, (
+          {/* Ends at 938: the kanga band is full width, so the kind pill needs the strip below it. */}
+          {centerCol({ left: 112, right: 112, top: 108, height: 830 }, (
             <>
               <div style={label(22, 0.32, ink(72))}>{w.host}</div>
               <div style={box({ position: 'relative', width: 250, height: 250, marginTop: 28, alignItems: 'center', justifyContent: 'center' })}>
@@ -837,12 +848,12 @@ export function InviteCard(props: InviteCardProps) {
           {rule({ left: 532, top: 90, width: 16, height: 600, backgroundColor: th.panel })}
           {rule({ left: 180, top: 382, width: 720, height: 16, backgroundColor: th.panel })}
           {rule({ left: 126, top: 714, width: 828, height: 26, borderRadius: 4, backgroundColor: inkP(16) })}
-          {centerCol({ left: 90, right: 90, top: 772 }, (
+          {centerCol({ left: 90, right: 90, top: 752 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: 16 })}
-              <div style={label(24, 0.22, th.ink, { marginTop: 22 })}>{`${dt.weekday} · ${dt.long} · ${d.ceremony.time}`}</div>
-              <div style={text(28, ink(72), { marginTop: 10 })}>{[d.ceremony.name, cityC].filter(Boolean).join(', ')}</div>
+              {oneLine(fs.ol, 1.05, { marginTop: 10 })}
+              <div style={label(24, 0.22, th.ink, { marginTop: 14 })}>{`${dt.weekday} · ${dt.long} · ${d.ceremony.time}`}</div>
+              <div style={text(28, ink(72), { marginTop: 6 })}>{[d.ceremony.name, cityC].filter(Boolean).join(', ')}</div>
             </>
           ))}
         </>
@@ -860,12 +871,12 @@ export function InviteCard(props: InviteCardProps) {
           {rule({ left: 404, top: 234, width: 272, height: 272, borderRadius: 136, backgroundColor: th.accent })}
           {slot('cover', { left: 410, top: 240, width: 260, height: 260 }, { radius: [130, 130, 130, 130], tint: th.accent })}
           {rule({ left: 531, top: 361, width: 18, height: 18, borderRadius: 9, backgroundColor: th.bg })}
-          {centerCol({ left: 90, right: 90, top: 712 }, (
+          {centerCol({ left: 90, right: 90, top: 690 }, (
             <>
               <div style={label(22, 0.3, th.accBg)}>{songArtist ? `${S.ourSong} · ${songArtist}` : S.ourSong}</div>
-              <div style={text(52, th.ink, { fontWeight: 300, letterSpacing: -1, marginTop: 14, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: 900 })}>{`“${songTitle}”`}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: 24 })}
-              <div style={label(24, 0.22, ink(76), { marginTop: 20 })}>{`${dt.weekday} · ${dt.long} · ${d.ceremony.time}`}</div>
+              <div style={text(52, th.ink, { fontWeight: 300, letterSpacing: -1, marginTop: 10, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: 900 })}>{`“${songTitle}”`}</div>
+              {oneLine(fs.ol, 1.05, { marginTop: 16 })}
+              <div style={label(24, 0.22, ink(76), { marginTop: 14 })}>{`${dt.weekday} · ${dt.long} · ${d.ceremony.time}`}</div>
             </>
           ))}
         </>
@@ -917,7 +928,7 @@ export function InviteCard(props: InviteCardProps) {
           {slot('cover', { left: 90, top: 90, width: 548, height: 600 }, { iconSize: 88 })}
           {slot('second', { left: 654, top: 90, width: 336, height: 292 }, { iconSize: 64 })}
           {slot('third', { left: 654, top: 398, width: 336, height: 292 }, { iconSize: 64 })}
-          {centerCol({ left: 90, right: 90, top: 728 }, (
+          {centerCol({ left: 90, right: 90, top: 700 }, (
             <>
               <div style={label(22, 0.3, th.accBg)}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 16 })}
@@ -943,14 +954,46 @@ export function InviteCard(props: InviteCardProps) {
     </div>
   );
 
+  /**
+   * SINGLE or DOUBLE, as on the printed card: a dark pill with white mono
+   * text, bottom-left just above the QR. The same grey on every template so
+   * the gate reads it the same way whatever the palette; mono on purpose
+   * even when the couple chose sans labels.
+   */
+  const kindPill = (left: number, top: number) => (
+    <div
+      style={abs({
+        left,
+        top,
+        height: KIND_PILL_H,
+        padding: '0 20px',
+        alignItems: 'center',
+        borderRadius: KIND_PILL_H / 2,
+        backgroundColor: 'rgba(48,48,48,0.86)',
+        fontFamily: fonts.mono,
+        fontSize: 20,
+        fontWeight: 700,
+        letterSpacing: 3.6,
+        textTransform: 'uppercase',
+        color: '#FFFFFF',
+      })}
+    >
+      {cardKindLabel(g.kind)}
+    </div>
+  );
+
   let pass: ReactNode = null;
   if (!cover) {
     if (t.pass === 'card') {
+      const top = CARD_H - 80 - 260;
       pass = (
-        <div style={abs({ left: 90, right: 90, top: CARD_H - 80 - 260, height: 260, alignItems: 'center', gap: 40, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
-          {qrBox(196, 12)}
-          {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
-        </div>
+        <>
+          <div style={abs({ left: 90, right: 90, top, height: 260, alignItems: 'center', gap: 40, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
+            {qrBox(196, 12)}
+            {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
+          </div>
+          {kindPill(130, top - 14 - KIND_PILL_H)}
+        </>
       );
     } else if (t.pass === 'line') {
       pass = (
@@ -960,50 +1003,64 @@ export function InviteCard(props: InviteCardProps) {
             {qrBox(210, 14, `0 0 0 2px ${ink(12)}`)}
             {passText({ label: ink(70), strong: th.ink, muted: ink(72), faint: ink(66) })}
           </div>
+          {kindPill(90, 1036 - 14 - KIND_PILL_H)}
         </>
       );
     } else if (t.pass === 'glass') {
+      const top = CARD_H - 80 - 260;
       pass = (
-        <div
-          style={abs({
-            left: 90,
-            right: 90,
-            top: CARD_H - 80 - 260,
-            height: 260,
-            alignItems: 'center',
-            gap: 40,
-            padding: '0 32px',
-            borderRadius: 24,
-            backgroundColor: alpha(th.bg, web ? 66 : 80),
-            border: `2px solid ${alpha(th.ink, 22)}`,
-            color: th.ink,
-            ...(web ? { backdropFilter: 'blur(16px)' } : {}),
-          })}
-        >
-          {qrBox(196, 12)}
-          {passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) })}
-        </div>
+        <>
+          <div
+            style={abs({
+              left: 90,
+              right: 90,
+              top,
+              height: 260,
+              alignItems: 'center',
+              gap: 40,
+              padding: '0 32px',
+              borderRadius: 24,
+              backgroundColor: alpha(th.bg, web ? 66 : 80),
+              border: `2px solid ${alpha(th.ink, 22)}`,
+              color: th.ink,
+              ...(web ? { backdropFilter: 'blur(16px)' } : {}),
+            })}
+          >
+            {qrBox(196, 12)}
+            {passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) })}
+          </div>
+          {kindPill(130, top - 14 - KIND_PILL_H)}
+        </>
       );
     } else if (t.pass === 'stack') {
+      const top = CARD_H - 60 - 290;
       pass = (
-        <div style={col({ position: 'absolute', left: 60, width: 440, top: CARD_H - 60 - 290, height: 290, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
-          <div style={box({ alignItems: 'center', gap: 22 })}>
-            {qrBox(150, 10)}
-            <div style={col({ flex: 1, gap: 6 })}>
-              <div style={label(18, 0.22, pink(68))}>{S.invFor}</div>
-              <div style={text(24, pink(72))}>{`${S.card} ${no}`}</div>
-              <div style={text(24, pink(72))}>{seats}</div>
+        <>
+          <div style={col({ position: 'absolute', left: 60, width: 440, top, height: 290, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
+            <div style={box({ alignItems: 'center', gap: 22 })}>
+              {qrBox(150, 10)}
+              <div style={col({ flex: 1, gap: 6 })}>
+                <div style={label(18, 0.22, pink(68))}>{S.invFor}</div>
+                <div style={text(24, pink(72))}>{`${S.card} ${no}`}</div>
+                <div style={text(24, pink(72))}>{seats}</div>
+              </div>
             </div>
+            <div style={text(fs.guestS, th.pink, { fontWeight: 500, lineHeight: 1.15 })}>{g.name}</div>
           </div>
-          <div style={text(fs.guestS, th.pink, { fontWeight: 500, lineHeight: 1.15 })}>{g.name}</div>
-        </div>
+          {kindPill(88, top - 14 - KIND_PILL_H)}
+        </>
       );
     } else if (t.pass === 'ticket') {
+      // The stub between the dashed tear line (988) and the panel edge
+      // (1280) holds the pill and then the QR row, so the QR is 180, not 196.
       pass = (
-        <div style={abs({ left: 130, right: 130, top: 1040, height: 200, alignItems: 'center', gap: 40, color: th.ink })}>
-          {qrBox(196, 12, `0 0 0 2px ${inkP(12)}`)}
-          {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}
-        </div>
+        <>
+          {kindPill(130, 1006)}
+          <div style={abs({ left: 130, right: 130, top: 1064, height: 180, alignItems: 'center', gap: 40, color: th.ink })}>
+            {qrBox(180, 12, `0 0 0 2px ${inkP(12)}`)}
+            {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}
+          </div>
+        </>
       );
     }
   }

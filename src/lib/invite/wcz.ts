@@ -261,11 +261,29 @@ export interface TypeOpts {
   labels: 'mono' | 'sans';
 }
 
+/**
+ * Single or double card, vendored from wedding-shared-types (types/card-kind.ts).
+ * Not the seat count: a card for a party of forty is still a SINGLE card.
+ */
+export type CardKind = 'single' | 'double';
+
+/** How the kind is printed on the card: the same word in both languages. */
+export function cardKindLabel(kind: CardKind | undefined): 'SINGLE' | 'DOUBLE' {
+  return kind === 'double' ? 'DOUBLE' : 'SINGLE';
+}
+
+/** The kind a placeholder guest gets when nobody chose one: two seats or more is a double. */
+export function cardKindForSeats(seats: number | null | undefined): CardKind {
+  return typeof seats === 'number' && seats >= 2 ? 'double' : 'single';
+}
+
 /** The person a card or page is for. Card number = design code + id. */
 export interface Guest {
   id: string;
   name: string;
   seats: number;
+  /** Missing on payloads from before the card kind existed: read as single. */
+  kind?: CardKind;
   phone?: string;
   rsvp?: 'yes' | 'no' | 'maybe' | 'pending';
   coming?: number;

@@ -1,6 +1,6 @@
 import type { InvitationCardView } from '@/lib/card';
 import type { DesignFields } from '@/lib/invite/types';
-import { normalise } from '@/lib/invite/wcz';
+import { cardKindForSeats, normalise } from '@/lib/invite/wcz';
 import { renderCardImage } from '../../../_card-image/render';
 import { renderInviteImage } from '../../../../_invite-card/render';
 
@@ -17,7 +17,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (ctx.designSaved === true && ctx.design != null) {
     return renderInviteImage({
       design: normalise(ctx.design),
-      guest: { name: card.guestName, seats: card.partyAllowed ?? 2, cardNumber: card.cardNumber },
+      // The preview has no real guest, so the kind follows the seats as the API would default it.
+      guest: { name: card.guestName, seats: card.partyAllowed ?? 2, cardNumber: card.cardNumber, kind: cardKindForSeats(card.partyAllowed ?? 2) },
       qrText: card.rsvpUrl,
     });
   }
