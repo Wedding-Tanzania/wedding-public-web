@@ -144,6 +144,7 @@ const categoryFilters = [
   { value: 'dj_mc', label: 'DJ & MC' },
   { value: 'cake', label: 'Cake' },
   { value: 'beauty', label: 'Beauty' },
+  { value: 'bridal_wear', label: 'Bridal wear' },
   { value: 'transport', label: 'Transport' },
 ];
 

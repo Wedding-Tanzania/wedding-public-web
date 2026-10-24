@@ -30,7 +30,9 @@ export type VendorCategory =
   | 'cake'
   | 'transport'
   | 'beauty'
-  | 'officiant';
+  | 'officiant'
+  /** Wedding dresses, gowns and suits: dress makers, tailors, boutiques. */
+  | 'bridal_wear';
 
 /** Onboarding lifecycle of a vendor's public listing. */
 export type VendorProfileStatus = 'draft' | 'submitted' | 'live';
