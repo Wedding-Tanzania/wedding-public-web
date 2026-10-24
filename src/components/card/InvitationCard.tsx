@@ -1,7 +1,7 @@
 import { Cormorant_Garamond } from 'next/font/google';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
-import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type VenueRow } from '@/lib/invite/wcz';
+import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type DressChip, type VenueRow } from '@/lib/invite/wcz';
 
 const serif = Cormorant_Garamond({
   subsets: ['latin'],
@@ -17,8 +17,22 @@ const serif = Cormorant_Garamond({
  * it; the card view has none, so otherwise it follows the seats, as on the
  * card image. `venues` are the church and the hall (see legacyVenues);
  * without them the card names the wedding's one venue as it always did.
+ * `dress` are the dress-code colours (legacyDress), drawn in the white
+ * banner under the QR, as on the card image; none leaves the banner as it was.
  */
-export function InvitationCard({ card, qrSvg, kind, venues }: { card: InvitationCardView; qrSvg: string; kind?: CardKind; venues?: VenueRow[] }) {
+export function InvitationCard({
+  card,
+  qrSvg,
+  kind,
+  venues,
+  dress = [],
+}: {
+  card: InvitationCardView;
+  qrSvg: string;
+  kind?: CardKind;
+  venues?: VenueRow[];
+  dress?: DressChip[];
+}) {
   const design = cardDesignFor(card.templateKey);
   const { paper, ink, accent, soft } = design.palette;
   const display = design.display === 'serif' ? serif.className : 'font-sans';
@@ -83,10 +97,32 @@ export function InvitationCard({ card, qrSvg, kind, venues }: { card: Invitation
       </div>
     ) : null;
 
-  const pass = (
+  const named = dress.some((c) => c.name !== '');
+  const dressRow =
+    dress.length > 0 ? (
+      <div data-dress={dress.length} className="mt-3 flex items-center gap-3 border-t pt-2.5" style={{ borderColor: soft }}>
+        <p className="w-12 shrink-0 font-mono text-[9px] uppercase leading-tight tracking-[0.16em]" style={{ color: accent }}>
+          Dress code
+        </p>
+        <ul className="flex min-w-0 flex-1 flex-wrap gap-x-1 gap-y-1.5" aria-label="Dress code colours">
+          {dress.map((c, i) => (
+            <li key={i} data-chip={c.hex} className={`flex flex-col items-center gap-0.5 ${named ? 'w-[52px]' : ''}`} title={c.name || c.hex}>
+              <span className={`block rounded-full ${named ? 'h-[18px] w-[18px]' : 'h-[22px] w-[22px]'}`} style={{ background: c.hex, boxShadow: `inset 0 0 0 1.5px ${ink}40` }} />
+              {named ? (
+                <span className="w-full truncate text-center text-[9px] leading-tight" style={{ color: ink, opacity: 0.75 }}>
+                  {c.name}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  const passRow = (
     <div
-      className="flex items-center gap-4 rounded-lg border p-3 text-left"
-      style={{ borderColor: soft, background: '#FFFFFF' }}
+      className={dress.length > 0 ? 'flex items-center gap-4 text-left' : 'flex items-center gap-4 rounded-lg border p-3 text-left'}
+      style={dress.length > 0 ? undefined : { borderColor: soft, background: '#FFFFFF' }}
     >
       <div
         className="h-[88px] w-[88px] shrink-0 [&>svg]:h-full [&>svg]:w-full"
@@ -127,6 +163,16 @@ export function InvitationCard({ card, qrSvg, kind, venues }: { card: Invitation
       </div>
     </div>
   );
+  // With colours the white banner holds the QR row and the dress row under it; without, the row alone, as before.
+  const pass =
+    dressRow !== null ? (
+      <div className="rounded-lg border p-3" style={{ borderColor: soft, background: '#FFFFFF' }}>
+        {passRow}
+        {dressRow}
+      </div>
+    ) : (
+      passRow
+    );
 
   const photo = (cls: string, style?: CSSProperties) =>
     card.photoUrl !== undefined ? (

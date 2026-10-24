@@ -6,7 +6,7 @@
  * so the six designs are copied here: change both together.
  */
 
-import { venueRows, type InviteDesign, type VenueRow } from './invite/wcz';
+import { dressChips, venueRows, type DressChip, type InviteDesign, type VenueRow } from './invite/wcz';
 
 export type CardLayout = 'classic' | 'coast' | 'bold';
 
@@ -114,4 +114,14 @@ export function legacyVenues(
     if (rows.length > 0) return rows;
   }
   return venueRows({ reception: { name: card.venueName ?? '', addr: card.venueAddress ?? '', time: '' } }, 'en');
+}
+
+/**
+ * The dress-code colours for the legacy card's banner, from the design the
+ * API sends (saved or derived), with English names (the legacy card is in
+ * English). Empty without a design or without colours: the banner is as before.
+ */
+export function legacyDress(design?: Partial<Pick<InviteDesign, 'attire' | 'dress'>> | null): DressChip[] {
+  if (design == null) return [];
+  return dressChips({ attire: design.attire ?? [], dress: design.dress ?? [] }, 'en');
 }

@@ -3,17 +3,21 @@ import { ICON_PATHS, isIconName } from '@/lib/invite/icons';
 import { placeSlot, type PlacedPhoto } from '@/lib/invite/photo';
 import type { QrPath } from '@/lib/invite/qr';
 import {
+  DRESS_BANDS,
+  DRESS_STACK_PER_ROW,
   STR,
   alpha,
   calendar,
   cardKindLabel,
+  dressChips,
+  dressLift,
   fit,
   fmtDate,
   mix,
   shownSeats,
   templateFor,
   theme,
-  venueBoxFor,
+  venueBoxAt,
   venueRows,
   words,
   type CardKind,
@@ -166,7 +170,16 @@ export function InviteCard(props: InviteCardProps) {
   // venue section below it); when there are none the bodies keep the room.
   const vrows = cover ? [] : venueRows(d, lang);
   const hv = vrows.length > 0;
-  const vb = venueBoxFor(t.id);
+  // The dress-code colours in the guest banner. With any, the banner grows
+  // by `lift` and everything above it moves up; with none, nothing changes.
+  const chips = cover ? [] : dressChips(d, lang);
+  const hasDress = chips.length > 0;
+  const lift = cover ? 0 : dressLift(t.pass, chips.length);
+  /** The compact body: made for the venue lines, and used for the dress row too. */
+  const tight = hv || hasDress;
+  /** Venue lines and a dress row together: the bodies give up a little more. */
+  const sq = hv && hasDress;
+  const vb = venueBoxAt(t.id, lift);
   /** "Jumamosi · 5 Desemba 2026", skipping whatever is empty, so no stray dot. */
   const dot = (...parts: (string | undefined)[]) =>
     parts
@@ -265,7 +278,13 @@ export function InviteCard(props: InviteCardProps) {
       shadow?: string;
     } = {},
   ) => {
-    const p = placed(key);
+    const natural = placed(key);
+    // A slot drawn smaller than the template's own size (a tight card) keeps the same crop, scaled.
+    const k = pos.width / (t.slots.find((x) => x.key === key)?.w ?? pos.width);
+    const p: PlacedPhoto | null =
+      natural === null || k === 1
+        ? natural
+        : { ...natural, left: natural.left * k, top: natural.top * k, width: natural.width * k, height: natural.height * k };
     const [tl, tr, br, bl] = opts.radius ?? [0, 0, 0, 0];
     const ring = opts.ring;
     const grow = ring ? ring.offset + ring.width : 0;
@@ -488,19 +507,20 @@ export function InviteCard(props: InviteCardProps) {
   switch (t.id) {
     case 't01':
       // Bodies above a pass end by about 940, clear of the pass at 1010; with
-      // venue lines they end by 842, clear of the venue band at 862.
+      // venue lines (or a dress row) they end by 842, clear of the venue band
+      // at 862; with both, by 758, clear of the band raised to 778.
       body = (
         <>
-          {centerCol({ left: 90, right: 90, top: hv ? 70 : 90, height: hv ? 772 : 820, justifyContent: 'center' }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 48 : tight ? 70 : 90, height: sq ? 710 : tight ? 772 : 820, justifyContent: 'center' }, (
             <>
-              <div style={label(24, 0.32, ink(72), { marginBottom: hv ? 32 : 40 })}>{w.host}</div>
-              <div style={name(fs.st, 1.02)}>{a}</div>
-              <div style={text(72, th.accent, { fontWeight: 200, lineHeight: 1.1, margin: '4px 0' })}>&amp;</div>
-              <div style={name(fs.st, 1.02)}>{b}</div>
-              <div style={text(34, ink(72), { marginTop: hv ? 28 : 36, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
-              <div style={box({ width: 96, height: 2, backgroundColor: th.accent, margin: hv ? '32px 0 24px' : '40px 0 32px' })} />
+              <div style={label(24, 0.32, ink(72), { marginBottom: sq ? 22 : tight ? 32 : 40 })}>{w.host}</div>
+              <div style={name(sq ? Math.min(fs.st, 116) : fs.st, 1.02)}>{a}</div>
+              <div style={text(sq ? 60 : 72, th.accent, { fontWeight: 200, lineHeight: 1.1, margin: '4px 0' })}>&amp;</div>
+              <div style={name(sq ? Math.min(fs.st, 116) : fs.st, 1.02)}>{b}</div>
+              <div style={text(34, ink(72), { marginTop: sq ? 18 : tight ? 28 : 36, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
+              <div style={box({ width: 96, height: 2, backgroundColor: th.accent, margin: sq ? '22px 0 16px' : tight ? '32px 0 24px' : '40px 0 32px' })} />
               <div style={label(24, 0.3, ink(72))}>{dt.weekday}</div>
-              <div style={text(60, th.ink, { fontWeight: 500, letterSpacing: -1.2, marginTop: 10 })}>{dt.long}</div>
+              <div style={text(sq ? 52 : 60, th.ink, { fontWeight: 500, letterSpacing: -1.2, marginTop: sq ? 6 : 10 })}>{dt.long}</div>
               {loneTime ? <div style={text(30, ink(72), { marginTop: 14 })}>{tm}</div> : null}
             </>
           ))}
@@ -514,18 +534,18 @@ export function InviteCard(props: InviteCardProps) {
         <>
           {rule({ left: 36, top: 36, right: 36, bottom: 36, border: `2px solid ${th.accent}` })}
           {rule({ left: 50, top: 50, right: 50, bottom: 50, border: `1px solid ${accT(50)}` })}
-          {centerCol({ left: 110, right: 110, top: hv ? 70 : 100, height: hv ? 772 : 820, justifyContent: 'center' }, (
+          {centerCol({ left: 110, right: 110, top: sq ? 60 : tight ? 70 : 100, height: sq ? 698 : tight ? 772 : 820, justifyContent: 'center' }, (
             <>
-              <div style={box({ position: 'relative', width: 112, height: 68, marginBottom: hv ? 26 : 40 })}>
+              <div style={box({ position: 'relative', width: 112, height: 68, marginBottom: sq ? 18 : tight ? 26 : 40 })}>
                 <div style={abs({ left: 0, top: 0, width: 68, height: 68, borderRadius: 34, border: `3px solid ${th.accent}` })} />
                 <div style={abs({ left: 44, top: 0, width: 68, height: 68, borderRadius: 34, border: `3px solid ${th.accent}` })} />
               </div>
-              <div style={label(24, 0.34, th.accBg, { marginBottom: hv ? 28 : 40 })}>{w.host}</div>
-              <div style={name(fs.st, 1.02)}>{a}</div>
-              <div style={text(64, th.accent, { fontWeight: 200, lineHeight: 1.1, margin: '8px 0' })}>&amp;</div>
-              <div style={name(fs.st, 1.02)}>{b}</div>
-              <div style={text(30, ink(76), { marginTop: hv ? 26 : 36, maxWidth: 760, justifyContent: 'center' })}>{w.invite}</div>
-              <div style={box({ alignItems: 'center', gap: 34, marginTop: hv ? 30 : 44 })}>
+              <div style={label(24, 0.34, th.accBg, { marginBottom: sq ? 20 : tight ? 28 : 40 })}>{w.host}</div>
+              <div style={name(sq ? Math.min(fs.st, 104) : fs.st, 1.02)}>{a}</div>
+              <div style={text(sq ? 56 : 64, th.accent, { fontWeight: 200, lineHeight: 1.1, margin: sq ? '4px 0' : '8px 0' })}>&amp;</div>
+              <div style={name(sq ? Math.min(fs.st, 104) : fs.st, 1.02)}>{b}</div>
+              <div style={text(30, ink(76), { marginTop: sq ? 18 : tight ? 26 : 36, maxWidth: 760, justifyContent: 'center' })}>{w.invite}</div>
+              <div style={box({ alignItems: 'center', gap: 34, marginTop: sq ? 22 : tight ? 30 : 44 })}>
                 <div style={label(24, 0.28, th.ink, { width: 230, justifyContent: 'flex-end' })}>{dt.weekday}</div>
                 <div style={box({ width: 2, height: 110, backgroundColor: th.accent })} />
                 <div style={text(112, th.ink, { fontWeight: 200, lineHeight: 1, letterSpacing: -4.5 })}>{dt.day}</div>
@@ -543,12 +563,14 @@ export function InviteCard(props: InviteCardProps) {
     case 't03':
       body = (
         <>
-          {slot('cover', { left: 240, top: hv ? 56 : 100, width: 600, height: 560 }, { radius: [300, 300, 0, 0], ring: { offset: 16, width: 2, color: th.accent } })}
-          {centerCol({ left: 90, right: 90, top: hv ? 650 : 700 }, (
+          {sq
+            ? slot('cover', { left: 270, top: 40, width: 540, height: 504 }, { radius: [270, 270, 0, 0], ring: { offset: 16, width: 2, color: th.accent } })
+            : slot('cover', { left: 240, top: tight ? 56 : 100, width: 600, height: 560 }, { radius: [300, 300, 0, 0], ring: { offset: 16, width: 2, color: th.accent } })}
+          {centerCol({ left: 90, right: 90, top: sq ? 572 : tight ? 650 : 700 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: hv ? 14 : 20 })}
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 20 : 30 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              {oneLine(sq ? Math.min(fs.ol, 88) : fs.ol, 1.05, { marginTop: sq ? 10 : tight ? 14 : 20 })}
+              <div style={label(24, 0.22, th.ink, { marginTop: sq ? 14 : tight ? 20 : 30 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -566,7 +588,7 @@ export function InviteCard(props: InviteCardProps) {
             width: 1080,
             height: 1350,
             // With venue lines the veil darkens sooner, so they read over the photo.
-            backgroundImage: hv
+            backgroundImage: tight
               ? `linear-gradient(180deg, ${alpha(th.bg, 80)} 0%, ${alpha(th.bg, 38)} 30%, ${alpha(th.bg, 8)} 46%, ${alpha(th.bg, 66)} 61%, ${alpha(th.bg, 88)} 100%)`
               : `linear-gradient(180deg, ${alpha(th.bg, 80)} 0%, ${alpha(th.bg, 38)} 36%, ${alpha(th.bg, 8)} 56%, ${alpha(th.bg, 55)} 78%, ${alpha(th.bg, 85)} 100%)`,
           })}
@@ -589,19 +611,19 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 540, top: 0, width: 540, height: 1350 })}
-          {/* Ends at 930, clear of the stacked pass; spacing is tighter to fit. */}
-          <div style={col({ position: 'absolute', left: 80, top: 90, width: 400, height: 840, alignItems: 'flex-start' })}>
-            <div style={box({ alignItems: 'flex-end', fontSize: 130, lineHeight: 0.8, fontWeight: th.nw, letterSpacing: -5, color: th.accent })}>
+          {/* Ends at 930, clear of the stacked pass; spacing is tighter to fit. With a dress row it ends above the taller pass. */}
+          <div style={col({ position: 'absolute', left: 80, top: hasDress ? 64 : 90, width: 400, height: hasDress ? 866 - lift : 840, alignItems: 'flex-start' })}>
+            <div style={box({ alignItems: 'flex-end', fontSize: hasDress ? 96 : 130, lineHeight: 0.8, fontWeight: th.nw, letterSpacing: -5, color: th.accent })}>
               <span>{ini.a}</span>
-              <span style={{ fontWeight: 200, fontSize: 98, margin: '0 6px', color: ink(40) }}>/</span>
+              <span style={{ fontWeight: 200, fontSize: hasDress ? 72 : 98, margin: '0 6px', color: ink(40) }}>/</span>
               <span>{ini.b}</span>
             </div>
-            <div style={label(22, 0.28, ink(72), { lineHeight: 1.6, margin: '28px 0 14px' })}>{w.host}</div>
-            <div style={name(fs.st, 0.96)}>{a}</div>
-            <div style={text(48, th.accent, { fontWeight: 200, lineHeight: 1 })}>&amp;</div>
-            <div style={name(fs.st, 0.96)}>{b}</div>
-            <div style={text(28, ink(72), { lineHeight: 1.3, marginTop: 18 })}>{w.invite}</div>
-            <div style={col({ marginTop: 'auto', gap: 8, paddingTop: 24 })}>
+            <div style={label(22, 0.28, ink(72), { lineHeight: 1.6, margin: hasDress ? '18px 0 8px' : '28px 0 14px' })}>{w.host}</div>
+            <div style={name(lift > 150 ? Math.min(fs.st, 84) : fs.st, 0.96)}>{a}</div>
+            <div style={text(hasDress ? 40 : 48, th.accent, { fontWeight: 200, lineHeight: 1 })}>&amp;</div>
+            <div style={name(lift > 150 ? Math.min(fs.st, 84) : fs.st, 0.96)}>{b}</div>
+            <div style={text(hasDress ? 26 : 28, ink(72), { lineHeight: 1.3, marginTop: hasDress ? 12 : 18 })}>{w.invite}</div>
+            <div style={col({ marginTop: 'auto', gap: hasDress ? 4 : 8, paddingTop: hasDress ? 14 : 24 })}>
               <div style={label(22, 0.28, th.accBg)}>{dt.weekday}</div>
               <div style={text(50, th.ink, { fontWeight: 500, letterSpacing: -1, lineHeight: 1.05 })}>{`${dt.day} ${dt.month}`}</div>
               <div style={text(28, ink(72))}>{dot(dt.year, hv ? '' : tm)}</div>
@@ -614,23 +636,27 @@ export function InviteCard(props: InviteCardProps) {
       break;
 
     case 't06': {
-      // With venue lines the monogram rises so the names clear the band.
-      const up = hv ? 110 : 0;
+      // With venue lines the monogram rises so the names clear the band; with
+      // a dress row as well it also steps down to 400 (the gap and the rule
+      // scale with it), so the A is not cut at the top.
+      const up = sq ? 100 : tight ? 110 : 0;
+      const mg = sq ? 400 : 460;
+      const k6 = mg / 460;
       body = (
         <>
-          <div style={abs({ left: 120, top: 40 - up, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.a}</div>
-          <div style={abs({ left: 560, top: 330 - up, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.b}</div>
-          {rule({ left: 538, top: 110 - up, width: 2, height: 700, backgroundColor: th.accent, transform: 'rotate(24deg)' })}
+          <div style={abs({ left: sq ? 160 : 120, top: 40 - up, fontSize: mg, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 * k6 })}>{ini.a}</div>
+          <div style={abs({ left: 560, top: 40 + 290 * k6 - up, fontSize: mg, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 * k6 })}>{ini.b}</div>
+          {rule({ left: 538, top: 40 + 70 * k6 - up, width: 2, height: 700 * k6, backgroundColor: th.accent, transform: 'rotate(24deg)' })}
           {/* Sits at 780, not 836: room once kept for the kind pill, left so sent cards do not shift. */}
-          {centerCol({ left: 90, right: 90, top: hv ? 690 : 780 }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 610 : tight ? 690 : 780 }, (
             <>
               <div style={label(22, 0.34, th.accBg)}>{S.marrying}</div>
-              <div style={{ ...text(fs.ol, th.ink, { fontWeight: 500, letterSpacing: -fs.ol * 0.02, marginTop: hv ? 14 : 18, whiteSpace: 'nowrap', gap: Math.round(fs.ol * 0.24) }) }}>
+              <div style={{ ...text(fs.ol, th.ink, { fontWeight: 500, letterSpacing: -fs.ol * 0.02, marginTop: tight ? 14 : 18, whiteSpace: 'nowrap', gap: Math.round(fs.ol * 0.24) }) }}>
                 <span>{a}</span>
                 <span>&amp;</span>
                 <span>{b}</span>
               </div>
-              <div style={label(22, 0.22, ink(72), { marginTop: hv ? 14 : 18 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              <div style={label(22, 0.22, ink(72), { marginTop: tight ? 14 : 18 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -642,16 +668,16 @@ export function InviteCard(props: InviteCardProps) {
     case 't07':
       body = (
         <>
-          {centerCol({ left: 90, right: 90, top: 96, ...(hv ? {} : { height: 900 }) }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 70 : 96, ...(tight ? {} : { height: 900 }) }, (
             <>
               <div style={label(24, 0.32, ink(72))}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: 26 })}
-              <div style={text(30, ink(72), { marginTop: hv ? 12 : 16, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
-              {/* A smaller numeral with venue lines (420, not 500), so the month clears them. */}
-              <div style={text(hv ? 420 : 500, th.accent, { fontWeight: 200, lineHeight: 0.82, letterSpacing: hv ? -25 : -30, marginTop: hv ? 32 : 44 })}>{dt.day}</div>
-              {/* With venue lines the weekday joins the month, in place of its own line. */}
-              <div style={label(34, 0.4, th.ink, { marginTop: hv ? 10 : 14 })}>{hv ? `${dt.weekday} · ${dt.month} ${dt.year}` : `${dt.month} ${dt.year}`}</div>
-              {hv ? null : <div style={text(28, ink(72), { marginTop: 22 })}>{dot(dt.weekday, tm)}</div>}
+              {oneLine(fs.ol, 1.05, { marginTop: sq ? 18 : 26 })}
+              <div style={text(30, ink(72), { marginTop: tight ? 12 : 16, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
+              {/* A smaller numeral with venue lines (420, not 500), so the month clears them; 340 with a dress row as well. */}
+              <div style={text(sq ? 340 : tight ? 420 : 500, th.accent, { fontWeight: 200, lineHeight: 0.82, letterSpacing: sq ? -20 : tight ? -25 : -30, marginTop: sq ? 24 : tight ? 32 : 44 })}>{dt.day}</div>
+              {/* With venue lines (or a dress row) the weekday joins the month, in place of its own line. */}
+              <div style={label(34, 0.4, th.ink, { marginTop: tight ? 10 : 14 })}>{tight ? `${dt.weekday} · ${dt.month} ${dt.year}` : `${dt.month} ${dt.year}`}</div>
+              {tight ? (loneTime ? <div style={text(28, ink(72), { marginTop: 14 })}>{tm}</div> : null) : <div style={text(28, ink(72), { marginTop: 22 })}>{dot(dt.weekday, tm)}</div>}
             </>
           ))}
           {venueBand(venueInk)}
@@ -661,26 +687,26 @@ export function InviteCard(props: InviteCardProps) {
 
     case 't08': {
       const cal = calendar(d.date, lang);
-      // Smaller days with venue lines, so the month still ends above them.
-      const cellH = hv ? (cal.rows > 5 ? 56 : 66) : cal.rows > 5 ? 64 : 76;
-      const dot2 = hv ? (cal.rows > 5 ? 50 : 58) : cal.rows > 5 ? 56 : 66;
+      // Smaller days with venue lines (or a dress row), so the month still ends above them; smaller again with both.
+      const cellH = sq ? (cal.rows > 5 ? 46 : 54) : tight ? (cal.rows > 5 ? 56 : 66) : cal.rows > 5 ? 64 : 76;
+      const dot2 = sq ? (cal.rows > 5 ? 42 : 48) : tight ? (cal.rows > 5 ? 50 : 58) : cal.rows > 5 ? 56 : 66;
       // Whole pixels: 7 x 111.43 rounds past 780 and wraps the last weekday.
       const cw = Math.floor(780 / 7);
       body = (
         <>
-          {centerCol({ left: 90, right: 90, top: 86, ...(hv ? {} : { height: 910 }) }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 64 : 86, ...(tight ? {} : { height: 910 }) }, (
             <>
               <div style={label(22, 0.32, th.accBg)}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: 22 })}
-              <div style={text(28, ink(76), { marginTop: 14 })}>{w.invite}</div>
-              <div style={col({ width: 780, marginTop: hv ? 28 : 40, paddingTop: hv ? 22 : 30, borderTop: `1px solid ${ink(22)}` })}>
-                <div style={box({ justifyContent: 'space-between', alignItems: 'baseline', marginBottom: hv ? 14 : 20, padding: '0 22px' })}>
+              {oneLine(fs.ol, 1.05, { marginTop: sq ? 16 : 22 })}
+              <div style={text(28, ink(76), { marginTop: sq ? 10 : 14 })}>{w.invite}</div>
+              <div style={col({ width: 780, marginTop: sq ? 20 : tight ? 28 : 40, paddingTop: sq ? 16 : tight ? 22 : 30, borderTop: `1px solid ${ink(22)}` })}>
+                <div style={box({ justifyContent: 'space-between', alignItems: 'baseline', marginBottom: sq ? 10 : tight ? 14 : 20, padding: '0 22px' })}>
                   <div style={label(28, 0.3, th.ink)}>{dt.month}</div>
                   <div style={label(28, 0.3, th.accBg, { textTransform: 'none' })}>{dt.year}</div>
                 </div>
                 <div style={box({ flexWrap: 'wrap', width: 780 })}>
                   {cal.head.map((h, i) => (
-                    <div key={`h${i}`} style={label(20, 0.1, ink(62), { width: cw, justifyContent: 'center', paddingBottom: 12 })}>
+                    <div key={`h${i}`} style={label(20, 0.1, ink(62), { width: cw, justifyContent: 'center', paddingBottom: sq ? 8 : 12 })}>
                       {h}
                     </div>
                   ))}
@@ -693,7 +719,7 @@ export function InviteCard(props: InviteCardProps) {
                           borderRadius: dot2 / 2,
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: hv ? 28 : 30,
+                          fontSize: sq ? 26 : tight ? 28 : 30,
                           backgroundColor: c.on ? th.accent : 'transparent',
                           color: c.on ? th.onacc : th.ink,
                           fontWeight: c.on ? 700 : 400,
@@ -705,7 +731,7 @@ export function InviteCard(props: InviteCardProps) {
                   ))}
                 </div>
               </div>
-              <div style={text(28, ink(76), { marginTop: hv ? 14 : 22 })}>{dot(dt.weekday, hv ? '' : tm)}</div>
+              <div style={text(28, ink(76), { marginTop: sq ? 8 : tight ? 14 : 22 })}>{dot(dt.weekday, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -717,12 +743,14 @@ export function InviteCard(props: InviteCardProps) {
     case 't09':
       body = (
         <>
-          {slot('cover', { left: 270, top: hv ? 36 : 96, width: 540, height: 540 }, { radius: [270, 270, 270, 270], ring: { offset: 18, width: 2, color: th.accent } })}
-          {centerCol({ left: 90, right: 90, top: hv ? 618 : 688 }, (
+          {sq
+            ? slot('cover', { left: 300, top: 36, width: 480, height: 480 }, { radius: [240, 240, 240, 240], ring: { offset: 18, width: 2, color: th.accent } })
+            : slot('cover', { left: 270, top: tight ? 36 : 96, width: 540, height: 540 }, { radius: [270, 270, 270, 270], ring: { offset: 18, width: 2, color: th.accent } })}
+          {centerCol({ left: 90, right: 90, top: sq ? 552 : tight ? 618 : 688 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: 22 })}
-              <div style={text(32, th.ink, { fontWeight: 500, marginTop: 28 })}>{`${dt.weekday}, ${dt.long}`}</div>
+              {oneLine(fs.ol, 1.05, { marginTop: sq ? 14 : 22 })}
+              <div style={text(32, th.ink, { fontWeight: 500, marginTop: sq ? 18 : 28 })}>{`${dt.weekday}, ${dt.long}`}</div>
               {loneTime ? <div style={text(28, ink(72), { marginTop: 10 })}>{tm}</div> : null}
             </>
           ))}
@@ -732,16 +760,21 @@ export function InviteCard(props: InviteCardProps) {
       break;
 
     case 't10':
-      // With venue lines the two photos rise (and close up a little) to make room.
+      // With venue lines the two photos rise (and close up a little) to make
+      // room; with a dress row as well they are drawn at 86%.
       body = (
         <>
-          {slot('cover', { left: 150, top: hv ? 20 : 90, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
-          {slot('second', { left: 570, top: hv ? 56 : 150, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
-          {centerCol({ left: 90, right: 90, top: hv ? 636 : 730 }, (
+          {sq
+            ? slot('cover', { left: 190, top: 24, width: 310, height: 482 }, { radius: [155, 155, 155, 155], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 72 })
+            : slot('cover', { left: 150, top: tight ? 20 : 90, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
+          {sq
+            ? slot('second', { left: 580, top: 56, width: 310, height: 482 }, { radius: [155, 155, 155, 155], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 72 })
+            : slot('second', { left: 570, top: tight ? 56 : 150, width: 360, height: 560 }, { radius: [180, 180, 180, 180], ring: { offset: 12, width: 2, color: th.accent }, iconSize: 80 })}
+          {centerCol({ left: 90, right: 90, top: sq ? 566 : tight ? 636 : 730 }, (
             <>
               {oneLine(fs.ol, 1.05)}
-              <div style={text(28, ink(72), { marginTop: hv ? 12 : 18, maxWidth: 860, justifyContent: 'center' })}>{w.invite}</div>
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 16 : 26 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              <div style={text(28, ink(72), { marginTop: sq ? 8 : tight ? 12 : 18, maxWidth: 860, justifyContent: 'center' })}>{w.invite}</div>
+              <div style={label(24, 0.22, th.ink, { marginTop: sq ? 12 : tight ? 16 : 26 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -751,8 +784,8 @@ export function InviteCard(props: InviteCardProps) {
 
     case 't11': {
       const rat = (d.ratiba || []).slice(0, 6);
-      // The programme gives up its foot to the venue lines.
-      const ratBox = hv ? 530 : 600;
+      // The programme gives up its foot to the venue lines, and more with a dress row as well.
+      const ratBox = sq ? 440 : tight ? 530 : 600;
       const ratH = Math.min(118, Math.floor(ratBox / Math.max(1, rat.length)));
       body = (
         <>
@@ -763,7 +796,7 @@ export function InviteCard(props: InviteCardProps) {
               <div style={label(24, 0.24, th.accBg, { marginTop: 24 })}>{`${dt.weekday} · ${dt.long}`}</div>
             </>
           ))}
-          <div style={col({ position: 'absolute', left: 150, right: 100, top: hv ? 300 : 340, height: ratBox, justifyContent: 'center' })}>
+          <div style={col({ position: 'absolute', left: 150, right: 100, top: sq ? 286 : tight ? 300 : 340, height: ratBox, justifyContent: 'center' })}>
             {rule({ left: 189, top: 70, bottom: 70, width: 2, backgroundColor: ink(16) })}
             {rat.map((r, i) => (
               <div key={i} style={box({ position: 'relative', alignItems: 'center', height: ratH })}>
@@ -792,16 +825,16 @@ export function InviteCard(props: InviteCardProps) {
     case 't12':
       body = (
         <>
-          <div style={col({ position: 'absolute', left: 90, right: 90, top: 90, alignItems: 'flex-start' })}>
+          <div style={col({ position: 'absolute', left: 90, right: 90, top: sq ? 70 : 90, alignItems: 'flex-start' })}>
             <div style={label(22, 0.3, th.accBg)}>{w.host}</div>
-            <div style={name(fs.st, 1.02, { marginTop: 22 })}>{a}</div>
-            <div style={{ ...name(fs.st, 1.02), gap: Math.round(fs.st * 0.24) }}>
+            <div style={name(sq ? Math.min(fs.st, 104) : fs.st, 1.02, { marginTop: sq ? 16 : 22 })}>{a}</div>
+            <div style={{ ...name(sq ? Math.min(fs.st, 104) : fs.st, 1.02), gap: Math.round(fs.st * 0.24) }}>
               <span style={{ fontWeight: 200, color: th.accent }}>&amp;</span>
               <span>{b}</span>
             </div>
             <div style={label(22, 0.24, ink(72), { marginTop: 24 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
           </div>
-          {slot('cover', { left: 0, top: 500, width: 1080, height: 360 }, { iconSize: 88 })}
+          {sq ? slot('cover', { left: 60, top: 468, width: 960, height: 320 }, { iconSize: 80 }) : slot('cover', { left: 0, top: 500, width: 1080, height: 360 }, { iconSize: 88 })}
           {/* The ceremony and the reception side by side under the photo, as this template always had them. */}
           {venueBand(venueInk)}
         </>
@@ -811,7 +844,7 @@ export function InviteCard(props: InviteCardProps) {
     case 't13':
       body = (
         <>
-          <div style={abs({ left: 440, top: 80, width: 200, height: 200, borderRadius: 100, backgroundColor: th.accent, alignItems: 'center', justifyContent: 'center', boxShadow: `0 14px 34px ${alpha(th.accent, 34)}` })}>
+          <div style={abs({ left: 440, top: sq ? 50 : 80, width: 200, height: 200, borderRadius: 100, backgroundColor: th.accent, alignItems: 'center', justifyContent: 'center', boxShadow: `0 14px 34px ${alpha(th.accent, 34)}` })}>
             <div style={abs({ left: 12, top: 12, width: 176, height: 176, borderRadius: 88, border: `2px solid ${alpha(th.onacc, 55)}` })} />
             <div style={box({ alignItems: 'center', whiteSpace: 'nowrap', fontSize: 62, fontWeight: 300, color: th.onacc, letterSpacing: 1.2 })}>
               <span>{ini.a}</span>
@@ -819,14 +852,14 @@ export function InviteCard(props: InviteCardProps) {
               <span>{ini.b}</span>
             </div>
           </div>
-          {centerCol({ left: 90, right: 90, top: hv ? 296 : 300, height: hv ? 546 : 640 }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 262 : tight ? 296 : 300, height: sq ? 496 : tight ? 546 : 640 }, (
             <>
               <div style={label(22, 0.32, ink(72))}>{w.host}</div>
-              <div style={name(fs.st, 1.02, { marginTop: 30 })}>{a}</div>
-              <div style={text(56, th.accent, { fontWeight: 200, lineHeight: 1.15, margin: '4px 0' })}>&amp;</div>
-              <div style={name(fs.st, 1.02)}>{b}</div>
-              <div style={text(28, ink(74), { marginTop: hv ? 22 : 28, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
-              <div style={box({ alignItems: 'center', gap: 30, marginTop: hv ? 28 : 36 })}>
+              <div style={name(sq ? Math.min(fs.st, 88) : fs.st, 1.02, { marginTop: sq ? 20 : 30 })}>{a}</div>
+              <div style={text(sq ? 48 : 56, th.accent, { fontWeight: 200, lineHeight: 1.15, margin: '4px 0' })}>&amp;</div>
+              <div style={name(sq ? Math.min(fs.st, 88) : fs.st, 1.02)}>{b}</div>
+              <div style={text(28, ink(74), { marginTop: sq ? 16 : tight ? 22 : 28, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
+              <div style={box({ alignItems: 'center', gap: 30, marginTop: sq ? 20 : tight ? 28 : 36 })}>
                 <div style={label(24, 0.28, th.ink, { width: 220, justifyContent: 'flex-end' })}>{dt.weekday}</div>
                 <div style={box({ width: 2, height: 100, backgroundColor: th.accent })} />
                 <div style={col({ alignItems: 'center' })}>
@@ -858,15 +891,15 @@ export function InviteCard(props: InviteCardProps) {
             <div style={label(22, 0.2, th.accBg)}>{`No. ${d.code}`}</div>
           </div>
           <div style={col({ position: 'absolute', left: 90, right: 90, top: 182 })}>
-            <div style={name(fs.st, 0.96)}>{a}</div>
-            <div style={{ ...name(fs.st, 0.96), gap: Math.round(fs.st * 0.24) }}>
+            <div style={name(sq ? Math.min(fs.st, 116) : fs.st, 0.96)}>{a}</div>
+            <div style={{ ...name(sq ? Math.min(fs.st, 116) : fs.st, 0.96), gap: Math.round(fs.st * 0.24) }}>
               <span style={{ fontWeight: 200, color: th.accent }}>&amp;</span>
               <span>{b}</span>
             </div>
-            <div style={text(32, ink(72), { lineHeight: 1.4, marginTop: 40, maxWidth: 780 })}>{`${w.host}, ${w.invite}.`}</div>
+            <div style={text(32, ink(72), { lineHeight: 1.4, marginTop: sq ? 28 : 40, maxWidth: 780 })}>{`${w.host}, ${w.invite}.`}</div>
           </div>
           {/* The date, then the church and the hall in the same two columns. */}
-          <div style={box({ position: 'absolute', left: 90, right: 90, top: 670, flexWrap: 'wrap', columnGap: 40, borderTop: `1px solid ${ink(20)}` })}>
+          <div style={box({ position: 'absolute', left: 90, right: 90, top: 670 - (sq ? lift : 0), flexWrap: 'wrap', columnGap: 40, borderTop: `1px solid ${ink(20)}` })}>
             {cell(dt.weekday, dt.long, 0)}
             {loneTime ? cell(w.ceremony, tm, 1) : null}
           </div>
@@ -907,9 +940,9 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {rule({ left: 70, top: 70, width: 940, height: 1210, borderRadius: 28, backgroundColor: th.panel })}
-          {rule({ left: 36, top: 956, width: 68, height: 68, borderRadius: 34, backgroundColor: th.bg })}
-          {rule({ left: 976, top: 956, width: 68, height: 68, borderRadius: 34, backgroundColor: th.bg })}
-          {rule({ left: 130, right: 130, top: 988, height: 0, borderTop: `3px dashed ${inkP(26)}` })}
+          {rule({ left: 36, top: 956 - lift, width: 68, height: 68, borderRadius: 34, backgroundColor: th.bg })}
+          {rule({ left: 976, top: 956 - lift, width: 68, height: 68, borderRadius: 34, backgroundColor: th.bg })}
+          {rule({ left: 130, right: 130, top: 988 - lift, height: 0, borderTop: `3px dashed ${inkP(26)}` })}
           <div style={col({ position: 'absolute', left: 130, right: 130, top: 126, color: th.ink })}>
             <div style={box({ justifyContent: 'space-between', alignItems: 'center', paddingBottom: 24, borderBottom: `1px solid ${inkP(18)}` })}>
               <div style={label(22, 0.28, th.accPn)}>{S.invitation}</div>
@@ -930,7 +963,7 @@ export function InviteCard(props: InviteCardProps) {
               {stubs}
             </div>
           ) : null}
-          <div style={label(22, 0.26, inkP(68), { position: 'absolute', left: 130, right: 130, top: 914, justifyContent: 'center' })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+          <div style={label(22, 0.26, inkP(68), { position: 'absolute', left: 130, right: 130, top: 914 - lift, justifyContent: 'center' })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
         </>
       );
       break;
@@ -940,8 +973,8 @@ export function InviteCard(props: InviteCardProps) {
       const p = placed('cover');
       body = (
         <>
-          {/* With venue lines the print rises and shrinks a little so the date clears them. */}
-          <div style={abs({ left: 190, top: hv ? 30 : 70, width: 700, height: 780, backgroundColor: th.panel, transform: hv ? 'rotate(-2.5deg) scale(0.9)' : 'rotate(-2.5deg)', boxShadow: '0 30px 70px rgba(26,37,22,0.45)' })}>
+          {/* With venue lines (or a dress row) the print rises and shrinks a little so the date clears them; with both, more. */}
+          <div style={abs({ left: 190, top: sq ? 0 : tight ? 30 : 70, width: 700, height: 780, backgroundColor: th.panel, transform: sq ? 'rotate(-2.5deg) scale(0.8)' : tight ? 'rotate(-2.5deg) scale(0.9)' : 'rotate(-2.5deg)', boxShadow: '0 30px 70px rgba(26,37,22,0.45)' })}>
             <div style={abs({ left: 32, top: 32, width: 636, height: 600, overflow: 'hidden', backgroundColor: mix(th.accent, 30, th.panel), alignItems: 'center', justifyContent: 'center' })}>
               {p !== null ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -958,7 +991,7 @@ export function InviteCard(props: InviteCardProps) {
               </div>
             </div>
           </div>
-          {centerCol({ left: 90, right: 90, top: hv ? 806 : 892 }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 716 : tight ? 806 : 892 }, (
             <>
               <div style={label(24, 0.26, th.accBg)}>{`${dt.weekday} · ${dt.long}`}</div>
               {loneTime ? <div style={text(28, ink(78), { marginTop: 14 })}>{tm}</div> : null}
@@ -973,16 +1006,16 @@ export function InviteCard(props: InviteCardProps) {
     case 't17':
       body = (
         <>
-          {centerCol({ left: 110, right: 110, top: hv ? 60 : 80, height: hv ? 800 : 910 }, (
+          {centerCol({ left: 110, right: 110, top: sq ? 40 : tight ? 60 : 80, height: sq ? 718 : tight ? 800 : 910 }, (
             <>
-              <div style={text(180, th.accent, { lineHeight: 0.8, fontWeight: 200, height: 112 })}>“</div>
+              <div style={text(sq ? 140 : 180, th.accent, { lineHeight: 0.8, fontWeight: 200, height: sq ? 84 : 112 })}>“</div>
               <div style={text(fs.verse, th.ink, { fontWeight: 300, lineHeight: 1.32, letterSpacing: -fs.verse * 0.01, marginTop: 8, justifyContent: 'center' })}>{w.verse}</div>
               {w.verseRef ? <div style={label(22, 0.26, th.accBg, { marginTop: 28 })}>{w.verseRef}</div> : null}
-              <div style={box({ width: 80, height: 2, backgroundColor: ink(22), margin: hv ? '36px 0' : '48px 0' })} />
+              <div style={box({ width: 80, height: 2, backgroundColor: ink(22), margin: sq ? '24px 0' : tight ? '36px 0' : '48px 0' })} />
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 20 })}
               <div style={text(28, ink(72), { marginTop: 16, maxWidth: 820, justifyContent: 'center' })}>{w.invite}</div>
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 20 : 26 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              <div style={label(24, 0.22, th.ink, { marginTop: tight ? 20 : 26 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -994,8 +1027,9 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 0, top: 0, width: 1080, height: 760 }, { tint: accT(26), iconSize: 110, iconColor: th.accent })}
-          {rule({ left: 0, top: 0, width: 1080, height: 770, backgroundImage: `linear-gradient(180deg, ${alpha(th.bg, 30)} 0%, ${alpha(th.bg, 0)} 22%, ${alpha(th.bg, 0)} 42%, ${th.bg} 94%)` })}
-          {centerCol({ left: 90, right: 90, top: hv ? 604 : 660 }, (
+          {/* With venue lines and a dress row the names sit higher, so the photo fades to the ground sooner. */}
+          {rule({ left: 0, top: 0, width: 1080, height: 770, backgroundImage: sq ? `linear-gradient(180deg, ${alpha(th.bg, 30)} 0%, ${alpha(th.bg, 0)} 18%, ${alpha(th.bg, 0)} 34%, ${th.bg} 80%)` : `linear-gradient(180deg, ${alpha(th.bg, 30)} 0%, ${alpha(th.bg, 0)} 22%, ${alpha(th.bg, 0)} 42%, ${th.bg} 94%)` })}
+          {centerCol({ left: 90, right: 90, top: sq ? 548 : tight ? 604 : 660 }, (
             <>
               <div style={label(22, 0.32, th.accBg)}>{w.host}</div>
               {oneLine(fs.ol, 1.05, { marginTop: 24 })}
@@ -1022,9 +1056,9 @@ export function InviteCard(props: InviteCardProps) {
           dots.push(<circle key={`${x}-${y}`} cx={x} cy={y} r={5} fill={th.accent} />);
         }
       }
-      // A smaller monogram with venue lines, so the kanga line still ends above them.
-      const ring = hv ? 200 : 250;
-      const disc = hv ? 150 : 188;
+      // A smaller monogram with venue lines (or a dress row), so the kanga line still ends above them; smaller again with both.
+      const ring = sq ? 160 : tight ? 200 : 250;
+      const disc = sq ? 120 : tight ? 150 : 188;
       body = (
         <>
           <div style={abs({ left: 30, top: 30, width: 1020, height: 1290, backgroundColor: th.ink })}>
@@ -1035,20 +1069,20 @@ export function InviteCard(props: InviteCardProps) {
           {rule({ left: 68, top: 68, right: 68, bottom: 68, backgroundColor: th.accent })}
           {rule({ left: 70, top: 70, right: 70, bottom: 70, backgroundColor: th.bg })}
           {/* Ends at 938: the kanga band is full width and must stay clear of the pass. */}
-          {centerCol({ left: 112, right: 112, top: hv ? 96 : 108, height: hv ? 746 : 830 }, (
+          {centerCol({ left: 112, right: 112, top: sq ? 90 : tight ? 96 : 108, height: sq ? 668 : tight ? 746 : 830 }, (
             <>
               <div style={label(22, 0.32, ink(72))}>{w.host}</div>
-              <div style={box({ position: 'relative', width: ring, height: ring, marginTop: hv ? 20 : 28, alignItems: 'center', justifyContent: 'center' })}>
+              <div style={box({ position: 'relative', width: ring, height: ring, marginTop: tight ? 20 : 28, alignItems: 'center', justifyContent: 'center' })}>
                 <DottedRing size={ring} width={9} color={th.accent} />
-                <div style={box({ width: disc, height: disc, borderRadius: disc / 2, backgroundColor: th.ink, color: th.bg, alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', fontSize: hv ? 56 : 70, fontWeight: 800, letterSpacing: -1.4 })}>
+                <div style={box({ width: disc, height: disc, borderRadius: disc / 2, backgroundColor: th.ink, color: th.bg, alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', fontSize: sq ? 46 : tight ? 56 : 70, fontWeight: 800, letterSpacing: -1.4 })}>
                   {`${ini.a}${ini.b}`}
                 </div>
               </div>
-              <div style={name(fs.st, 1, { marginTop: hv ? 26 : 32 })}>{a}</div>
+              <div style={name(sq ? Math.min(fs.st, 92) : fs.st, 1, { marginTop: sq ? 20 : tight ? 26 : 32 })}>{a}</div>
               <div style={text(44, th.accent, { fontWeight: 300, lineHeight: 1.2 })}>&amp;</div>
-              <div style={name(fs.st, 1)}>{b}</div>
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 22 : 28 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
-              <div style={box({ marginTop: 'auto', width: '100%', padding: hv ? '14px 0' : '18px 0', borderTop: `2px solid ${th.ink}`, borderBottom: `2px solid ${th.ink}`, fontSize: hv ? 28 : 30, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', lineHeight: 1.25, justifyContent: 'center', textAlign: 'center' })}>
+              <div style={name(sq ? Math.min(fs.st, 92) : fs.st, 1)}>{b}</div>
+              <div style={label(24, 0.22, th.ink, { marginTop: sq ? 16 : tight ? 22 : 28 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              <div style={box({ marginTop: 'auto', width: '100%', padding: tight ? '14px 0' : '18px 0', borderTop: `2px solid ${th.ink}`, borderBottom: `2px solid ${th.ink}`, fontSize: tight ? 28 : 30, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', lineHeight: 1.25, justifyContent: 'center', textAlign: 'center' })}>
                 {w.kanga}
               </div>
             </>
@@ -1060,20 +1094,24 @@ export function InviteCard(props: InviteCardProps) {
     }
 
     case 't20': {
-      // With venue lines the window rises 64 so the names clear them.
-      const up = hv ? 64 : 0;
+      // With venue lines (or a dress row) the window rises 64 so the names
+      // clear them; with both it is drawn at 82% from the top.
+      const k20 = sq ? 0.82 : 1;
+      const top20 = sq ? 30 : 66 - (tight ? 64 : 0);
+      const x20 = (x: number) => 540 + (x - 540) * k20;
+      const y20 = (y: number) => top20 + (y - 66) * k20;
       body = (
         <>
-          {rule({ left: 156, top: 66 - up, width: 768, height: 648, backgroundColor: th.panel, boxShadow: '0 24px 60px rgba(26,37,22,0.18)' })}
-          {slot('cover', { left: 180, top: 90 - up, width: 720, height: 600 })}
-          {rule({ left: 532, top: 90 - up, width: 16, height: 600, backgroundColor: th.panel })}
-          {rule({ left: 180, top: 382 - up, width: 720, height: 16, backgroundColor: th.panel })}
-          {rule({ left: 126, top: 714 - up, width: 828, height: 26, borderRadius: 4, backgroundColor: inkP(16) })}
-          {centerCol({ left: 90, right: 90, top: 752 - up }, (
+          {rule({ left: x20(156), top: y20(66), width: 768 * k20, height: 648 * k20, backgroundColor: th.panel, boxShadow: '0 24px 60px rgba(26,37,22,0.18)' })}
+          {slot('cover', { left: x20(180), top: y20(90), width: 720 * k20, height: 600 * k20 })}
+          {rule({ left: x20(532), top: y20(90), width: 16 * k20, height: 600 * k20, backgroundColor: th.panel })}
+          {rule({ left: x20(180), top: y20(382), width: 720 * k20, height: 16 * k20, backgroundColor: th.panel })}
+          {rule({ left: x20(126), top: y20(714), width: 828 * k20, height: 26 * k20, borderRadius: 4, backgroundColor: inkP(16) })}
+          {centerCol({ left: 90, right: 90, top: y20(714) + 38 }, (
             <>
               <div style={label(22, 0.3, ink(72))}>{w.host}</div>
-              {oneLine(fs.ol, 1.05, { marginTop: hv ? 6 : 10 })}
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 10 : 14 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              {oneLine(fs.ol, 1.05, { marginTop: tight ? 6 : 10 })}
+              <div style={label(24, 0.22, th.ink, { marginTop: tight ? 10 : 14 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -1085,9 +1123,9 @@ export function InviteCard(props: InviteCardProps) {
     case 't21': {
       const songTitle = d.music?.title || S.ourSong;
       const songArtist = d.music?.artist || '';
-      // With venue lines the record is smaller (520, not 600) and higher, centred on 284.
-      const rec = hv ? 520 : 600;
-      const cy = hv ? 284 : 370;
+      // With venue lines (or a dress row) the record is smaller (520, not 600) and higher, centred on 284; with both, 460 on 250.
+      const rec = sq ? 460 : tight ? 520 : 600;
+      const cy = sq ? 250 : tight ? 284 : 370;
       body = (
         <>
           <div style={abs({ left: 540 - rec / 2, top: cy - rec / 2, width: rec, height: rec, borderRadius: rec / 2, boxShadow: `0 30px 70px rgba(0,0,0,0.35)` })}>
@@ -1096,7 +1134,7 @@ export function InviteCard(props: InviteCardProps) {
           {rule({ left: 404, top: cy - 136, width: 272, height: 272, borderRadius: 136, backgroundColor: th.accent })}
           {slot('cover', { left: 410, top: cy - 130, width: 260, height: 260 }, { radius: [130, 130, 130, 130], tint: th.accent })}
           {rule({ left: 531, top: cy - 9, width: 18, height: 18, borderRadius: 9, backgroundColor: th.bg })}
-          {centerCol({ left: 90, right: 90, top: hv ? 562 : 690 }, (
+          {centerCol({ left: 90, right: 90, top: sq ? 508 : tight ? 562 : 690 }, (
             <>
               <div style={label(22, 0.3, th.accBg)}>{songArtist ? `${S.ourSong} · ${songArtist}` : S.ourSong}</div>
               <div style={text(52, th.ink, { fontWeight: 300, letterSpacing: -1, marginTop: 10, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: 900 })}>{`“${songTitle}”`}</div>
@@ -1115,21 +1153,22 @@ export function InviteCard(props: InviteCardProps) {
       stops.push({ y: dt.short, text: d.ceremony.name || d.reception.name, last: true });
       body = (
         <>
-          <div style={col({ position: 'absolute', left: 90, top: 96, width: 560, alignItems: 'flex-start' })}>
+          <div style={col({ position: 'absolute', left: 90, top: sq ? 72 : 96, width: 560, alignItems: 'flex-start' })}>
             <div style={label(22, 0.3, th.accBg)}>{w.host}</div>
-            <div style={name(fs.st, 1.02, { marginTop: 26 })}>{a}</div>
-            <div style={{ ...name(fs.st, 1.02), gap: Math.round(fs.st * 0.24) }}>
+            <div style={name(sq ? Math.min(fs.st, 84) : fs.st, 1.02, { marginTop: sq ? 18 : 26 })}>{a}</div>
+            <div style={{ ...name(sq ? Math.min(fs.st, 84) : fs.st, 1.02), gap: Math.round(fs.st * 0.24) }}>
               <span style={{ fontWeight: 200, color: th.accent }}>&amp;</span>
               <span>{b}</span>
             </div>
-            <div style={text(30, ink(72), { lineHeight: 1.4, marginTop: 30, maxWidth: 520 })}>{w.invite}</div>
-            <div style={label(22, 0.28, th.accBg, { marginTop: 44 })}>{dt.weekday}</div>
-            <div style={text(56, th.ink, { fontWeight: 500, letterSpacing: -1.1, marginTop: 8 })}>{dt.long}</div>
+            <div style={text(30, ink(72), { lineHeight: 1.4, marginTop: sq ? 18 : 30, maxWidth: 520 })}>{w.invite}</div>
+            <div style={label(22, 0.28, th.accBg, { marginTop: sq ? 22 : 44 })}>{dt.weekday}</div>
+            <div style={text(sq ? 48 : 56, th.ink, { fontWeight: 500, letterSpacing: -1.1, marginTop: sq ? 4 : 8 })}>{dt.long}</div>
             {loneTime ? <div style={text(28, ink(72), { marginTop: 10 })}>{tm}</div> : null}
           </div>
           {/* The church and the hall one under the other, in the left column under the date. */}
           {venueBand(venueInk)}
-          <div style={abs({ left: 700, top: 100, width: 300, height: 880 })}>
+          {/* The route ends above the line pass, which rises with a dress row. */}
+          <div style={abs({ left: 700, top: 100, width: 300, height: 880 - lift })}>
             {rule({ left: 15, top: 70, bottom: 30, width: 3, backgroundColor: ink(18) })}
             <div style={label(20, 0.26, ink(66), { position: 'absolute', left: 4, top: 0 })}>{S.route}</div>
             <div style={col({ position: 'absolute', left: 0, top: 70, right: 0, bottom: 0, justifyContent: 'space-between' })}>
@@ -1151,20 +1190,24 @@ export function InviteCard(props: InviteCardProps) {
     }
 
     case 't23': {
-      // With venue lines the album rises 72 and the names step down a size, so they clear them.
-      const up = hv ? 72 : 0;
-      const ol = hv ? Math.min(fs.ol, 76) : fs.ol;
+      // With venue lines (or a dress row) the album rises 72 and the names
+      // step down a size, so they clear them; with both it is drawn at 86%.
+      const up = tight ? 72 : 0;
+      const ol = tight ? Math.min(fs.ol, 76) : fs.ol;
+      const k23 = sq ? 0.86 : 1;
+      const x23 = (x: number) => 540 + (x - 540) * k23;
+      const y23 = (y: number) => (sq ? 30 : 90 - up) + (y - 90) * k23;
       body = (
         <>
-          {slot('cover', { left: 90, top: 90 - up, width: 548, height: 600 }, { iconSize: 88 })}
-          {slot('second', { left: 654, top: 90 - up, width: 336, height: 292 }, { iconSize: 64 })}
-          {slot('third', { left: 654, top: 398 - up, width: 336, height: 292 }, { iconSize: 64 })}
-          {centerCol({ left: 90, right: 90, top: hv ? 628 : 700 }, (
+          {slot('cover', { left: x23(90), top: y23(90), width: 548 * k23, height: 600 * k23 }, { iconSize: 88 })}
+          {slot('second', { left: x23(654), top: y23(90), width: 336 * k23, height: 292 * k23 }, { iconSize: 64 })}
+          {slot('third', { left: x23(654), top: y23(398), width: 336 * k23, height: 292 * k23 }, { iconSize: 64 })}
+          {centerCol({ left: 90, right: 90, top: sq ? 562 : tight ? 628 : 700 }, (
             <>
               <div style={label(22, 0.3, th.accBg)}>{w.host}</div>
-              {oneLine(ol, 1.05, { marginTop: hv ? 10 : 16 })}
-              <div style={text(28, ink(72), { marginTop: hv ? 8 : 12 })}>{w.invite}</div>
-              <div style={label(24, 0.22, th.ink, { marginTop: hv ? 12 : 20 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
+              {oneLine(ol, 1.05, { marginTop: sq ? 6 : tight ? 10 : 16 })}
+              <div style={text(28, ink(72), { marginTop: sq ? 6 : tight ? 8 : 12 })}>{w.invite}</div>
+              <div style={label(24, 0.22, th.ink, { marginTop: sq ? 8 : tight ? 12 : 20 })}>{dot(dt.weekday, dt.long, hv ? '' : tm)}</div>
             </>
           ))}
           {venueBand(venueInk)}
@@ -1210,6 +1253,32 @@ export function InviteCard(props: InviteCardProps) {
     </div>
   );
 
+  /**
+   * The dress-code row: the label, then one round swatch per colour with its
+   * name under it (names cut with an ellipsis when the row is crowded), or
+   * bare swatches when the design has only hexes. A thin edge in the banner's
+   * ink keeps a white or cream swatch visible on a white banner.
+   */
+  const DRESS_LABEL_W = 110;
+  const dressCells = (c: { name: string; edge: string }, width: number, perRow: number) => {
+    const named = chips.some((x) => x.name !== '');
+    const size = named ? 40 : 46;
+    const cell = Math.min(named ? 150 : 84, Math.floor(width / Math.max(1, Math.min(perRow, chips.length))));
+    return chips.map((x, i) => (
+      <div key={`chip${i}`} data-chip={x.hex} style={col({ width: cell, flexShrink: 0, alignItems: 'center', gap: 6, padding: '0 3px' })}>
+        <div style={box({ width: size, height: size, flexShrink: 0, borderRadius: size / 2, backgroundColor: x.hex, border: `2px solid ${c.edge}` })} />
+        {named ? <div style={oneLineCut(x.name, chips.length > 6 ? 19 : 20, cell - 6, c.name, 'center', { lineHeight: 1.25, fontWeight: 500 })}>{x.name}</div> : null}
+      </div>
+    ));
+  };
+  /** One full-width row under the QR and the text (card, glass, line and ticket passes). "DRESS CODE" takes two lines. */
+  const dressRow = (c: { label: string; name: string; edge: string; rule: string }, width: number, height: number) => (
+    <div data-dress={chips.length} style={box({ width, height, flexShrink: 0, alignItems: 'center', gap: 16, borderTop: `1px solid ${c.rule}` })}>
+      <div style={label(17, 0.22, c.label, { width: DRESS_LABEL_W, flexShrink: 0, lineHeight: 1.3 })}>{S.dressCode}</div>
+      <div style={box({ flex: 1, minWidth: 0, alignItems: 'flex-start' })}>{dressCells(c, width - DRESS_LABEL_W - 16, chips.length)}</div>
+    </div>
+  );
+
   const passText = (c: { label: string; strong: string; muted: string; faint: string }, size = fs.guest) => (
     <div style={col({ gap: fs.passGap, flex: 1, minWidth: 0 })}>
       <div style={label(22, 0.26, c.label)}>{S.invFor}</div>
@@ -1226,24 +1295,62 @@ export function InviteCard(props: InviteCardProps) {
   let pass: ReactNode = null;
   if (!cover) {
     if (t.pass === 'card') {
-      pass = (
+      const b = DRESS_BANDS.card;
+      pass = hasDress ? (
+        // The same banner, taller: the QR and the text in a row with less padding, the dress row under them.
+        <div style={col({ position: 'absolute', left: 90, right: 90, top: CARD_H - 80 - b.height - lift, height: b.height + lift, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
+          <div style={box({ flex: 1, minHeight: 0, alignItems: 'center', gap: 40 })}>
+            {qrBox(196, 12)}
+            {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
+          </div>
+          {dressRow({ label: pink(68), name: pink(72), edge: pink(26), rule: pink(14) }, 900 - 4 - 80, b.strip)}
+        </div>
+      ) : (
         <div style={abs({ left: 90, right: 90, top: CARD_H - 80 - 260, height: 260, alignItems: 'center', gap: 40, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
           {qrBox(196, 12)}
           {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
         </div>
       );
     } else if (t.pass === 'line') {
+      const b = DRESS_BANDS.line;
       pass = (
         <>
-          {rule({ left: 90, right: 90, top: 1036, height: 2, backgroundColor: ink(16) })}
-          <div style={abs({ left: 90, right: 90, top: CARD_H - 64 - 230, height: 230, alignItems: 'center', gap: 44 })}>
+          {rule({ left: 90, right: 90, top: 1036 - lift, height: 2, backgroundColor: ink(16) })}
+          <div style={abs({ left: 90, right: 90, top: CARD_H - 64 - 230 - lift, height: 230, alignItems: 'center', gap: 44 })}>
             {qrBox(210, 14, `0 0 0 2px ${ink(12)}`)}
             {passText({ label: ink(70), strong: th.ink, muted: ink(72), faint: ink(66) })}
           </div>
+          {hasDress ? (
+            <div style={abs({ left: 90, right: 90, top: CARD_H - 64 - 230 - lift + b.row, height: b.strip })}>
+              {dressRow({ label: ink(70), name: ink(72), edge: ink(26), rule: ink(14) }, 900, b.strip)}
+            </div>
+          ) : null}
         </>
       );
     } else if (t.pass === 'glass') {
-      pass = (
+      const b = DRESS_BANDS.glass;
+      const glassText = passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) });
+      const glassBox: CSSProperties = {
+        left: 90,
+        right: 90,
+        top: CARD_H - 80 - b.height - lift,
+        height: b.height + lift,
+        padding: '0 40px 0 32px',
+        borderRadius: 24,
+        backgroundColor: alpha(th.bg, web ? 66 : 80),
+        border: `2px solid ${alpha(th.ink, 22)}`,
+        color: th.ink,
+        ...(web ? { backdropFilter: 'blur(16px)' } : {}),
+      };
+      pass = hasDress ? (
+        <div style={col({ position: 'absolute', ...glassBox })}>
+          <div style={box({ flex: 1, minHeight: 0, alignItems: 'center', gap: 40 })}>
+            {qrBox(196, 12)}
+            {glassText}
+          </div>
+          {dressRow({ label: th.accent, name: alpha(th.ink, 84), edge: alpha(th.ink, 40), rule: alpha(th.ink, 22) }, 900 - 4 - 72, b.strip)}
+        </div>
+      ) : (
         <div
           style={abs({
             left: 90,
@@ -1262,7 +1369,7 @@ export function InviteCard(props: InviteCardProps) {
           })}
         >
           {qrBox(196, 12)}
-          {passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) })}
+          {glassText}
         </div>
       );
     } else if (t.pass === 'stack') {
@@ -1272,7 +1379,7 @@ export function InviteCard(props: InviteCardProps) {
       // pinned by its foot and grows upward for a long name, into the strip
       // the t05 body leaves clear above it (it ends at 930).
       pass = (
-        <div style={col({ position: 'absolute', left: 60, width: 440, bottom: 60, minHeight: 290, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
+        <div style={col({ position: 'absolute', left: 60, width: 440, bottom: 60, minHeight: 290 + lift, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
           <div style={box({ alignItems: 'center', gap: 22 })}>
             {qrBox(150, 10)}
             <div style={col({ flex: 1, gap: 6, alignSelf: 'stretch' })}>
@@ -1283,12 +1390,28 @@ export function InviteCard(props: InviteCardProps) {
             </div>
           </div>
           <div style={text(fs.guestS, th.pink, { fontWeight: 500, lineHeight: 1.15 })}>{g.name}</div>
+          {hasDress ? (
+            // Too narrow for one row: the label on its own line, four swatches to a row.
+            <div data-dress={chips.length} style={col({ height: lift - 18, flexShrink: 0, gap: 10, paddingTop: 14, borderTop: `1px solid ${pink(14)}` })}>
+              <div style={label(16, 0.22, pink(68), { lineHeight: 1.35 })}>{S.dressCode}</div>
+              <div style={box({ flexWrap: 'wrap', rowGap: 10, width: 384 })}>{dressCells({ name: pink(72), edge: pink(26) }, 384, DRESS_STACK_PER_ROW)}</div>
+            </div>
+          ) : null}
         </div>
       );
     } else if (t.pass === 'ticket') {
       // The stub between the dashed tear line (988) and the panel edge (1280)
       // holds one row, centred, now that the pill rides on the gate line.
-      pass = (
+      const b = DRESS_BANDS.ticket;
+      pass = hasDress ? (
+        <div style={col({ position: 'absolute', left: 130, right: 130, top: 1010 - lift, height: b.row + b.strip, color: th.ink })}>
+          <div style={box({ height: b.row, flexShrink: 0, alignItems: 'center', gap: 40 })}>
+            {qrBox(196, 12, `0 0 0 2px ${inkP(12)}`)}
+            {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}
+          </div>
+          {dressRow({ label: th.accPn, name: inkP(72), edge: inkP(26), rule: inkP(14) }, 820, b.strip)}
+        </div>
+      ) : (
         <div style={abs({ left: 130, right: 130, top: 1010, height: 250, alignItems: 'center', gap: 40, color: th.ink })}>
           {qrBox(196, 12, `0 0 0 2px ${inkP(12)}`)}
           {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}

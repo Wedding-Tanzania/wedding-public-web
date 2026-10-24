@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { InviteCard, OG_FONTS } from '@/components/invite/InviteCard';
 import { qrPath } from '@/lib/invite/qr';
 import { sampleDesign } from '@/lib/invite/sample';
-import { PASS_BOXES, TEMPLATES, VENUE_BOXES, shownSeats, venueRows, type CardKind, type InviteDesign } from '@/lib/invite/wcz';
+import { PASS_BOXES, TEMPLATES, VENUE_BOXES, dressChips, dressLift, shownSeats, venueBoxAt, venueRows, type CardKind, type InviteDesign } from '@/lib/invite/wcz';
 import { renderInviteImage } from './render';
 
 /**
@@ -115,7 +115,9 @@ describe('venue lines on every template', () => {
       expect(html).toMatch(/UKUMBI|Ukumbi/);
       expect(html).toContain('Golden Tulip Hotel');
       expect(html).toContain('Msasani Peninsula, Dar es Salaam');
-      const v = VENUE_BOXES[t.id];
+      // The sample has dress colours, so the box sits raised by the banner's dress row.
+      const d = design(t.id, 'both');
+      const v = venueBoxAt(t.id, dressLift(t.pass, dressChips(d, d.lang).length));
       const tag = html.slice(html.lastIndexOf('<div', html.indexOf('data-venues=')), html.indexOf('data-venues=') + 400);
       expect(tag).toContain(`top:${v?.top}px`);
       expect(tag).toContain(`height:${v?.height}px`);

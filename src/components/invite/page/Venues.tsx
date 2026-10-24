@@ -1,6 +1,6 @@
 'use client';
 
-import { STR, mapUrl, venueBlurb, type Lang, type Venue } from '@/lib/invite/wcz';
+import { STR, exactMapUrl, mapUrl, venueBlurb, type Lang, type Venue } from '@/lib/invite/wcz';
 import { Icon } from './Icon';
 import { Photo } from './Photo';
 import { labelStyle, monoStyle, usePal } from './palette';
@@ -8,7 +8,9 @@ import { labelStyle, monoStyle, usePal } from './palette';
 /**
  * Ceremony and reception cards: the venue photo on top (the couple's upload
  * or the venue vendor's cover), the name, address and time, a short blurb
- * and one big "Open reception map" button.
+ * and one big map button: "Open in Google Maps" to the couple's own Google
+ * Maps link when they saved one (the exact pin), else "Open reception map",
+ * a Google Maps search for the name and address.
  */
 export function Venues({ items, lang }: { items: { label: string; kind: 'ceremony' | 'reception'; v: Venue }[]; lang: Lang }) {
   const P = usePal();
@@ -17,6 +19,7 @@ export function Venues({ items, lang }: { items: { label: string; kind: 'ceremon
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {items.map((x) => {
         const photo = x.v.photo ?? null;
+        const exact = exactMapUrl(x.v);
         return (
           <div key={x.label} data-venue={x.label} style={{ borderRadius: 18, overflow: 'hidden', background: P.panel, color: P.pink, boxShadow: `inset 0 0 0 1px ${P.pink_(12)}, 0 14px 34px rgba(26,37,22,0.12)` }}>
             {photo !== null && photo !== '' && (
@@ -40,14 +43,14 @@ export function Venues({ items, lang }: { items: { label: string; kind: 'ceremon
               )}
               <div style={{ fontSize: 15, fontStyle: 'italic', color: P.pink_(76), maxWidth: 320, marginTop: 10, lineHeight: 1.5 }}>{venueBlurb(x.v, lang, x.kind)}</div>
               <a
-                href={mapUrl(x.v)}
+                href={exact ?? mapUrl(x.v)}
                 target="_blank"
                 rel="noopener noreferrer"
-                data-map-link="1"
+                data-map-link={exact !== null ? 'exact' : '1'}
                 style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 22px', borderRadius: 999, textDecoration: 'none', background: P.accent, color: P.onacc, fontFamily: P.sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}
               >
                 <Icon name="LocationOn" size={16} />
-                {S.openMapFor(x.label)}
+                {exact !== null ? S.openGoogleMaps : S.openMapFor(x.label)}
               </a>
             </div>
           </div>

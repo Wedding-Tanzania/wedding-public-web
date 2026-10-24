@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
-import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type VenueRow } from '@/lib/invite/wcz';
+import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type DressChip, type VenueRow } from '@/lib/invite/wcz';
 import { qrSvg } from '@/lib/qr';
 
 /** 4:5 portrait: what WhatsApp, Instagram and a phone's photo app all show whole. */
@@ -97,16 +97,60 @@ function Venues({ rows, ink, accent, soft }: { rows: VenueRow[]; ink: string; ac
 }
 
 /**
+ * The dress-code row inside the white banner, under the QR and the text: the
+ * label, then a round swatch per colour with its name under it (cut with an
+ * ellipsis when crowded), or bare swatches for a design with only hexes. The
+ * thin edge keeps a white or cream swatch visible on the white banner.
+ */
+function DressRow({ chips, ink, accent, soft, width }: { chips: DressChip[]; ink: string; accent: string; soft: string; width: number }) {
+  const named = chips.some((c) => c.name !== '');
+  const labelW = 110;
+  const size = named ? 40 : 46;
+  const nameSize = chips.length > 6 ? 19 : 20;
+  const cell = Math.min(named ? 150 : 84, Math.floor((width - labelW - 16) / Math.max(1, chips.length)));
+  return (
+    <Row style={{ width, height: 100, alignItems: 'center', gap: 16, borderTop: `2px solid ${soft}`, marginTop: 20 }}>
+      <div style={{ display: 'flex', width: labelW, flexShrink: 0, fontFamily: 'Sans', fontSize: 18, letterSpacing: 4, lineHeight: 1.3, color: accent, textTransform: 'uppercase' }}>Dress code</div>
+      <Row style={{ flex: 1, flexShrink: 1, minWidth: 0, alignItems: 'flex-start' }}>
+        {chips.map((c, i) => (
+          <Col key={i} style={{ width: cell, alignItems: 'center', gap: 6, padding: '0 3px' }}>
+            <div style={{ display: 'flex', width: size, height: size, borderRadius: size / 2, background: c.hex, border: `2px solid ${ink}40` }} />
+            {named ? (
+              <div
+                style={
+                  fitsLine(c.name, nameSize, cell - 6)
+                    ? { display: 'flex', justifyContent: 'center', width: '100%', fontFamily: 'Sans', fontSize: nameSize, lineHeight: 1.25, color: ink, opacity: 0.75 }
+                    : { display: 'block', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'Sans', fontSize: nameSize, lineHeight: 1.25, color: ink, opacity: 0.75 }
+                }
+              >
+                {c.name}
+              </div>
+            ) : null}
+          </Col>
+        ))}
+      </Row>
+    </Row>
+  );
+}
+
+/**
  * `kind` is the guest's SINGLE / DOUBLE from the RSVP payload. The card view
  * itself does not carry one, so without it the kind follows the seats, the
  * same default the API gives a guest nobody chose a kind for. `venues` are
  * the church and the hall (see legacyVenues); without them the card names
  * the wedding's one venue as it always did.
  */
-export async function renderCardImage(card: InvitationCardView, opts: { kind?: CardKind; venues?: VenueRow[] } = {}): Promise<ImageResponse> {
+export async function renderCardImage(
+  card: InvitationCardView,
+  opts: { kind?: CardKind; venues?: VenueRow[]; dress?: DressChip[] } = {},
+): Promise<ImageResponse> {
   const kind = opts.kind ?? cardKindForSeats(card.partyAllowed);
   const venues = opts.venues;
   const hv = venues !== undefined && venues.length > 0;
+  // `dress` are the colours for the banner (legacyDress); with any, the
+  // banner grows by its dress row and the layouts above tighten to match.
+  const chips = opts.dress ?? [];
+  const hd = chips.length > 0;
   // The banner grows upward with its text, so a name on three lines would run
   // it into the venue lines above; smaller steps keep long names on two.
   const gl = card.guestName.length;
@@ -126,11 +170,12 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
     </div>
   );
 
+  const nameSize = hd && hv ? 92 : hd ? 96 : 100;
   const names = (
     <Col style={{ alignItems: 'center', fontFamily: display, color: ink, lineHeight: 1.02 }}>
-      <div style={{ display: 'flex', fontSize: 100, fontWeight: 700 }}>{card.partnerA}</div>
-      <div style={{ display: 'flex', fontSize: 54, color: accent, fontWeight: 600 }}>&amp;</div>
-      <div style={{ display: 'flex', fontSize: 100, fontWeight: 700 }}>{card.partnerB}</div>
+      <div style={{ display: 'flex', fontSize: nameSize, fontWeight: 700 }}>{card.partnerA}</div>
+      <div style={{ display: 'flex', fontSize: hd ? 46 : 54, color: accent, fontWeight: 600 }}>&amp;</div>
+      <div style={{ display: 'flex', fontSize: nameSize, fontWeight: 700 }}>{card.partnerB}</div>
     </Col>
   );
 
@@ -159,8 +204,8 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
     </Col>
   );
 
-  const pass = (
-    <Row style={{ alignItems: 'center', gap: 36, background: '#FFFFFF', border: `3px solid ${soft}`, borderRadius: 24, padding: 26, width: 880 }}>
+  const passRow = (
+    <Row style={{ alignItems: 'center', gap: 36, ...(hd ? { width: 822 } : { background: '#FFFFFF', border: `3px solid ${soft}`, borderRadius: 24, padding: 26, width: 880 }) }}>
       {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
       <img src={qrSrc} width={196} height={196} />
       <Col style={{ gap: 8, flex: 1 }}>
@@ -198,36 +243,48 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
       </Col>
     </Row>
   );
+  // With colours the white banner holds the QR row and the dress row under it; without, it is the row alone, as before.
+  const pass = hd ? (
+    <Col style={{ background: '#FFFFFF', border: `3px solid ${soft}`, borderRadius: 24, padding: '26px 26px 0', width: 880 }}>
+      {passRow}
+      <DressRow chips={chips} ink={ink} accent={accent} soft={soft} width={822} />
+    </Col>
+  ) : (
+    passRow
+  );
 
   let body: ReactNode;
+  // The coast photo strip gives up height to the venue lines and to the dress row.
+  const coastPhotoH = hd && hv ? 210 : hd ? 280 : hv ? 260 : 340;
   if (design.layout === 'coast') {
     body = (
       <Col style={{ width: '100%', height: '100%', alignItems: 'center' }}>
         {/* A shorter photo strip with venue lines, so they keep clear of the pass. */}
-        <Row style={{ width: '100%', height: hv ? 260 : 340, background: soft, overflow: 'hidden' }}>
+        <Row style={{ width: '100%', height: coastPhotoH, background: soft, overflow: 'hidden' }}>
           {photo !== null && (
             // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-            <img src={photo} width={1080} height={hv ? 260 : 340} style={{ objectFit: 'cover' }} />
+            <img src={photo} width={1080} height={coastPhotoH} style={{ objectFit: 'cover' }} />
           )}
         </Row>
-        <Col style={{ alignItems: 'center', gap: hv ? 16 : 20, padding: hv ? '34px 100px 0' : '40px 100px 0' }}>
+        <Col style={{ alignItems: 'center', gap: hd ? 12 : hv ? 16 : 20, padding: hd ? '26px 100px 0' : hv ? '34px 100px 0' : '40px 100px 0' }}>
           {eyebrow('Karibu kwenye harusi yetu')}
           {names}
           <div style={{ display: 'flex', width: 140, height: 3, background: accent }} />
           {details}
         </Col>
-        <Row style={{ marginTop: 'auto', marginBottom: 56 }}>{pass}</Row>
+        <Row style={{ marginTop: 'auto', marginBottom: hd ? 44 : 56 }}>{pass}</Row>
       </Col>
     );
   } else if (design.layout === 'bold') {
+    const medal = hd && hv ? 130 : hd ? 150 : hv ? 150 : 180;
     body = (
-      <Col style={{ width: '100%', height: '100%', padding: 44 }}>
-        {/* Tighter, with a smaller medallion, when the venue lines are on the card. */}
-        <Col style={{ flex: 1, alignItems: 'center', border: `14px solid ${accent}`, borderRadius: 12, padding: hv ? '40px 40px 36px' : '56px 40px 48px', gap: hv ? 18 : 26 }}>
-          <Row style={{ width: hv ? 150 : 180, height: hv ? 150 : 180, borderRadius: 90, border: `5px solid ${accent}`, background: soft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <Col style={{ width: '100%', height: '100%', padding: hd ? 36 : 44 }}>
+        {/* Tighter, with a smaller medallion, when the venue lines (or a dress row) are on the card. */}
+        <Col style={{ flex: 1, alignItems: 'center', border: `14px solid ${accent}`, borderRadius: 12, padding: hd ? '28px 30px 26px' : hv ? '40px 40px 36px' : '56px 40px 48px', gap: hd && hv ? 10 : hd ? 14 : hv ? 18 : 26 }}>
+          <Row style={{ width: medal, height: medal, borderRadius: 90, border: `5px solid ${accent}`, background: soft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {photo !== null ? (
               // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-              <img src={photo} width={hv ? 150 : 180} height={hv ? 150 : 180} style={{ objectFit: 'cover' }} />
+              <img src={photo} width={medal} height={medal} style={{ objectFit: 'cover' }} />
             ) : (
               <div style={{ display: 'flex', fontFamily: display, fontSize: 72, fontWeight: 700, color: accent }}>
                 {`${card.partnerA.charAt(0)}${card.partnerB.charAt(0)}`}
@@ -242,13 +299,15 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
       </Col>
     );
   } else {
+    // The couple's photo ring steps down with a dress row, and again with venue lines as well.
+    const ring = hd && hv ? 190 : hd ? 220 : 240;
     body = (
-      <Col style={{ width: '100%', height: '100%', alignItems: 'center', padding: '64px 100px 56px', gap: 20 }}>
+      <Col style={{ width: '100%', height: '100%', alignItems: 'center', padding: hd ? '44px 100px 44px' : '64px 100px 56px', gap: hd ? 14 : 20 }}>
         {eyebrow('Together with their families')}
         {photo !== null && (
-          <Row style={{ width: 240, height: 240, borderRadius: 120, border: `8px solid ${soft}`, overflow: 'hidden' }}>
+          <Row style={{ width: ring, height: ring, borderRadius: ring / 2, border: `8px solid ${soft}`, overflow: 'hidden' }}>
             {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-            <img src={photo} width={240} height={240} style={{ objectFit: 'cover' }} />
+            <img src={photo} width={ring} height={ring} style={{ objectFit: 'cover' }} />
           </Row>
         )}
         {names}

@@ -1,5 +1,5 @@
 import { InvitationCard } from '@/components/card/InvitationCard';
-import { cardDesignFor, legacyVenues, type InvitationCardView } from '@/lib/card';
+import { cardDesignFor, legacyDress, legacyVenues, type InvitationCardView } from '@/lib/card';
 import { shownSeats, type CardKind, type InviteDesign } from '@/lib/invite/wcz';
 import { qrSvg } from '@/lib/qr';
 import { RsvpForm, type SavedReply, type Status } from '@/app/rsvp/[token]/RsvpForm';
@@ -21,7 +21,7 @@ export interface LegacyRsvpContext {
   /** The guest's own record; only the SINGLE / DOUBLE kind is read here. */
   guest?: { kind?: CardKind };
   /** The design the API derives (never saved here): the card reads its church and hall. */
-  design?: Pick<InviteDesign, 'ceremony' | 'reception' | 'faith'> | null;
+  design?: (Pick<InviteDesign, 'ceremony' | 'reception' | 'faith'> & Partial<Pick<InviteDesign, 'attire' | 'dress'>>) | null;
   calendar?: { googleUrl: string; icsUrl: string; startsAt?: string; allDay?: boolean };
 }
 
@@ -34,7 +34,7 @@ export async function LegacyRsvpPage({ ctx, params }: { ctx: LegacyRsvpContext; 
       <div className="mx-auto w-full max-w-[400px] space-y-6">
         {card !== undefined && svg !== null ? (
           <>
-            <InvitationCard card={card} qrSvg={svg} kind={ctx.guest?.kind} venues={legacyVenues(card, ctx.design)} />
+            <InvitationCard card={card} qrSvg={svg} kind={ctx.guest?.kind} venues={legacyVenues(card, ctx.design)} dress={legacyDress(ctx.design)} />
             <div className="flex justify-center">
               <SaveCardButton
                 href={`/rsvp/${params.token}/card.png`}
