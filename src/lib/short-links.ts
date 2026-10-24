@@ -193,6 +193,7 @@ export async function calendarPage(
   userAgent: string = '',
   base: string = apiBase(),
   fetchImpl: Fetch = fetch,
+  siteUrl: string | undefined = process.env.NEXT_PUBLIC_SITE_URL,
 ): Promise<Response> {
   const r = await resolveShortCode(code, base, fetchImpl);
   if (r === 'missing' || r === 'unavailable') return linkProblemPage(r);
@@ -200,7 +201,10 @@ export async function calendarPage(
   if (file === 'missing') return linkProblemPage('missing');
   const event = file === 'unavailable' ? null : parseCalendarEvent(file.text);
 
-  const url = new URL(requestUrl);
+  // The site's own address, not the request's: on Netlify a function sees
+  // the deploy's internal host (<id>--site.netlify.app), and a link to that
+  // stays pinned to one deploy forever.
+  const url = new URL(siteUrl || requestUrl);
   const filePath = `/k/${encodeURIComponent(code)}/wedding.ics`;
   const httpsFile = new URL(filePath, url).toString();
   const webcal = `webcal://${url.host}${filePath}`;
