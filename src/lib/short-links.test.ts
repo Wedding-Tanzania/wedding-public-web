@@ -154,6 +154,21 @@ describe('/k/<code>', () => {
     expect(html).toContain('href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Wedding+of+Andrew+%26+Franciana&amp;dates=20261031%2F20261101');
   });
 
+  it('links to the site\'s own address, not the host the function was called on', async () => {
+    const res = await calendarPage(
+      'https://6adcb4beef068c4644c441c1--deluxe-semolina-969edc.netlify.app/k/abcdEFGH',
+      'abcdEFGH',
+      IPHONE,
+      API,
+      api(),
+      'https://wedding.co.tz',
+    );
+    const html = await res.text();
+    expect(html).toContain('href="webcal://wedding.co.tz/k/abcdEFGH/wedding.ics"');
+    expect(html).toContain('href="https://wedding.co.tz/k/abcdEFGH/wedding.ics"');
+    expect(html).not.toContain('netlify.app');
+  });
+
   it('puts the phone\'s own calendar first', async () => {
     const first = (html: string) => (html.indexOf('webcal://') < html.indexOf('calendar.google.com') ? 'apple' : 'google');
     expect(first(await (await calendarPage('https://wedding.co.tz/k/abcdEFGH', 'abcdEFGH', IPHONE, API, api())).text())).toBe('apple');
