@@ -9,3 +9,11 @@
 # project, so the build published raw .next internals and every route 404'd.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# iOS reads the Universal Links association file from Apple's CDN, which
+# expects JSON. The file has no extension (Apple's rule), so Netlify would
+# otherwise serve it as application/octet-stream.
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
