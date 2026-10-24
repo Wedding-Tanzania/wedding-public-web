@@ -13,7 +13,8 @@ export const runtime = 'nodejs';
  * the public site. A day of caching is fine, the designs change with a deploy.
  *
  * A template id (t01 to t23) draws that template with no photos;
- * `?kind=double` and `?lang=en` pick the pass kind and the language.
+ * `?kind=double` and `?lang=en` pick the pass kind and the language. A
+ * legacy design takes `?kind` too; without it the kind follows the two seats.
  */
 export async function GET(req: Request, { params }: { params: { design: string } }) {
   if (byId[params.design]) {
@@ -29,6 +30,7 @@ export async function GET(req: Request, { params }: { params: { design: string }
     return res;
   }
   if (!(params.design in CARD_DESIGNS)) return new Response('Not found', { status: 404 });
+  const kindQ = new URL(req.url).searchParams.get('kind');
   const res = await renderCardImage({
     templateKey: params.design,
     partnerA: 'Amina',
@@ -42,7 +44,7 @@ export async function GET(req: Request, { params }: { params: { design: string }
     cardNumber: '1549-001',
     rsvpUrl: 'https://wedding.co.tz',
     sample: true,
-  });
+  }, kindQ !== null ? { kind: kindParam(kindQ) } : {});
   res.headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
   return res;
 }

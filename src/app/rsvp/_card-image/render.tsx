@@ -3,25 +3,30 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
+import { cardKindForSeats, cardKindLabel, type CardKind } from '@/lib/invite/wcz';
 import { qrSvg } from '@/lib/qr';
 
 /** 4:5 portrait: what WhatsApp, Instagram and a phone's photo app all show whole. */
 export const CARD_IMAGE_SIZE = { width: 1080, height: 1350 };
 
 const FONT_DIR = join(process.cwd(), 'src/app/rsvp/_card-image/fonts');
+// The kind pill is mono on every card; the template renderer already ships JetBrains Mono.
+const MONO_FONT = join(process.cwd(), 'src/app/_invite-card/fonts/jetbrains-mono-latin-700-normal.woff');
 
 async function fonts() {
-  const [serif600, serif700, sans400, sans600] = await Promise.all([
+  const [serif600, serif700, sans400, sans600, mono700] = await Promise.all([
     readFile(join(FONT_DIR, 'cormorant-garamond-latin-600-normal.woff')),
     readFile(join(FONT_DIR, 'cormorant-garamond-latin-700-normal.woff')),
     readFile(join(FONT_DIR, 'manrope-latin-400-normal.woff')),
     readFile(join(FONT_DIR, 'manrope-latin-600-normal.woff')),
+    readFile(MONO_FONT),
   ]);
   return [
     { name: 'Serif', data: serif600, weight: 600 as const, style: 'normal' as const },
     { name: 'Serif', data: serif700, weight: 700 as const, style: 'normal' as const },
     { name: 'Sans', data: sans400, weight: 400 as const, style: 'normal' as const },
     { name: 'Sans', data: sans600, weight: 600 as const, style: 'normal' as const },
+    { name: 'Mono', data: mono700, weight: 700 as const, style: 'normal' as const },
   ];
 }
 
@@ -52,7 +57,17 @@ function Col({ children, style }: { children: ReactNode; style?: CSSProperties }
   return <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, ...style }}>{children}</div>;
 }
 
-export async function renderCardImage(card: InvitationCardView): Promise<ImageResponse> {
+/**
+ * `kind` is the guest's SINGLE / DOUBLE from the RSVP payload. The card view
+ * itself does not carry one, so without it the kind follows the seats, the
+ * same default the API gives a guest nobody chose a kind for.
+ */
+export async function renderCardImage(card: InvitationCardView, opts: { kind?: CardKind } = {}): Promise<ImageResponse> {
+  const kind = opts.kind ?? cardKindForSeats(card.partyAllowed);
+  // The banner grows upward with its text, so a name on three lines would run
+  // it into the venue lines above; smaller steps keep long names on two.
+  const gl = card.guestName.length;
+  const guestSize = gl > 46 ? 32 : gl > 30 ? 36 : 40;
   const design = cardDesignFor(card.templateKey);
   const { paper, ink, accent, soft } = design.palette;
   const display = design.display === 'serif' ? 'Serif' : 'Sans';
@@ -102,11 +117,34 @@ export async function renderCardImage(card: InvitationCardView): Promise<ImageRe
         <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 22, letterSpacing: 5, color: accent, textTransform: 'uppercase' }}>
           Invitation for
         </div>
-        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 40, fontWeight: 600, color: ink }}>{card.guestName}</div>
+        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: guestSize, fontWeight: 600, color: ink }}>{card.guestName}</div>
         <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 30, color: ink, opacity: 0.75 }}>
           {`Card ${card.cardNumber}${party !== null ? ` · ${party}` : ''}`}
         </div>
-        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 24, color: ink, opacity: 0.6 }}>Show this at the gate</div>
+        {/* Same corner as the template cards: the pill on the gate line, at the banner's right edge. */}
+        <Row style={{ alignItems: 'center', gap: 24 }}>
+          <div style={{ display: 'flex', flex: 1, minWidth: 0, fontFamily: 'Sans', fontSize: 24, color: ink, opacity: 0.6 }}>Show this at the gate</div>
+          <div
+            style={{
+              display: 'flex',
+              flexShrink: 0,
+              height: 44,
+              padding: '0 20px',
+              alignItems: 'center',
+              borderRadius: 22,
+              backgroundColor: 'rgba(48,48,48,0.86)',
+              fontFamily: 'Mono',
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: 3.6,
+              textTransform: 'uppercase',
+              color: '#FFFFFF',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cardKindLabel(kind)}
+          </div>
+        </Row>
       </Col>
     </Row>
   );

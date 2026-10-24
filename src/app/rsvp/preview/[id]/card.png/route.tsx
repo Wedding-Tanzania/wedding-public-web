@@ -22,5 +22,5 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       qrText: card.rsvpUrl,
     });
   }
-  return renderCardImage(card);
+  return renderCardImage(card, { kind: cardKindForSeats(card.partyAllowed ?? 2) });
 }

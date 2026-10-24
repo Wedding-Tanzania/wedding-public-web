@@ -32,3 +32,32 @@ describe('card image with no photos', () => {
     }
   }
 });
+
+/**
+ * The kind pill shares the banner's gate line, so the longest names (which
+ * wrap to two lines and make the banner text tallest) are the case that
+ * would push the pill out of the banner. DOUBLE is the wider of the two words.
+ */
+const LONG_NAMES = {
+  long: 'Mheshimiwa Bibi Rehema Mwakyusa na Familia ya Mwakatumbula',
+  longest: 'Mheshimiwa Mchungaji Dkt. Emmanuel Mwakatumbula na Bibi Rehema Mwakyusa na Familia',
+};
+
+describe('card image with a long guest name', () => {
+  for (const t of TEMPLATES) {
+    for (const [tag, name] of Object.entries(LONG_NAMES)) {
+      it(`${t.id} ${t.en} renders a double card for a ${name.length} character name`, async () => {
+        const g = sampleGuest('double');
+        const res = await renderInviteImage({
+          design: sampleDesign(t.id),
+          guest: { name, seats: g.seats, cardNumber: g.cardNumber, kind: 'double' },
+          qrText: 'https://wedding.co.tz/rsvp/sample',
+        });
+        expect(res.status).toBe(200);
+        const bytes = new Uint8Array(await res.arrayBuffer());
+        expect(Array.from(bytes.slice(0, 4))).toEqual(PNG_MAGIC);
+        if (OUT) writeFileSync(join(OUT, `${t.id}-double-${tag}.png`), bytes);
+      }, 30000);
+    }
+  }
+});
