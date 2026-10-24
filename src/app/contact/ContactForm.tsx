@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from '@/lib/support';
 
 type Topic = 'couple' | 'vendor' | 'press' | 'careers' | 'other';
 
@@ -23,8 +24,18 @@ export function ContactForm() {
     if (t !== null && topics.some((o) => o.value === t)) setTopic(t);
   }, [params]);
 
+  // There is no message inbox behind this form yet, so it hands the message to the visitor's
+  // own email app, addressed to support. Pretending to send it would lose it.
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const label = topics.find((o) => o.value === topic)?.label ?? 'Enquiry';
+    const lines = [...data.entries()]
+      .filter(([, v]) => typeof v === 'string' && v.trim().length > 0)
+      .map(([k, v]) => `${k}: ${String(v)}`);
+    const subject = encodeURIComponent(`Wedding by Lockwood: ${label}`);
+    const body = encodeURIComponent(lines.join('\n'));
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
     setSubmitted(true);
   }
 
@@ -34,8 +45,9 @@ export function ContactForm() {
         <div className="font-sans text-herb-300 text-6xl leading-none">"</div>
         <div className="font-sans text-3xl text-herb-900 mt-2">Thank you.</div>
         <p className="font-sans text-lg text-ink-2 mt-4 max-w-md mx-auto leading-relaxed">
-          We will write back within one business day. In the meantime, browse the vendor directory
-          or have a look at real wedding stories.
+          Your email app has opened with your message to {SUPPORT_EMAIL}. Press send there and we
+          will write back within one business day. If nothing opened, email us directly or call{' '}
+          {SUPPORT_PHONE}.
         </p>
       </div>
     );

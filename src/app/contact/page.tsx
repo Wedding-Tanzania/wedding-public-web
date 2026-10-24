@@ -1,46 +1,48 @@
 import { Section, SectionHead } from '@/components/Section';
+import { Suspense } from 'react';
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from '@/lib/support';
 import { ContactForm } from './ContactForm';
 
-export const metadata = { title: 'Contact' };
+export const metadata = {
+  title: 'Contact',
+  description: 'Contact and support for Wedding by Lockwood: email and phone.',
+};
 
 export default function ContactPage() {
   return (
     <main>
       <Section tone="ivory" className="!pt-32 !pb-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="eyebrow justify-center">Contact</div>
+          <div className="eyebrow justify-center">Support</div>
           <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
-            Tell us about
-            <br />
-            <em className="not-italic font-extrabold text-herb-600">your day.</em>
+            Contact <em className="not-italic font-extrabold text-herb-600">us.</em>
           </h1>
           <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
-            Couples, vendors, journalists, partners. Whatever you need, we read every message.
+            Couples, guests, vendors and partners: email or call us and a person will answer. We
+            reply within one business day.
           </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-10 font-sans text-xl">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-herb-700 hover:underline">
+              {SUPPORT_EMAIL}
+            </a>
+            <a href={`tel:${SUPPORT_PHONE.replace(/\s/g, '')}`} className="text-ink-1 hover:underline">
+              {SUPPORT_PHONE}
+            </a>
+          </div>
         </div>
       </Section>
 
       <Section tone="paper" className="!pt-12">
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-16 items-start">
-          <ContactForm />
+          <Suspense fallback={null}>
+            <ContactForm />
+          </Suspense>
           <div className="space-y-12">
             <ChannelBlock
-              title="Couples"
-              email="hello@wedding.co.tz"
-              phone="+255 754 000 001"
-              note="Reach the planning team for questions about story pages, contributions, RSVPs, or anything on the journey."
-            />
-            <ChannelBlock
-              title="Vendors"
-              email="vendors@wedding.co.tz"
-              phone="+255 754 000 002"
-              note="Sign up, get verified, ask about promotions, or escalate a booking issue."
-            />
-            <ChannelBlock
-              title="Press & partnerships"
-              email="press@wedding.co.tz"
-              phone="+255 754 000 003"
-              note="Media, MNO partnerships, brand collaborations, and co-marketing requests."
+              title="Support"
+              email={SUPPORT_EMAIL}
+              phone={SUPPORT_PHONE}
+              note="Questions about your wedding, story page, contributions, guests, RSVPs, vendor sign-up, press or partnerships. To delete your account, see wedding.co.tz/delete-account."
             />
             <div className="bg-herb-50 border border-champagne rounded-lg p-8">
               <div className="eyebrow">Visit us</div>
@@ -55,7 +57,7 @@ export default function ContactPage() {
                 Tanzania
               </div>
               <div className="mt-4 text-[11px] uppercase tracking-widest text-ink-3">
-                Mon–Fri · 09:00–18:00 EAT
+                Monday to Friday, 09:00 to 18:00 EAT
               </div>
             </div>
           </div>
@@ -87,7 +89,7 @@ export default function ContactPage() {
             ],
             [
               'Is there a mobile app?',
-              'Coming in Phase 2 (Android, then iOS). For now, the web app is fully mobile-responsive and works offline-first for the planning checklist.',
+              'Yes. The Wedding by Lockwood app for iPhone and Android is coming to the App Store and Google Play. The web app at app.wedding.co.tz works on any phone in the meantime.',
             ],
           ].map(([q, a]) => (
             <details key={q} className="py-6 group">

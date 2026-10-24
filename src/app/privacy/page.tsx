@@ -7,7 +7,7 @@ export const metadata = {
     'How Wedding by Lockwood collects, uses, and protects personal information for couples, vendors, and guests.',
 };
 
-const LAST_UPDATED = 'April 2026';
+const LAST_UPDATED = '24 October 2026';
 
 export default function PrivacyPage() {
   return (
@@ -23,10 +23,8 @@ export default function PrivacyPage() {
             their guests in Tanzania and the wider East African region.
           </p>
           <p className="mt-3 text-sm text-ink-3">
-            This is a first-draft policy published in good faith. It will be reviewed by counsel
-            and aligned to TCRA and Bank of Tanzania guidance before public launch. Material
-            changes will be posted here with a fresh "Last updated" stamp at least 14 days before
-            taking effect.
+            We will post any material change here with a fresh "Last updated" date at least 14 days
+            before it takes effect.
           </p>
         </div>
       </Section>
