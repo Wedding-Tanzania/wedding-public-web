@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type CSSProperties } from 'react';
-import { STR, fmtDate, type InviteDesign, type Lang, type PageRecipe } from '@/lib/invite/wcz';
+import { STR, fmtDate, shownSeats, type InviteDesign, type Lang, type PageRecipe } from '@/lib/invite/wcz';
 import type { CalendarLinks, InviteGuestView } from '@/lib/invite/types';
 import { Icon } from './Icon';
 import { usePal, type Pal } from './palette';
@@ -70,7 +70,8 @@ export function Rsvp(props: {
   const p = usePal();
   const S = STR[props.lang];
   const L = look(p, props.view, props.rhythm);
-  const seatsMax = Math.max(1, props.guest?.seats ?? 1);
+  // A DOUBLE card can confirm two, even when no seat count was saved.
+  const seatsMax = shownSeats(props.guest?.kind, props.guest?.seats);
   const answered = answerOf(props.status);
   const [answer, setAnswer] = useState<Answer | null>(answered);
   const [phase, setPhase] = useState<Phase>(

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { QrPath } from '@/lib/invite/qr';
-import { STR, cardKindLabel, type CardKind, type Lang } from '@/lib/invite/wcz';
+import { STR, cardKindLabel, shownSeats, type CardKind, type Lang } from '@/lib/invite/wcz';
 import type { InviteGuestView } from '@/lib/invite/types';
 import { Icon } from './Icon';
 import { labelStyle, monoStyle, usePal } from './palette';
@@ -34,7 +34,8 @@ export function KindPill({ kind }: { kind: CardKind | undefined }) {
 export function EntryPass({ guest, qr, lang, cardPngUrl, onEnlarge }: { guest: InviteGuestView; qr: QrPath; lang: Lang; cardPngUrl: string | null; onEnlarge: () => void }) {
   const P = usePal();
   const S = STR[lang];
-  const seats = guest.seats || 1;
+  // A DOUBLE card admits two at the least, as the card and the gate say.
+  const seats = shownSeats(guest.kind, guest.seats);
   return (
     <div
         id={ENTRY_PASS_ID}
@@ -88,7 +89,8 @@ export function EntryPass({ guest, qr, lang, cardPngUrl, onEnlarge }: { guest: I
 export function EntryPassDialog({ guest, qr, lang, onClose }: { guest: InviteGuestView; qr: QrPath; lang: Lang; onClose: () => void }) {
   const P = usePal();
   const S = STR[lang];
-  const seats = guest.seats || 1;
+  // A DOUBLE card admits two at the least, as the card and the gate say.
+  const seats = shownSeats(guest.kind, guest.seats);
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     closeRef.current?.focus();

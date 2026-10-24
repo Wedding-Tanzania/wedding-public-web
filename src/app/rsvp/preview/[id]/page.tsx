@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { InvitationCard } from '@/components/card/InvitationCard';
-import { cardDesignFor, type InvitationCardView } from '@/lib/card';
+import { cardDesignFor, legacyVenues, type InvitationCardView } from '@/lib/card';
 import { qrSvg } from '@/lib/qr';
 import { InviteCard } from '@/components/invite/InviteCard';
 import { ScaledCard } from '@/components/invite/ScaledCard';
@@ -52,7 +52,7 @@ export default async function CardPreviewPage({ params }: { params: { id: string
             </ScaledCard>
           </div>
         ) : (
-          <InvitationCard card={card} qrSvg={svg} />
+          <InvitationCard card={card} qrSvg={svg} venues={legacyVenues(card, body?.design)} />
         )}
         <div className="flex justify-center">
           <a
