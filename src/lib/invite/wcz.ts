@@ -135,6 +135,12 @@ export interface Venue {
   en?: string;
   /** The couple's Google Maps link to the place, or "" (vendored from shared-types InviteVenue.map). */
   map?: string;
+  /**
+   * What the embedded map shows: the pin's coordinates or the place name,
+   * which the API reads from `map` on save (following a maps.app.goo.gl link
+   * once). Absent when it could not; see map-embed.ts for the fallbacks.
+   */
+  mapQuery?: string;
 }
 /** One celebration colour: swatch, names in both languages, optional outfit photo. */
 export interface Attire {
@@ -440,6 +446,8 @@ export interface Strings {
   tapEnlarge: string;
   closeLabel: string;
   openMapFor: (venue: string) => string;
+  /** The embedded map's accessible title: "Ramani ya Kanisa: St. Joseph Cathedral". */
+  mapTitle: (label: string, place: string) => string;
   venueBlurb: string;
   /** The default line on the ceremony card (the reception has `venueBlurb`). */
   venueBlurbCeremony: string;
@@ -594,6 +602,7 @@ export const STR: Record<Lang, Strings> = {
     tapEnlarge: 'Gusa kukuza',
     closeLabel: 'Funga',
     openMapFor: (venue) => `Fungua ramani ya ${venue.toLowerCase()}`,
+    mapTitle: (label, place) => `Ramani ya ${label.toLowerCase()}: ${place}`,
     venueBlurb: 'Karibuni kwenye jioni ya sherehe, chakula na kumbukumbu zisizosahaulika.',
     venueBlurbCeremony: 'Karibuni mshuhudie tunapofunga ndoa yetu.',
     wearColours: 'Sherehekeeni nasi kwa rangi hizi',
@@ -761,6 +770,7 @@ export const STR: Record<Lang, Strings> = {
     tapEnlarge: 'Tap to enlarge',
     closeLabel: 'Close',
     openMapFor: (venue) => `Open ${venue.toLowerCase()} map`,
+    mapTitle: (label, place) => `Map of the ${label.toLowerCase()}: ${place}`,
     venueBlurb: 'Join us for an evening of celebration, dinner and unforgettable memories.',
     venueBlurbCeremony: 'Join us as we exchange our vows.',
     wearColours: 'Celebrate with us in these colours',

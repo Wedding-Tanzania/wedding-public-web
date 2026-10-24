@@ -4,13 +4,20 @@ import {
   calendarResponse,
   cardRedirect,
   googleCalendarUrl,
+  isGoogleMapsTarget,
   isShortCode,
+  mapRedirect,
+  openShortCode,
+  pageRedirect,
   parseCalendarEvent,
+  parseMapSegment,
   resolveShortCode,
 } from './short-links';
 import { GET as cardGET } from '../app/i/[code]/route';
 import { GET as calendarPageGET } from '../app/k/[code]/route';
 import { GET as calendarFileGET } from '../app/k/[code]/wedding.ics/route';
+import { GET as mapGET } from '../app/m/[code]/route';
+import { GET as pageGET } from '../app/p/[code]/route';
 
 const API = 'https://api.test/api/v1';
 const TOKEN = 'fo9Sl1AV5rEW7bCXvGM4oywS-Dzb8hLbP';
@@ -43,10 +50,39 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-/** A stand-in API: knows one code, serves its calendar file. */
-function api(opts: { links?: 'ok' | 404 | 500 | 'throw'; ics?: 'ok' | 404 | 500 | 'throw' } = {}) {
-  return vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+const MAP_C = 'https://www.google.com/maps/place/St+Joseph/@-6.81,39.29,17z';
+
+/**
+ * A stand-in API: knows one code, serves its calendar file. POST
+ * /links/:code/open follows `links` unless `open` says otherwise: 'absent'
+ * is an API from before tracking (Express's own 404 page), and `target`
+ * is what it answers for a map or page link.
+ */
+function api(
+  opts: {
+    links?: 'ok' | 404 | 500 | 'throw';
+    ics?: 'ok' | 404 | 500 | 'throw';
+    open?: 'absent' | 429 | 'hang';
+    target?: string | null;
+  } = {},
+) {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = String(input);
+    if (url.endsWith('/open')) {
+      if (opts.open === 'absent') return new Response('Cannot POST', { status: 404, headers: { 'Content-Type': 'text/html' } });
+      if (opts.open === 429) return json({ code: 'TOO_MANY' }, 429);
+      if (opts.open === 'hang') {
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        });
+      }
+      if (opts.links === 'throw') throw new Error('ECONNREFUSED');
+      if (opts.links === 404 || !url.endsWith('/links/abcdEFGH/open')) return json({ code: 'LINK_NOT_FOUND' }, 404);
+      if (opts.links === 500) return json({}, 500);
+      const body = JSON.parse(String(init?.body ?? '{}')) as { kind?: string; venue?: string };
+      if (body.kind === 'map' && body.venue === undefined) return json({ code: 'VALIDATION_ERROR' }, 400);
+      return json({ token: TOKEN, target: body.kind === 'map' || body.kind === 'page' ? (opts.target ?? null) : null });
+    }
     if (url.includes('/links/')) {
       if (opts.links === 'throw') throw new Error('ECONNREFUSED');
       if (opts.links === 404 || !url.endsWith('/links/abcdEFGH')) return json({ code: 'LINK_NOT_FOUND' }, 404);
@@ -228,7 +264,7 @@ describe('the route handlers', () => {
     const card = await cardGET(new Request('https://wedding.co.tz/i/abcdEFGH'), { params: { code: 'abcdEFGH' } });
     expect(card.status).toBe(302);
     expect(card.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}`);
-    expect(String(f.mock.calls[0]?.[0])).toBe(`${base}/links/abcdEFGH`);
+    expect(String(f.mock.calls[0]?.[0])).toBe(`${base}/links/abcdEFGH/open`);
 
     const page = await calendarPageGET(
       new Request('https://wedding.co.tz/k/abcdEFGH', { headers: { 'user-agent': IPHONE } }),
@@ -240,5 +276,125 @@ describe('the route handlers', () => {
     const file = await calendarFileGET(new Request('https://wedding.co.tz/k/abcdEFGH/wedding.ics'), { params: { code: 'abcdEFGH' } });
     expect(file.status).toBe(200);
     expect(file.headers.get('content-type')).toBe('text/calendar; charset=utf-8');
+  });
+});
+
+describe('openShortCode', () => {
+  it('posts the kind, the venue for a map, and the guest browser, and reads the answer', async () => {
+    const f = api({ target: MAP_C });
+    expect(await openShortCode('abcdEFGH', 'map', { venue: 'ceremony', userAgent: ANDROID }, API, f)).toEqual({ token: TOKEN, target: MAP_C });
+    const [url, init] = f.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${API}/links/abcdEFGH/open`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(String(init.body))).toEqual({ kind: 'map', venue: 'ceremony' });
+    expect((init.headers as Record<string, string>)['X-Guest-User-Agent']).toBe(ANDROID);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('falls back to the plain lookup on an API from before tracking', async () => {
+    const f = api({ open: 'absent' });
+    expect(await openShortCode('abcdEFGH', 'card', {}, API, f)).toEqual({ token: TOKEN, target: null });
+    expect(String(f.mock.calls[1]?.[0])).toBe(`${API}/links/abcdEFGH`);
+  });
+
+  it('is missing for an unknown code, unavailable when the API is down, busy or slow', async () => {
+    expect(await openShortCode('zzzzzzzz', 'card', {}, API, api())).toBe('missing');
+    expect(await openShortCode('abcdEFGH', 'card', {}, API, api({ links: 'throw' }))).toBe('unavailable');
+    expect(await openShortCode('abcdEFGH', 'card', {}, API, api({ open: 429 }))).toBe('unavailable');
+    vi.useFakeTimers();
+    try {
+      const pending = openShortCode('abcdEFGH', 'card', {}, API, api({ open: 'hang' }));
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(await pending).toBe('unavailable');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('/m/<code>-c and -r', () => {
+  it('reads the venue from the suffix, and nothing else', () => {
+    expect(parseMapSegment('abcdEFGH-c')).toEqual({ code: 'abcdEFGH', venue: 'ceremony' });
+    expect(parseMapSegment('abcdEFGH-r')).toEqual({ code: 'abcdEFGH', venue: 'reception' });
+    for (const bad of ['abcdEFGH', 'abcdEFGH-x', 'abcdEFG0-c', 'abcdEFGH-cc', '../abcdEF-c']) expect(parseMapSegment(bad)).toBeNull();
+  });
+
+  it('302s to the venue Google Maps link the API names', async () => {
+    const res = await mapRedirect('https://wedding.co.tz/m/abcdEFGH-c', 'abcdEFGH-c', IPHONE, API, api({ target: MAP_C }));
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(MAP_C);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('opens the card when there is no map, the API is from before tracking, or the target is not Google Maps', async () => {
+    for (const f of [api({ target: null }), api({ open: 'absent' }), api({ target: 'https://evil.example.com/maps' })]) {
+      const res = await mapRedirect('https://wedding.co.tz/m/abcdEFGH-r', 'abcdEFGH-r', ANDROID, API, f);
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}`);
+    }
+  });
+
+  it('is the not-found page for a bad suffix or an unknown code, try again when the API is down', async () => {
+    const f = api();
+    expect((await mapRedirect('https://wedding.co.tz/m/abcdEFGH', 'abcdEFGH', '', API, f)).status).toBe(404);
+    expect(f).not.toHaveBeenCalled();
+    expect((await mapRedirect('https://wedding.co.tz/m/zzzzzzzz-c', 'zzzzzzzz-c', '', API, api())).status).toBe(404);
+    expect((await mapRedirect('https://wedding.co.tz/m/abcdEFGH-c', 'abcdEFGH-c', '', API, api({ links: 'throw' }))).status).toBe(503);
+  });
+
+  it('only follows Google Maps addresses', () => {
+    expect(isGoogleMapsTarget(MAP_C)).toBe(true);
+    expect(isGoogleMapsTarget('https://www.google.com/maps/search/?api=1&query=Mlimani')).toBe(true);
+    expect(isGoogleMapsTarget('https://maps.app.goo.gl/AbC1')).toBe(true);
+    for (const bad of ['http://www.google.com/maps', 'https://google.com.evil.com/maps', 'https://www.google.com/search?q=x', 'javascript:alert(1)', '/rsvp/x']) {
+      expect(isGoogleMapsTarget(bad)).toBe(false);
+    }
+  });
+});
+
+describe('/p/<code>', () => {
+  it('302s to the wedding page on the site address', async () => {
+    const res = await pageRedirect('https://x--site.netlify.app/p/abcdEFGH', 'abcdEFGH', IPHONE, API, api({ target: '/amina-juma' }), 'https://wedding.co.tz');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('https://wedding.co.tz/amina-juma');
+  });
+
+  it('opens the card for an unpublished page, an old API, or a target off this site', async () => {
+    for (const f of [api({ target: null }), api({ open: 'absent' }), api({ target: '//evil.example.com/x' }), api({ target: 'https://evil.example.com/' })]) {
+      const res = await pageRedirect('https://wedding.co.tz/p/abcdEFGH', 'abcdEFGH', '', API, f, 'https://wedding.co.tz');
+      expect(res.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}`);
+    }
+    expect((await pageRedirect('https://wedding.co.tz/p/zzzzzzzz', 'zzzzzzzz', '', API, api())).status).toBe(404);
+  });
+});
+
+describe('counting opens', () => {
+  it('records the /k page as the calendar open, never the .ics file it links to', async () => {
+    const f = api();
+    await calendarPage('https://wedding.co.tz/k/abcdEFGH', 'abcdEFGH', IPHONE, API, f, 'https://wedding.co.tz');
+    expect(JSON.parse(String((f.mock.calls[0] as [string, RequestInit])[1].body))).toEqual({ kind: 'calendar' });
+    const g = api();
+    await calendarResponse('abcdEFGH', API, g);
+    expect(g.mock.calls.some((c) => String(c[0]).endsWith('/open'))).toBe(false);
+  });
+
+  it('forwards the guest browser from /i, /m and /p', async () => {
+    const f = api({ target: MAP_C });
+    vi.stubGlobal('fetch', f);
+    try {
+      await cardGET(new Request('https://wedding.co.tz/i/abcdEFGH', { headers: { 'user-agent': ANDROID } }), { params: { code: 'abcdEFGH' } });
+      const map = await mapGET(new Request('https://wedding.co.tz/m/abcdEFGH-c', { headers: { 'user-agent': ANDROID } }), { params: { code: 'abcdEFGH-c' } });
+      const page = await pageGET(new Request('https://wedding.co.tz/p/abcdEFGH', { headers: { 'user-agent': ANDROID } }), { params: { code: 'abcdEFGH' } });
+      expect(map.headers.get('location')).toBe(MAP_C);
+      expect(page.status).toBe(302);
+      const sent = f.mock.calls.map((c) => [JSON.parse(String((c[1] as RequestInit).body)), ((c[1] as RequestInit).headers as Record<string, string>)['X-Guest-User-Agent']]);
+      expect(sent).toEqual([
+        [{ kind: 'card' }, ANDROID],
+        [{ kind: 'map', venue: 'ceremony' }, ANDROID],
+        [{ kind: 'page' }, ANDROID],
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

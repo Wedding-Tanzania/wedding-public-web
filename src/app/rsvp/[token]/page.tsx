@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { InvitePage } from '@/components/invite/InvitePage';
 import { LegacyRsvpPage, type LegacyRsvpContext } from '@/components/story/LegacyRsvpPage';
 import { normalise } from '@/lib/invite/wcz';
@@ -13,9 +14,18 @@ type RsvpContext = LegacyRsvpContext &
     storySlug?: string | null;
   };
 
-async function load(token: string): Promise<RsvpContext | null> {
+/**
+ * `view` marks the page's own render as the guest opening their card: the
+ * API counts it (robots and quick repeats left out), with the guest's
+ * browser forwarded so a WhatsApp preview is told from a person. The
+ * metadata read, the card image and the couple's preview never send it.
+ */
+async function load(token: string, view?: { userAgent: string }): Promise<RsvpContext | null> {
   // Never cached: the reply state changes the moment a guest answers.
-  const res = await fetch(`${API_BASE}/rsvp/${encodeURIComponent(token)}`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE}/rsvp/${encodeURIComponent(token)}${view !== undefined ? '?view=1' : ''}`, {
+    cache: 'no-store',
+    ...(view !== undefined && view.userAgent !== '' ? { headers: { 'X-Guest-User-Agent': view.userAgent.slice(0, 512) } } : {}),
+  });
   if (!res.ok) return null;
   return (await res.json()) as RsvpContext;
 }
@@ -46,8 +56,17 @@ export async function generateMetadata({ params }: { params: { token: string } }
   };
 }
 
-export default async function RsvpPage({ params }: { params: { token: string } }) {
-  const ctx = await load(params.token);
+export default async function RsvpPage({
+  params,
+  searchParams = {},
+}: {
+  params: { token: string };
+  searchParams?: { preview?: string };
+}) {
+  // The couple opening a guest's card from their dashboard adds ?preview=1:
+  // that is not the guest opening it.
+  const preview = searchParams.preview !== undefined;
+  const ctx = await load(params.token, preview ? undefined : { userAgent: headers().get('user-agent') ?? '' });
 
   if (ctx === null) {
     return (
