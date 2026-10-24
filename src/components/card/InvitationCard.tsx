@@ -1,6 +1,7 @@
 import { Cormorant_Garamond } from 'next/font/google';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
+import { cardKindForSeats, cardKindLabel, type CardKind } from '@/lib/invite/wcz';
 
 const serif = Cormorant_Garamond({
   subsets: ['latin'],
@@ -12,9 +13,11 @@ const serif = Cormorant_Garamond({
  * The card a guest receives, on their RSVP page. Rendered on the server: the
  * QR is an SVG made from the guest's own RSVP link, so scanning it with any
  * phone camera opens their card, and the gate scanner reads the token out of
- * the same link.
+ * the same link. `kind` is the guest's SINGLE / DOUBLE when the API sends
+ * it; the card view has none, so otherwise it follows the seats, as on the
+ * card image.
  */
-export function InvitationCard({ card, qrSvg }: { card: InvitationCardView; qrSvg: string }) {
+export function InvitationCard({ card, qrSvg, kind }: { card: InvitationCardView; qrSvg: string; kind?: CardKind }) {
   const design = cardDesignFor(card.templateKey);
   const { paper, ink, accent, soft } = design.palette;
   const display = design.display === 'serif' ? serif.className : 'font-sans';
@@ -69,7 +72,7 @@ export function InvitationCard({ card, qrSvg }: { card: InvitationCardView; qrSv
         // Our own SVG, generated from the guest's RSVP link on this server.
         dangerouslySetInnerHTML={{ __html: qrSvg }}
       />
-      <div className="min-w-0 space-y-1">
+      <div className="min-w-0 flex-1 space-y-1">
         <p className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: accent }}>
           Invitation for
         </p>
@@ -80,9 +83,24 @@ export function InvitationCard({ card, qrSvg }: { card: InvitationCardView; qrSv
           Card {card.cardNumber}
           {party !== null ? ` · ${party}` : ''}
         </p>
-        <p className="text-[10px]" style={{ color: ink, opacity: 0.6 }}>
-          Show this at the gate
-        </p>
+        {/*
+          The pill on the gate line at the right edge, the corner the card
+          image puts it in. On a narrow phone the line has no room for both,
+          so the pill wraps under it, still flush right, rather than squeezing
+          the gate line into a column of single words.
+        */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="whitespace-nowrap text-[10px]" style={{ color: ink, opacity: 0.6 }}>
+            Show this at the gate
+          </p>
+          <span
+            data-card-kind={kind ?? cardKindForSeats(card.partyAllowed)}
+            className="ml-auto inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-full px-[10px] font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white"
+            style={{ background: 'rgba(48,48,48,0.86)' }}
+          >
+            {cardKindLabel(kind ?? cardKindForSeats(card.partyAllowed))}
+          </span>
+        </div>
       </div>
     </div>
   );

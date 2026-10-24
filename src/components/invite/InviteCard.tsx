@@ -75,7 +75,12 @@ export interface InviteCardProps {
 export const CARD_W = 1080;
 export const CARD_H = 1350;
 export const COVER_H = 1010;
-/** Height of the SINGLE / DOUBLE pill; the bodies above the passes stop short of it. */
+/**
+ * Height of the SINGLE / DOUBLE pill. It sits on the pass's last line, so
+ * the bodies above no longer need to stop short of it; several still end a
+ * little higher than the design because they once did, and moving them now
+ * would shift every card couples have already sent.
+ */
 const KIND_PILL_H = 44;
 
 /**
@@ -162,8 +167,13 @@ export function InviteCard(props: InviteCardProps) {
   const fs = {
     st: t.fit.st ? fit(stText, t.fit.st[0], t.fit.st[1], fo) : 100,
     ol: t.fit.ol ? fit(`${a} & ${b}`, t.fit.ol[0], t.fit.ol[1], fo) : 80,
-    guest: gl > 34 ? 36 : gl > 24 ? 42 : 48,
-    guestS: gl > 24 ? 28 : 32,
+    // The smallest steps keep names up to about 80 characters on two lines,
+    // so the gate line with the kind pill stays inside the banner.
+    guest: gl > 72 ? 26 : gl > 64 ? 28 : gl > 46 ? 32 : gl > 34 ? 36 : gl > 24 ? 42 : 48,
+    // Tighter rows for those names too, so a name that still wraps to three
+    // lines leaves the pill clear of the banner's bottom edge.
+    passGap: gl > 46 ? 6 : 10,
+    guestS: gl > 46 ? 24 : gl > 24 ? 28 : 32,
     verse: w.verse.length > 120 ? 36 : w.verse.length > 70 ? 42 : 50,
   };
 
@@ -327,7 +337,7 @@ export function InviteCard(props: InviteCardProps) {
   let body: ReactNode = null;
   switch (t.id) {
     case 't01':
-      // Bodies above a pass end by about 940, clear of the kind pill at 952.
+      // Bodies above a pass end by about 940, clear of the pass at 1010.
       body = centerCol({ left: 90, right: 90, top: 90, height: 820, justifyContent: 'center' }, (
         <>
           <div style={label(24, 0.32, ink(72), { marginBottom: 40 })}>{w.host}</div>
@@ -418,7 +428,7 @@ export function InviteCard(props: InviteCardProps) {
       body = (
         <>
           {slot('cover', { left: 540, top: 0, width: 540, height: 1350 })}
-          {/* Ends at 930 so the kind pill above the stacked pass has clear ground; spacing is tighter to fit. */}
+          {/* Ends at 930, clear of the stacked pass; spacing is tighter to fit. */}
           <div style={col({ position: 'absolute', left: 80, top: 90, width: 400, height: 840, alignItems: 'flex-start' })}>
             <div style={box({ alignItems: 'flex-end', fontSize: 130, lineHeight: 0.8, fontWeight: th.nw, letterSpacing: -5, color: th.accent })}>
               <span>{ini.a}</span>
@@ -446,7 +456,7 @@ export function InviteCard(props: InviteCardProps) {
           <div style={abs({ left: 120, top: 40, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.a}</div>
           <div style={abs({ left: 560, top: 330, fontSize: 460, lineHeight: 1, fontWeight: th.nw, letterSpacing: -18 })}>{ini.b}</div>
           {rule({ left: 538, top: 110, width: 2, height: 700, backgroundColor: th.accent, transform: 'rotate(24deg)' })}
-          {/* Sits at 780, not 836: the date line would otherwise run into the kind pill. */}
+          {/* Sits at 780, not 836: room once kept for the kind pill, left so sent cards do not shift. */}
           {centerCol({ left: 90, right: 90, top: 780 }, (
             <>
               <div style={label(22, 0.34, th.accBg)}>{S.marrying}</div>
@@ -606,7 +616,7 @@ export function InviteCard(props: InviteCardProps) {
             <div style={label(22, 0.24, ink(72), { marginTop: 24 })}>{`${dt.weekday} · ${dt.long}`}</div>
           </div>
           {slot('cover', { left: 0, top: 500, width: 1080, height: 360 }, { iconSize: 88 })}
-          {/* 880, not 896: leaves room for the kind pill above the pass rule. */}
+          {/* 880, not 896: room once kept for the kind pill, left so sent cards do not shift. */}
           <div style={box({ position: 'absolute', left: 90, right: 90, top: 880, gap: 60 })}>
             {[
               [w.ceremony, d.ceremony],
@@ -816,7 +826,7 @@ export function InviteCard(props: InviteCardProps) {
           </div>
           {rule({ left: 68, top: 68, right: 68, bottom: 68, backgroundColor: th.accent })}
           {rule({ left: 70, top: 70, right: 70, bottom: 70, backgroundColor: th.bg })}
-          {/* Ends at 938: the kanga band is full width, so the kind pill needs the strip below it. */}
+          {/* Ends at 938: the kanga band is full width and must stay clear of the pass. */}
           {centerCol({ left: 112, right: 112, top: 108, height: 830 }, (
             <>
               <div style={label(22, 0.32, ink(72))}>{w.host}</div>
@@ -945,26 +955,18 @@ export function InviteCard(props: InviteCardProps) {
   }
 
   // ===== Gate passes =====
-  const passText = (c: { label: string; strong: string; muted: string; faint: string }, size = fs.guest) => (
-    <div style={col({ gap: 10, flex: 1 })}>
-      <div style={label(22, 0.26, c.label)}>{S.invFor}</div>
-      <div style={text(size, c.strong, { fontWeight: 500, lineHeight: 1.12, letterSpacing: -size * 0.01 })}>{g.name}</div>
-      <div style={text(26, c.muted)}>{`${S.card} ${no} · ${seats}`}</div>
-      <div style={text(22, c.faint)}>{S.gate}</div>
-    </div>
-  );
-
   /**
    * SINGLE or DOUBLE, as on the printed card: a dark pill with white mono
-   * text, bottom-left just above the QR. The same grey on every template so
-   * the gate reads it the same way whatever the palette; mono on purpose
-   * even when the couple chose sans labels.
+   * text in the banner's bottom-right corner, where the product owner drew
+   * it. The same grey on every template so the gate reads it the same way
+   * whatever the palette; mono on purpose even when the couple chose sans
+   * labels. It flows with the text rather than sitting absolutely, so a
+   * long guest name or a long gate line pushes it instead of running under it.
    */
-  const kindPill = (left: number, top: number) => (
+  const kindPill = (extra: CSSProperties = {}) => (
     <div
-      style={abs({
-        left,
-        top,
+      style={box({
+        flexShrink: 0,
         height: KIND_PILL_H,
         padding: '0 20px',
         alignItems: 'center',
@@ -976,24 +978,35 @@ export function InviteCard(props: InviteCardProps) {
         letterSpacing: 3.6,
         textTransform: 'uppercase',
         color: '#FFFFFF',
+        whiteSpace: 'nowrap',
+        ...extra,
       })}
     >
       {cardKindLabel(g.kind)}
     </div>
   );
 
+  const passText = (c: { label: string; strong: string; muted: string; faint: string }, size = fs.guest) => (
+    <div style={col({ gap: fs.passGap, flex: 1, minWidth: 0 })}>
+      <div style={label(22, 0.26, c.label)}>{S.invFor}</div>
+      <div style={text(size, c.strong, { fontWeight: 500, lineHeight: 1.12, letterSpacing: -size * 0.01 })}>{g.name}</div>
+      <div style={text(26, c.muted)}>{`${S.card} ${no} · ${seats}`}</div>
+      {/* The gate line and the pill share a row, so the pill lands on its baseline at the right edge. */}
+      <div style={box({ alignItems: 'center', gap: 24 })}>
+        <div style={text(22, c.faint, { flex: 1, minWidth: 0 })}>{S.gate}</div>
+        {kindPill()}
+      </div>
+    </div>
+  );
+
   let pass: ReactNode = null;
   if (!cover) {
     if (t.pass === 'card') {
-      const top = CARD_H - 80 - 260;
       pass = (
-        <>
-          <div style={abs({ left: 90, right: 90, top, height: 260, alignItems: 'center', gap: 40, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
-            {qrBox(196, 12)}
-            {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
-          </div>
-          {kindPill(130, top - 14 - KIND_PILL_H)}
-        </>
+        <div style={abs({ left: 90, right: 90, top: CARD_H - 80 - 260, height: 260, alignItems: 'center', gap: 40, padding: '0 40px', borderRadius: 24, backgroundColor: th.panel, color: th.pink, border: `2px solid ${pink(10)}` })}>
+          {qrBox(196, 12)}
+          {passText({ label: pink(68), strong: th.pink, muted: pink(70), faint: pink(62) })}
+        </div>
       );
     } else if (t.pass === 'line') {
       pass = (
@@ -1003,64 +1016,59 @@ export function InviteCard(props: InviteCardProps) {
             {qrBox(210, 14, `0 0 0 2px ${ink(12)}`)}
             {passText({ label: ink(70), strong: th.ink, muted: ink(72), faint: ink(66) })}
           </div>
-          {kindPill(90, 1036 - 14 - KIND_PILL_H)}
         </>
       );
     } else if (t.pass === 'glass') {
-      const top = CARD_H - 80 - 260;
       pass = (
-        <>
-          <div
-            style={abs({
-              left: 90,
-              right: 90,
-              top,
-              height: 260,
-              alignItems: 'center',
-              gap: 40,
-              padding: '0 32px',
-              borderRadius: 24,
-              backgroundColor: alpha(th.bg, web ? 66 : 80),
-              border: `2px solid ${alpha(th.ink, 22)}`,
-              color: th.ink,
-              ...(web ? { backdropFilter: 'blur(16px)' } : {}),
-            })}
-          >
-            {qrBox(196, 12)}
-            {passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) })}
-          </div>
-          {kindPill(130, top - 14 - KIND_PILL_H)}
-        </>
+        <div
+          style={abs({
+            left: 90,
+            right: 90,
+            top: CARD_H - 80 - 260,
+            height: 260,
+            alignItems: 'center',
+            gap: 40,
+            // 40 on the right, not 32, so the pill keeps the same margin from the edge as on the card pass.
+            padding: '0 40px 0 32px',
+            borderRadius: 24,
+            backgroundColor: alpha(th.bg, web ? 66 : 80),
+            border: `2px solid ${alpha(th.ink, 22)}`,
+            color: th.ink,
+            ...(web ? { backdropFilter: 'blur(16px)' } : {}),
+          })}
+        >
+          {qrBox(196, 12)}
+          {passText({ label: th.accent, strong: th.ink, muted: alpha(th.ink, 84), faint: alpha(th.ink, 78) })}
+        </div>
       );
     } else if (t.pass === 'stack') {
-      const top = CARD_H - 60 - 290;
+      // The name runs the full width below the QR row, so the pill goes at the
+      // bottom-right of the QR row (level with the QR's foot) where it can
+      // never meet the name however many lines that takes. The panel is
+      // pinned by its foot and grows upward for a long name, into the strip
+      // the t05 body leaves clear above it (it ends at 930).
       pass = (
-        <>
-          <div style={col({ position: 'absolute', left: 60, width: 440, top, height: 290, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
-            <div style={box({ alignItems: 'center', gap: 22 })}>
-              {qrBox(150, 10)}
-              <div style={col({ flex: 1, gap: 6 })}>
-                <div style={label(18, 0.22, pink(68))}>{S.invFor}</div>
-                <div style={text(24, pink(72))}>{`${S.card} ${no}`}</div>
-                <div style={text(24, pink(72))}>{seats}</div>
-              </div>
+        <div style={col({ position: 'absolute', left: 60, width: 440, bottom: 60, minHeight: 290, justifyContent: 'center', gap: 18, padding: 28, borderRadius: 24, backgroundColor: th.panel, color: th.pink })}>
+          <div style={box({ alignItems: 'center', gap: 22 })}>
+            {qrBox(150, 10)}
+            <div style={col({ flex: 1, gap: 6, alignSelf: 'stretch' })}>
+              <div style={label(18, 0.22, pink(68))}>{S.invFor}</div>
+              <div style={text(24, pink(72))}>{`${S.card} ${no}`}</div>
+              <div style={text(24, pink(72))}>{seats}</div>
+              {kindPill({ marginTop: 'auto', alignSelf: 'flex-end' })}
             </div>
-            <div style={text(fs.guestS, th.pink, { fontWeight: 500, lineHeight: 1.15 })}>{g.name}</div>
           </div>
-          {kindPill(88, top - 14 - KIND_PILL_H)}
-        </>
+          <div style={text(fs.guestS, th.pink, { fontWeight: 500, lineHeight: 1.15 })}>{g.name}</div>
+        </div>
       );
     } else if (t.pass === 'ticket') {
-      // The stub between the dashed tear line (988) and the panel edge
-      // (1280) holds the pill and then the QR row, so the QR is 180, not 196.
+      // The stub between the dashed tear line (988) and the panel edge (1280)
+      // holds one row, centred, now that the pill rides on the gate line.
       pass = (
-        <>
-          {kindPill(130, 1006)}
-          <div style={abs({ left: 130, right: 130, top: 1064, height: 180, alignItems: 'center', gap: 40, color: th.ink })}>
-            {qrBox(180, 12, `0 0 0 2px ${inkP(12)}`)}
-            {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}
-          </div>
-        </>
+        <div style={abs({ left: 130, right: 130, top: 1010, height: 250, alignItems: 'center', gap: 40, color: th.ink })}>
+          {qrBox(196, 12, `0 0 0 2px ${inkP(12)}`)}
+          {passText({ label: th.accPn, strong: th.ink, muted: inkP(70), faint: inkP(64) })}
+        </div>
       );
     }
   }

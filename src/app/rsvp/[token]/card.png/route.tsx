@@ -27,5 +27,5 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       qrText: card.rsvpUrl,
     });
   }
-  return renderCardImage(card);
+  return renderCardImage(card, { kind: ctx.guest?.kind });
 }

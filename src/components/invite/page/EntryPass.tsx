@@ -44,10 +44,7 @@ export function EntryPass({ guest, qr, lang, cardPngUrl, onEnlarge }: { guest: I
         <div style={{ ...labelStyle(P, 10, 0.26, P.accent), opacity: 0.95 }}>{S.keepReady}</div>
         <div style={{ fontSize: 30, fontWeight: 300, fontStyle: 'italic', letterSpacing: '-0.01em', marginTop: 4 }}>{S.yourPass}</div>
         <div style={{ fontSize: 20, fontWeight: 600, marginTop: 6, textWrap: 'balance', textAlign: 'center' }}>{guest.name}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ ...labelStyle(P, 11, 0.22, P.bg), opacity: 0.8 }}>{S.entryFor(seats)}</div>
-          <KindPill kind={guest.kind} />
-        </div>
+        <div style={{ ...labelStyle(P, 11, 0.22, P.bg), opacity: 0.8 }}>{S.entryFor(seats)}</div>
         <button
           type="button"
           onClick={onEnlarge}
@@ -59,7 +56,19 @@ export function EntryPass({ guest, qr, lang, cardPngUrl, onEnlarge }: { guest: I
           </svg>
         </button>
         <div style={{ ...labelStyle(P, 10, 0.2, P.bg), opacity: 0.7, marginTop: 10 }}>{S.tapEnlarge}</div>
-        <div style={{ ...monoStyle(P, 12, 0.08), fontVariantNumeric: 'tabular-nums', marginTop: 8 }}>{`${S.card} ${guest.cardNumber}`}</div>
+        {/*
+          The card number stays centred and the pill takes the right-hand
+          column of the same line, the corner the card image puts it in. The
+          side columns share the room equally, so the number is centred; on a
+          narrow phone the right one never shrinks below the pill, and the
+          number slides left instead of running into it.
+        */}
+        <div data-pass-card-row="1" style={{ width: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(max-content, 1fr)', alignItems: 'center', columnGap: 8, marginTop: 8 }}>
+          <div style={{ ...monoStyle(P, 12, 0.08), fontVariantNumeric: 'tabular-nums', gridColumn: 2, whiteSpace: 'nowrap' }}>{`${S.card} ${guest.cardNumber}`}</div>
+          <div style={{ gridColumn: 3, justifySelf: 'end', display: 'flex' }}>
+            <KindPill kind={guest.kind} />
+          </div>
+        </div>
         <div style={{ fontSize: 13, opacity: 0.72, maxWidth: 300, textAlign: 'center' }}>{S.passNote}</div>
         {cardPngUrl !== null && (
           <a href={cardPngUrl} download={`invitation-${guest.cardNumber}.png`} style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 20px', textDecoration: 'none', color: P.bg, border: `1px solid ${P.bg}66`, fontFamily: P.sans, fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
