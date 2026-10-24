@@ -6,6 +6,8 @@
  * so the six designs are copied here: change both together.
  */
 
+import { venueRows, type InviteDesign, type VenueRow } from './invite/wcz';
+
 export type CardLayout = 'classic' | 'coast' | 'bold';
 
 export interface CardDesign {
@@ -95,4 +97,21 @@ export function cardDate(iso: string): { weekday: string; day: string; month: st
 export function partyLine(n: number | undefined): string | null {
   if (n === undefined || n <= 1) return null;
   return `Admits ${n}`;
+}
+
+/**
+ * The church and the hall for the card a wedding sends before it saves a
+ * design. From the design the API derives (or the stored one), else the
+ * wedding's one venue on the card view. The legacy card is in English and
+ * its design was never saved, so a lone venue is named as the hall.
+ */
+export function legacyVenues(
+  card: Pick<InvitationCardView, 'venueName' | 'venueAddress'>,
+  design?: Partial<Pick<InviteDesign, 'ceremony' | 'reception' | 'faith'>> | null,
+): VenueRow[] {
+  if (design != null) {
+    const rows = venueRows(design, 'en', { loneIsReception: true });
+    if (rows.length > 0) return rows;
+  }
+  return venueRows({ reception: { name: card.venueName ?? '', addr: card.venueAddress ?? '', time: '' } }, 'en');
 }

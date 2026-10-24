@@ -1,7 +1,7 @@
 import { Cormorant_Garamond } from 'next/font/google';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
-import { cardKindForSeats, cardKindLabel, type CardKind } from '@/lib/invite/wcz';
+import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type VenueRow } from '@/lib/invite/wcz';
 
 const serif = Cormorant_Garamond({
   subsets: ['latin'],
@@ -15,14 +15,17 @@ const serif = Cormorant_Garamond({
  * phone camera opens their card, and the gate scanner reads the token out of
  * the same link. `kind` is the guest's SINGLE / DOUBLE when the API sends
  * it; the card view has none, so otherwise it follows the seats, as on the
- * card image.
+ * card image. `venues` are the church and the hall (see legacyVenues);
+ * without them the card names the wedding's one venue as it always did.
  */
-export function InvitationCard({ card, qrSvg, kind }: { card: InvitationCardView; qrSvg: string; kind?: CardKind }) {
+export function InvitationCard({ card, qrSvg, kind, venues }: { card: InvitationCardView; qrSvg: string; kind?: CardKind; venues?: VenueRow[] }) {
   const design = cardDesignFor(card.templateKey);
   const { paper, ink, accent, soft } = design.palette;
   const display = design.display === 'serif' ? serif.className : 'font-sans';
   const date = cardDate(card.weddingDate);
-  const party = partyLine(card.partyAllowed);
+  const shownKind = kind ?? cardKindForSeats(card.partyAllowed);
+  // A DOUBLE card admits two at the least, whatever seat count was saved.
+  const party = partyLine(shownSeats(shownKind, card.partyAllowed));
   const vars = { '--paper': paper, '--ink': ink, '--accent': accent, '--soft': soft } as CSSProperties;
 
   const names = (
@@ -47,7 +50,27 @@ export function InvitationCard({ card, qrSvg, kind }: { card: InvitationCardView
   );
 
   const where =
-    card.venueName !== undefined ? (
+    venues !== undefined ? (
+      venues.length > 0 ? (
+        <div data-venues={venues.length} className={`grid gap-3 ${venues.length > 1 ? 'grid-cols-2 divide-x' : 'grid-cols-1'}`} style={{ borderColor: soft }}>
+          {venues.map((v) => (
+            <div key={v.key} data-venue={v.key} className="min-w-0 space-y-0.5 px-1" style={{ borderColor: soft }}>
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: accent }}>
+                {v.time ? `${v.label} · ${v.time}` : v.label}
+              </p>
+              <p className="line-clamp-2 break-words text-[13px] font-semibold leading-snug" style={{ color: ink }}>
+                {v.name}
+              </p>
+              {v.addr ? (
+                <p className="truncate text-[11px]" style={{ color: ink, opacity: 0.7 }}>
+                  {v.addr}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null
+    ) : card.venueName !== undefined ? (
       <div className="space-y-0.5">
         <p className="text-[14px] font-semibold" style={{ color: ink }}>
           {card.venueName}
@@ -94,11 +117,11 @@ export function InvitationCard({ card, qrSvg, kind }: { card: InvitationCardView
             Show this at the gate
           </p>
           <span
-            data-card-kind={kind ?? cardKindForSeats(card.partyAllowed)}
+            data-card-kind={shownKind}
             className="ml-auto inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-full px-[10px] font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white"
             style={{ background: 'rgba(48,48,48,0.86)' }}
           >
-            {cardKindLabel(kind ?? cardKindForSeats(card.partyAllowed))}
+            {cardKindLabel(shownKind)}
           </span>
         </div>
       </div>

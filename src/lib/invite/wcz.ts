@@ -277,6 +277,17 @@ export function cardKindForSeats(seats: number | null | undefined): CardKind {
   return typeof seats === 'number' && seats >= 2 ? 'double' : 'single';
 }
 
+/**
+ * The seats a card shows. A DOUBLE card admits two at the least, so one with
+ * no seat count saved (or a stale count of one) still reads "Watu 2" /
+ * "2 guests"; a single shows its seats, else one. The API applies the same
+ * floor, so the card, the guest page and the gate agree.
+ */
+export function shownSeats(kind: CardKind | undefined, seats: number | null | undefined): number {
+  const n = typeof seats === 'number' && seats > 0 ? Math.floor(seats) : 1;
+  return kind === 'double' ? Math.max(n, 2) : n;
+}
+
 /** The person a card or page is for. Card number = design code + id. */
 export interface Guest {
   id: string;
@@ -321,6 +332,9 @@ export interface Strings {
   verseRef: ByFaith;
   ceremony: ByFaith;
   reception: string;
+  /** The venue rows on the card: where the vows are (by faith) and the hall. */
+  venueCeremony: ByFaith;
+  venueReception: string;
   closing: string;
   dressNote: string;
   marrying: string;
@@ -472,6 +486,8 @@ export const STR: Record<Lang, Strings> = {
     verseRef: { church: 'Mathayo 19:6', nikah: 'Qur’an 30:21', civil: '' },
     ceremony: { church: 'Ibada ya ndoa', nikah: 'Nikah', civil: 'Ndoa' },
     reception: 'Sherehe',
+    venueCeremony: { church: 'Kanisa', nikah: 'Nikah', civil: 'Ndoa' },
+    venueReception: 'Ukumbi',
     closing: 'Karibu tusherehekee pamoja',
     dressNote: 'Mavazi rasmi. Tafadhali vaa rangi hizi.',
     marrying: 'Tunaoana',
@@ -635,6 +651,8 @@ export const STR: Record<Lang, Strings> = {
     verseRef: { church: 'Matthew 19:6', nikah: 'Qur’an 30:21', civil: '' },
     ceremony: { church: 'Wedding service', nikah: 'Nikah', civil: 'Ceremony' },
     reception: 'Reception',
+    venueCeremony: { church: 'Church', nikah: 'Nikah', civil: 'Ceremony' },
+    venueReception: 'Venue',
     closing: 'We can’t wait to celebrate with you',
     dressNote: 'Formal. Please wear these colours.',
     marrying: 'We’re getting married',
@@ -1095,6 +1113,133 @@ export function city(addr: string | undefined): string {
   const p = String(addr || '').split(',');
   return (p[p.length - 1] ?? '').trim();
 }
+
+// ---------------------------------------------------------------------------
+// The church and the hall on the card
+// ---------------------------------------------------------------------------
+
+/** One venue line on the card: "KANISA · 10:00", the name, the address. */
+export interface VenueRow {
+  key: 'ceremony' | 'reception';
+  label: string;
+  time: string;
+  name: string;
+  addr: string;
+}
+
+/**
+ * The venues a card names, in order: the ceremony (church) then the
+ * reception (hall). A venue counts when it has a name or an address; a
+ * reception that only repeats the ceremony is left out. `loneIsReception`
+ * is for a wedding that never saved a design: the derived design puts the
+ * wedding's one venue in the ceremony slot, and a lone venue is where the
+ * party is, so it is called the hall (the invitation message does the same).
+ */
+export function venueRows(
+  d: { ceremony?: Partial<Venue> | null; reception?: Partial<Venue> | null; faith?: Faith },
+  lang: Lang,
+  opts: { loneIsReception?: boolean } = {},
+): VenueRow[] {
+  const S = STR[lang];
+  const str = (x: unknown): string => (typeof x === 'string' ? x.trim() : '');
+  const clean = (v: Partial<Venue> | null | undefined) => {
+    const name = str(v?.name);
+    const addr = str(v?.addr);
+    // An address with no name is still a place to go: it takes the name line.
+    return { name: name || addr, addr: name ? addr : '', time: str(v?.time) };
+  };
+  const c = clean(d.ceremony);
+  const r = clean(d.reception);
+  const hasC = c.name !== '';
+  const same = r.name === c.name && r.addr === c.addr && r.time === c.time;
+  const hasR = r.name !== '' && !(hasC && same);
+  const ceremony: VenueRow = { key: 'ceremony', label: S.venueCeremony[d.faith ?? 'church'], ...c };
+  const reception: VenueRow = { key: 'reception', label: S.venueReception, ...r };
+  if (hasC && !hasR && opts.loneIsReception === true) return [{ ...ceremony, key: 'reception', label: S.venueReception }];
+  return [...(hasC ? [ceremony] : []), ...(hasR ? [reception] : [])];
+}
+
+/**
+ * Where a template draws its venue lines, on the 1080 x 1350 card. Fixed
+ * boxes with the overflow clipped (names wrap to two lines, addresses keep
+ * to one), so however long a name is, nothing can reach the gate pass; the
+ * tests hold every box clear of its pass. Shared with the couple app's
+ * CardArt, which draws the same boxes.
+ */
+export interface VenueBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  align: 'center' | 'left';
+  /** One under the other (narrow columns) instead of side by side. */
+  stack: boolean;
+  /** Font sizes of the label, the name and the address. */
+  fs: [number, number, number];
+  /** A panel of its own in the template's panel colour (t05, beside the pass). */
+  panel?: boolean;
+}
+
+/** Two columns: label (24), a name on up to two lines (65), an address on one (30), and the gaps. */
+export const VENUE_H = 132;
+const band = (top: number, o: Partial<VenueBox> = {}): VenueBox => ({
+  left: 90,
+  top,
+  width: 900,
+  height: VENUE_H,
+  align: 'center',
+  stack: false,
+  fs: [20, 28, 22],
+  ...o,
+});
+/** 20 above the pass: the card and glass passes start at 1010, the line pass rule at 1036. */
+const CARD_BAND = 1010 - 20 - VENUE_H;
+const LINE_BAND = 1036 - 20 - VENUE_H;
+
+export const VENUE_BOXES: Record<string, VenueBox> = {
+  t01: band(CARD_BAND),
+  t02: band(CARD_BAND, { left: 110, width: 860 }),
+  t03: band(LINE_BAND),
+  t04: band(CARD_BAND),
+  t05: { left: 580, top: 1000, width: 440, height: 290, align: 'left', stack: true, fs: [18, 24, 20], panel: true },
+  t06: band(LINE_BAND),
+  t07: band(CARD_BAND),
+  t08: band(CARD_BAND),
+  t09: band(LINE_BAND),
+  t10: band(CARD_BAND),
+  t11: band(CARD_BAND),
+  t12: band(LINE_BAND, { align: 'left' }),
+  t13: band(CARD_BAND),
+  // Right under the date cell, in the same two columns.
+  t14: band(812, { align: 'left' }),
+  // The ticket keeps its big times: the venue row inside the panel, above the tear line.
+  t15: { left: 130, top: 616, width: 820, height: 280, align: 'left', stack: false, fs: [20, 24, 22] },
+  t16: band(CARD_BAND),
+  t17: band(LINE_BAND),
+  t18: band(CARD_BAND),
+  t19: band(CARD_BAND, { left: 112, width: 856 }),
+  t20: band(LINE_BAND),
+  t21: band(CARD_BAND),
+  t22: { left: 90, top: 748, width: 560, height: 268, align: 'left', stack: true, fs: [20, 26, 22] },
+  t23: band(CARD_BAND),
+};
+
+export function venueBoxFor(tplId: string): VenueBox {
+  return VENUE_BOXES[tplId] ?? (VENUE_BOXES.t01 as VenueBox);
+}
+
+/**
+ * The area each gate pass covers, for the tests that keep the venue lines
+ * off it. The stack pass grows upward with a long name, so its top is the
+ * highest it reaches (a name of about 80 characters).
+ */
+export const PASS_BOXES: Record<PassStyle, { left: number; top: number; right: number; bottom: number }> = {
+  card: { left: 90, top: 1010, right: 990, bottom: 1270 },
+  glass: { left: 90, top: 1010, right: 990, bottom: 1270 },
+  line: { left: 90, top: 1036, right: 990, bottom: 1286 },
+  ticket: { left: 130, top: 988, right: 950, bottom: 1260 },
+  stack: { left: 60, top: 960, right: 500, bottom: 1290 },
+};
 
 // ---------------------------------------------------------------------------
 // Photos and crops

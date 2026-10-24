@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { CSSProperties, ReactNode } from 'react';
 import { cardDate, cardDesignFor, partyLine, type InvitationCardView } from '@/lib/card';
-import { cardKindForSeats, cardKindLabel, type CardKind } from '@/lib/invite/wcz';
+import { cardKindForSeats, cardKindLabel, shownSeats, type CardKind, type VenueRow } from '@/lib/invite/wcz';
 import { qrSvg } from '@/lib/qr';
 
 /** 4:5 portrait: what WhatsApp, Instagram and a phone's photo app all show whole. */
@@ -58,12 +58,55 @@ function Col({ children, style }: { children: ReactNode; style?: CSSProperties }
 }
 
 /**
+ * A line of venue text that fits its column is drawn as a plain centred
+ * line: the renderer leaves a clamped line that fits flush left. Text that
+ * runs over keeps the clamp, and fills the width anyway. 0.56 of the size
+ * per character errs on long for Manrope.
+ */
+const fitsLine = (text: string, size: number, width: number) => text.length * size * 0.56 <= width;
+
+/** The church and the hall: two columns (or one), label with time, name on two lines, address on one. */
+function Venues({ rows, ink, accent, soft }: { rows: VenueRow[]; ink: string; accent: string; soft: string }) {
+  const colW = rows.length > 1 ? (880 - 73) / 2 : 880;
+  const cols: ReactNode[] = [];
+  rows.forEach((r, i) => {
+    if (i > 0) cols.push(<div key="rule" style={{ display: 'flex', width: 1, alignSelf: 'stretch', margin: '2px 36px', background: soft }} />);
+    const name: CSSProperties = fitsLine(r.name, 30, colW)
+      ? { display: 'flex', justifyContent: 'center', width: '100%' }
+      : { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' };
+    const addr: CSSProperties = fitsLine(r.addr, 24, colW)
+      ? { display: 'flex', justifyContent: 'center', width: '100%' }
+      : { display: 'block', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    cols.push(
+      <Col key={r.key} style={{ flex: 1, flexShrink: 1, minWidth: 0, alignItems: 'center' }}>
+        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 20, letterSpacing: 4.4, color: accent, textTransform: 'uppercase', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+          {r.time ? `${r.label} · ${r.time}` : r.label}
+        </div>
+        <div style={{ ...name, marginTop: 6, fontFamily: 'Sans', fontSize: 30, fontWeight: 600, lineHeight: 1.15, color: ink, textAlign: 'center', maxHeight: 72 }}>{r.name}</div>
+        {r.addr ? (
+          <div style={{ ...addr, marginTop: 4, fontFamily: 'Sans', fontSize: 24, lineHeight: 1.35, color: ink, opacity: 0.7, textAlign: 'center', maxHeight: 33, overflow: 'hidden' }}>{r.addr}</div>
+        ) : null}
+      </Col>,
+    );
+  });
+  return (
+    <Row style={{ width: 880, alignItems: 'flex-start', justifyContent: 'center', marginTop: 10 }}>
+      {cols}
+    </Row>
+  );
+}
+
+/**
  * `kind` is the guest's SINGLE / DOUBLE from the RSVP payload. The card view
  * itself does not carry one, so without it the kind follows the seats, the
- * same default the API gives a guest nobody chose a kind for.
+ * same default the API gives a guest nobody chose a kind for. `venues` are
+ * the church and the hall (see legacyVenues); without them the card names
+ * the wedding's one venue as it always did.
  */
-export async function renderCardImage(card: InvitationCardView, opts: { kind?: CardKind } = {}): Promise<ImageResponse> {
+export async function renderCardImage(card: InvitationCardView, opts: { kind?: CardKind; venues?: VenueRow[] } = {}): Promise<ImageResponse> {
   const kind = opts.kind ?? cardKindForSeats(card.partyAllowed);
+  const venues = opts.venues;
+  const hv = venues !== undefined && venues.length > 0;
   // The banner grows upward with its text, so a name on three lines would run
   // it into the venue lines above; smaller steps keep long names on two.
   const gl = card.guestName.length;
@@ -72,7 +115,8 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
   const { paper, ink, accent, soft } = design.palette;
   const display = design.display === 'serif' ? 'Serif' : 'Sans';
   const date = cardDate(card.weddingDate);
-  const party = partyLine(card.partyAllowed);
+  // A DOUBLE card admits two at the least, whatever seat count was saved.
+  const party = partyLine(shownSeats(kind, card.partyAllowed));
   const [qr, photo] = await Promise.all([qrSvg(card.rsvpUrl, ink), photoData(card.photoUrl)]);
   const qrSrc = `data:image/svg+xml;base64,${Buffer.from(qr).toString('base64')}`;
 
@@ -98,13 +142,19 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
       <div style={{ display: 'flex', fontFamily: display, fontSize: 54, fontWeight: 700, color: ink }}>
         {`${date.day} ${date.month} ${date.year}`}
       </div>
-      {card.venueName !== undefined && (
-        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 36, fontWeight: 600, color: ink, marginTop: 8 }}>
-          {card.venueName}
-        </div>
-      )}
-      {card.venueAddress !== undefined && (
-        <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 30, color: ink, opacity: 0.7 }}>{card.venueAddress}</div>
+      {venues !== undefined ? (
+        hv ? <Venues rows={venues} ink={ink} accent={accent} soft={soft} /> : null
+      ) : (
+        <>
+          {card.venueName !== undefined && (
+            <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 36, fontWeight: 600, color: ink, marginTop: 8 }}>
+              {card.venueName}
+            </div>
+          )}
+          {card.venueAddress !== undefined && (
+            <div style={{ display: 'flex', fontFamily: 'Sans', fontSize: 30, color: ink, opacity: 0.7 }}>{card.venueAddress}</div>
+          )}
+        </>
       )}
     </Col>
   );
@@ -153,13 +203,14 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
   if (design.layout === 'coast') {
     body = (
       <Col style={{ width: '100%', height: '100%', alignItems: 'center' }}>
-        <Row style={{ width: '100%', height: 340, background: soft, overflow: 'hidden' }}>
+        {/* A shorter photo strip with venue lines, so they keep clear of the pass. */}
+        <Row style={{ width: '100%', height: hv ? 260 : 340, background: soft, overflow: 'hidden' }}>
           {photo !== null && (
             // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-            <img src={photo} width={1080} height={340} style={{ objectFit: 'cover' }} />
+            <img src={photo} width={1080} height={hv ? 260 : 340} style={{ objectFit: 'cover' }} />
           )}
         </Row>
-        <Col style={{ alignItems: 'center', gap: 20, padding: '40px 100px 0' }}>
+        <Col style={{ alignItems: 'center', gap: hv ? 16 : 20, padding: hv ? '34px 100px 0' : '40px 100px 0' }}>
           {eyebrow('Karibu kwenye harusi yetu')}
           {names}
           <div style={{ display: 'flex', width: 140, height: 3, background: accent }} />
@@ -171,11 +222,12 @@ export async function renderCardImage(card: InvitationCardView, opts: { kind?: C
   } else if (design.layout === 'bold') {
     body = (
       <Col style={{ width: '100%', height: '100%', padding: 44 }}>
-        <Col style={{ flex: 1, alignItems: 'center', border: `14px solid ${accent}`, borderRadius: 12, padding: '56px 40px 48px', gap: 26 }}>
-          <Row style={{ width: 180, height: 180, borderRadius: 90, border: `5px solid ${accent}`, background: soft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {/* Tighter, with a smaller medallion, when the venue lines are on the card. */}
+        <Col style={{ flex: 1, alignItems: 'center', border: `14px solid ${accent}`, borderRadius: 12, padding: hv ? '40px 40px 36px' : '56px 40px 48px', gap: hv ? 18 : 26 }}>
+          <Row style={{ width: hv ? 150 : 180, height: hv ? 150 : 180, borderRadius: 90, border: `5px solid ${accent}`, background: soft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {photo !== null ? (
               // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-              <img src={photo} width={180} height={180} style={{ objectFit: 'cover' }} />
+              <img src={photo} width={hv ? 150 : 180} height={hv ? 150 : 180} style={{ objectFit: 'cover' }} />
             ) : (
               <div style={{ display: 'flex', fontFamily: display, fontSize: 72, fontWeight: 700, color: accent }}>
                 {`${card.partnerA.charAt(0)}${card.partnerB.charAt(0)}`}

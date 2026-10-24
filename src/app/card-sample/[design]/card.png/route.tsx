@@ -1,4 +1,4 @@
-import { CARD_DESIGNS } from '@/lib/card';
+import { CARD_DESIGNS, legacyVenues } from '@/lib/card';
 import { kindParam, sampleDesign, sampleGuest } from '@/lib/invite/sample';
 import { byId } from '@/lib/invite/wcz';
 import { renderInviteImage } from '../../../_invite-card/render';
@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: { params: { design: string }
   }
   if (!(params.design in CARD_DESIGNS)) return new Response('Not found', { status: 404 });
   const kindQ = new URL(req.url).searchParams.get('kind');
-  const res = await renderCardImage({
+  const sample = {
     templateKey: params.design,
     partnerA: 'Amina',
     partnerB: 'Juma',
@@ -44,7 +44,10 @@ export async function GET(req: Request, { params }: { params: { design: string }
     cardNumber: '1549-001',
     rsvpUrl: 'https://wedding.co.tz',
     sample: true,
-  }, kindQ !== null ? { kind: kindParam(kindQ) } : {});
+  };
+  // The sample couple's church and hall, as a real card would show them.
+  const venues = legacyVenues(sample, sampleDesign('t01', 'en'));
+  const res = await renderCardImage(sample, kindQ !== null ? { kind: kindParam(kindQ), venues } : { venues });
   res.headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
   return res;
 }
