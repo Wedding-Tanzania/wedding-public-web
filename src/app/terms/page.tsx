@@ -7,7 +7,7 @@ export const metadata = {
     'Terms governing use of the Wedding by Lockwood platform by couples, vendors, and guests.',
 };
 
-const LAST_UPDATED = 'April 2026';
+const LAST_UPDATED = '24 October 2026';
 
 export default function TermsPage() {
   return (
@@ -23,9 +23,7 @@ export default function TermsPage() {
             account or otherwise using the Platform, you agree to these terms.
           </p>
           <p className="mt-3 text-sm text-ink-3">
-            This is a first-draft set of terms published in good faith. They will be reviewed by
-            counsel before public launch. Material changes will be posted here with at least 14
-            days' notice.
+            We will post any material change here at least 14 days before it takes effect.
           </p>
         </div>
       </Section>
