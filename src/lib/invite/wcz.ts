@@ -440,6 +440,12 @@ export interface Strings {
   wishesFailed: string;
   needChange: string;
   updateResponse: string;
+  downloadOn: string;
+  getItOn: string;
+  openInBrowser: string;
+  appAvailableNote: string;
+  redirectingToStore: string;
+  stayHere: string;
   H: Record<SectionKey | 'pass' | 'faqs' | 'party' | 'guestbook' | 'gifts' | 'travel', string>;
 }
 
@@ -583,6 +589,13 @@ export const STR: Record<Lang, Strings> = {
     wishesFailed: 'Imeshindikana kutuma. Jaribu tena.',
     needChange: 'Unahitaji kubadilisha jibu lako?',
     updateResponse: 'Badilisha jibu',
+    downloadOn: 'Pakua kwenye',
+    getItOn: 'Ipate kwenye',
+    openInBrowser: 'Fungua kwenye kivinjari',
+    appAvailableNote:
+      'App ya Wedding by Lockwood ipo kwenye App Store. Toleo la Google Play linakuja hivi karibuni. Mwaliko wako unafunguka pia hapa kwenye kivinjari.',
+    redirectingToStore: 'Inakupeleka kwenye duka la app...',
+    stayHere: 'Baki hapa',
     H: {
       rsvp: 'Utafika?',
       song: 'Wimbo wetu',
@@ -739,6 +752,13 @@ export const STR: Record<Lang, Strings> = {
     wishesFailed: 'Could not send. Please try again.',
     needChange: 'Need to change your response?',
     updateResponse: 'Update response',
+    downloadOn: 'Download on the',
+    getItOn: 'Get it on',
+    openInBrowser: 'Open in browser',
+    appAvailableNote:
+      'The Wedding by Lockwood app is on the App Store. The Google Play version is coming soon. Your invitation also opens right here in the browser.',
+    redirectingToStore: 'Taking you to the app store...',
+    stayHere: 'Stay here',
     H: {
       rsvp: 'Will you attend?',
       song: 'Our song',
