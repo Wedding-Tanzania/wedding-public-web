@@ -1,0 +1,29 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["9J398UCV98.tz.co.wedding"],
+        "components": [
+          {
+            "/": "/rsvp/*/*",
+            "exclude": true,
+            "comment": "Deeper than one guest's card (the card image, the couple's preview): stays in Safari"
+          },
+          {
+            "/": "/rsvp/?*",
+            "comment": "A guest's card, /rsvp/<token>"
+          },
+          {
+            "/": "/i/*/*",
+            "exclude": true,
+            "comment": "Nothing lives below a short link"
+          },
+          {
+            "/": "/i/?*",
+            "comment": "The short link in guest messages, /i/<code>"
+          }
+        ]
+      }
+    ]
+  }
+}
