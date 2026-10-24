@@ -1,6 +1,7 @@
 'use client';
 
 import { STR, exactMapUrl, mapUrl, venueBlurb, type Lang, type Venue } from '@/lib/invite/wcz';
+import { mapEmbedUrl, venueMapQuery } from '@/lib/invite/map-embed';
 import { Icon } from './Icon';
 import { Photo } from './Photo';
 import { labelStyle, monoStyle, usePal } from './palette';
@@ -8,9 +9,11 @@ import { labelStyle, monoStyle, usePal } from './palette';
 /**
  * Ceremony and reception cards: the venue photo on top (the couple's upload
  * or the venue vendor's cover), the name, address and time, a short blurb
- * and one big map button: "Open in Google Maps" to the couple's own Google
- * Maps link when they saved one (the exact pin), else "Open reception map",
- * a Google Maps search for the name and address.
+ * a small interactive Google map of the place (lazy, keyless embed; see
+ * map-embed.ts for where it points) and one big map button: "Open in Google
+ * Maps" to the couple's own Google Maps link when they saved one (the exact
+ * pin), else "Open reception map", a Google Maps search for the name and
+ * address.
  */
 export function Venues({ items, lang }: { items: { label: string; kind: 'ceremony' | 'reception'; v: Venue }[]; lang: Lang }) {
   const P = usePal();
@@ -20,6 +23,7 @@ export function Venues({ items, lang }: { items: { label: string; kind: 'ceremon
       {items.map((x) => {
         const photo = x.v.photo ?? null;
         const exact = exactMapUrl(x.v);
+        const query = venueMapQuery(x.v);
         return (
           <div key={x.label} data-venue={x.label} style={{ borderRadius: 18, overflow: 'hidden', background: P.panel, color: P.pink, boxShadow: `inset 0 0 0 1px ${P.pink_(12)}, 0 14px 34px rgba(26,37,22,0.12)` }}>
             {photo !== null && photo !== '' && (
@@ -42,6 +46,21 @@ export function Venues({ items, lang }: { items: { label: string; kind: 'ceremon
                 </div>
               )}
               <div style={{ fontSize: 15, fontStyle: 'italic', color: P.pink_(76), maxWidth: 320, marginTop: 10, lineHeight: 1.5 }}>{venueBlurb(x.v, lang, x.kind)}</div>
+              {query !== null && (
+                <div
+                  data-venue-map={x.kind}
+                  style={{ width: '100%', marginTop: 18, borderRadius: 14, overflow: 'hidden', aspectRatio: '16 / 10', maxHeight: 260, background: P.acc_(30), boxShadow: `inset 0 0 0 1px ${P.pink_(12)}` }}
+                >
+                  <iframe
+                    src={mapEmbedUrl(query, lang)}
+                    title={S.mapTitle(x.label, x.v.name !== '' ? x.v.name : query)}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                    style={{ display: 'block', width: '100%', height: '100%', border: 0 }}
+                  />
+                </div>
+              )}
               <a
                 href={exact ?? mapUrl(x.v)}
                 target="_blank"

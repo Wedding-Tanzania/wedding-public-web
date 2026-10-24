@@ -1,9 +1,18 @@
 /**
- * The short links in guest messages: wedding.co.tz/i/<code> opens the
- * guest's card, wedding.co.tz/k/<code> offers the ways to add the day to their
- * calendar (the file itself is /k/<code>/wedding.ics).
- * The code is resolved to the RSVP token by the API (GET /links/:code); the
- * long /rsvp/<token> links keep working beside them.
+ * The short links in guest messages, all on one 8-character code per guest:
+ * - wedding.co.tz/i/<code>    the guest's card (302 to /rsvp/<token>)
+ * - wedding.co.tz/k/<code>    the ways to add the day to their calendar (the
+ *   file itself is /k/<code>/wedding.ics)
+ * - wedding.co.tz/m/<code>-c  the ceremony's Google Maps link (-r: reception)
+ * - wedding.co.tz/p/<code>    the wedding page (302 to /<story slug>)
+ *
+ * Each is opened through the API (POST /links/:code/open), which answers
+ * where to go and records the open after answering, so counting never slows
+ * a redirect. The guest's browser is forwarded (X-Guest-User-Agent) so the
+ * API can tell WhatsApp's link preview from a guest. An API from before
+ * tracking has no such route: the card and calendar links then fall back to
+ * GET /links/:code, and map and page links open the card. The long
+ * /rsvp/<token> links keep working beside them.
  */
 
 /** Same alphabet as the API mints from: no 0/O, 1/l/I. */
@@ -19,6 +28,61 @@ export function apiBase(): string {
 
 type Fetch = typeof fetch;
 
+/** The longest a redirect waits on the API before saying "try again". */
+export const API_TIMEOUT_MS = 2500;
+
+export type LinkKind = 'card' | 'calendar' | 'map' | 'page';
+export type LinkVenue = 'ceremony' | 'reception';
+
+/** /m/<code>-c and /m/<code>-r: the code, and which venue's map. */
+export function parseMapSegment(segment: string): { code: string; venue: LinkVenue } | null {
+  const m = /^(.{8})-([cr])$/.exec(segment);
+  if (m === null || !isShortCode(m[1])) return null;
+  return { code: m[1], venue: m[2] === 'c' ? 'ceremony' : 'reception' };
+}
+
+/**
+ * Open a short link: the token, and for a map or page link where it goes
+ * (`target` null: nowhere, open the card). `missing` and `unavailable` as
+ * for resolveShortCode.
+ */
+export async function openShortCode(
+  code: string,
+  kind: LinkKind,
+  opts: { venue?: LinkVenue; userAgent?: string } = {},
+  base: string = apiBase(),
+  fetchImpl: Fetch = fetch,
+): Promise<{ token: string; target: string | null } | 'missing' | 'unavailable'> {
+  if (!isShortCode(code)) return 'missing';
+  let res: Response;
+  try {
+    res = await fetchImpl(`${base}/links/${encodeURIComponent(code)}/open`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(opts.userAgent ? { 'X-Guest-User-Agent': opts.userAgent.slice(0, 512) } : {}),
+      },
+      body: JSON.stringify(kind === 'map' ? { kind, venue: opts.venue } : { kind }),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
+  } catch {
+    return 'unavailable';
+  }
+  if (res.ok) {
+    const body = (await res.json().catch(() => null)) as { token?: unknown; target?: unknown } | null;
+    if (typeof body?.token !== 'string' || body.token === '') return 'unavailable';
+    return { token: body.token, target: typeof body.target === 'string' && body.target !== '' ? body.target : null };
+  }
+  if (res.status === 429) return 'unavailable';
+  const err = (await res.json().catch(() => null)) as { code?: unknown } | null;
+  if (res.status === 404 && err?.code === 'LINK_NOT_FOUND') return 'missing';
+  // An API from before tracking (no such route) or one refusing the call:
+  // the plain lookup still gets the guest to their card.
+  const plain = await resolveShortCode(code, base, fetchImpl);
+  return typeof plain === 'string' ? plain : { token: plain.token, target: null };
+}
+
 /**
  * The token behind a code. `missing` for a code the API does not know (or an
  * API from before short links, which answers 404 too); `unavailable` when the
@@ -33,7 +97,10 @@ export async function resolveShortCode(
   if (!isShortCode(code)) return 'missing';
   let res: Response;
   try {
-    res = await fetchImpl(`${base}/links/${encodeURIComponent(code)}`, { cache: 'no-store' });
+    res = await fetchImpl(`${base}/links/${encodeURIComponent(code)}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
   } catch {
     return 'unavailable';
   }
@@ -56,19 +123,83 @@ export function linkProblemPage(kind: 'missing' | 'unavailable'): Response {
   });
 }
 
+function redirect(location: string): Response {
+  return new Response(null, { status: 302, headers: { Location: location, 'Cache-Control': 'no-store' } });
+}
+
+function cardUrl(token: string, requestUrl: string): string {
+  return new URL(`/rsvp/${encodeURIComponent(token)}`, requestUrl).toString();
+}
+
 /** /i/<code>: 302 to the guest's card page. */
 export async function cardRedirect(
   requestUrl: string,
   code: string,
   base: string = apiBase(),
   fetchImpl: Fetch = fetch,
+  userAgent: string = '',
 ): Promise<Response> {
-  const r = await resolveShortCode(code, base, fetchImpl);
+  const r = await openShortCode(code, 'card', { userAgent }, base, fetchImpl);
   if (r === 'missing' || r === 'unavailable') return linkProblemPage(r);
-  return new Response(null, {
-    status: 302,
-    headers: { Location: new URL(`/rsvp/${encodeURIComponent(r.token)}`, requestUrl).toString(), 'Cache-Control': 'no-store' },
-  });
+  return redirect(cardUrl(r.token, requestUrl));
+}
+
+/** A Google Maps address the API may send a guest to; anything else is not followed. */
+export function isGoogleMapsTarget(target: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(target);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:' || u.username !== '' || u.password !== '') return false;
+  const host = u.hostname.toLowerCase();
+  const under = (p: string) => u.pathname === p || u.pathname.startsWith(`${p}/`);
+  return (
+    ((host === 'google.com' || host === 'www.google.com') && under('/maps')) ||
+    host === 'maps.google.com' ||
+    (host === 'maps.app.goo.gl' && u.pathname.length > 1) ||
+    (host === 'goo.gl' && under('/maps'))
+  );
+}
+
+/**
+ * /m/<code>-c, /m/<code>-r: 302 to the venue's Google Maps link (or a Maps
+ * search for its name, which the API picks), else to the guest's card, which
+ * names the place and has its own map.
+ */
+export async function mapRedirect(
+  requestUrl: string,
+  segment: string,
+  userAgent: string = '',
+  base: string = apiBase(),
+  fetchImpl: Fetch = fetch,
+): Promise<Response> {
+  const parsed = parseMapSegment(segment);
+  if (parsed === null) return linkProblemPage('missing');
+  const r = await openShortCode(parsed.code, 'map', { venue: parsed.venue, userAgent }, base, fetchImpl);
+  if (r === 'missing' || r === 'unavailable') return linkProblemPage(r);
+  return redirect(r.target !== null && isGoogleMapsTarget(r.target) ? r.target : cardUrl(r.token, requestUrl));
+}
+
+/**
+ * /p/<code>: 302 to the wedding page on this site, else (unpublished, or an
+ * API from before tracking) to the guest's card. Only a path on this site is
+ * followed, never another host.
+ */
+export async function pageRedirect(
+  requestUrl: string,
+  code: string,
+  userAgent: string = '',
+  base: string = apiBase(),
+  fetchImpl: Fetch = fetch,
+  siteUrl: string | undefined = process.env.NEXT_PUBLIC_SITE_URL,
+): Promise<Response> {
+  const r = await openShortCode(code, 'page', { userAgent }, base, fetchImpl);
+  if (r === 'missing' || r === 'unavailable') return linkProblemPage(r);
+  const onSite = r.target !== null && /^\/[^/\\]/.test(r.target);
+  // The site's own address, as for the calendar page: a Netlify function sees its deploy host.
+  return redirect(onSite && r.target !== null ? new URL(r.target, siteUrl || requestUrl).toString() : cardUrl(r.token, requestUrl));
 }
 
 /**
@@ -195,7 +326,9 @@ export async function calendarPage(
   fetchImpl: Fetch = fetch,
   siteUrl: string | undefined = process.env.NEXT_PUBLIC_SITE_URL,
 ): Promise<Response> {
-  const r = await resolveShortCode(code, base, fetchImpl);
+  // The page is the counted open; the .ics file it links to is not, or the
+  // phone's calendar app fetching it would count the guest twice.
+  const r = await openShortCode(code, 'calendar', { userAgent }, base, fetchImpl);
   if (r === 'missing' || r === 'unavailable') return linkProblemPage(r);
   const file = await fetchCalendar(`${base}/rsvp/${encodeURIComponent(r.token)}/calendar.ics`, fetchImpl);
   if (file === 'missing') return linkProblemPage('missing');
