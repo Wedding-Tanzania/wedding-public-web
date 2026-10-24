@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tz.co.wedding",
+      "sha256_cert_fingerprints": [
+        "62:F3:99:9E:53:7E:A7:28:81:D8:A3:33:9F:FD:E8:B1:3F:81:9E:9E:BA:7F:BD:AE:96:CB:8B:5A:8E:44:19:4C",
+        "F4:19:1A:2C:2B:34:23:CF:94:20:93:C3:6A:CF:8E:28:B5:00:24:77:8D:F7:73:E7:50:8C:11:60:3A:DB:98:75"
+      ]
+    }
+  }
+]
