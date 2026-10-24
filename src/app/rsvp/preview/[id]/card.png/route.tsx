@@ -1,4 +1,4 @@
-import { legacyVenues, type InvitationCardView } from '@/lib/card';
+import { legacyDress, legacyVenues, type InvitationCardView } from '@/lib/card';
 import type { DesignFields } from '@/lib/invite/types';
 import { cardKindForSeats, normalise } from '@/lib/invite/wcz';
 import { renderCardImage } from '../../../_card-image/render';
@@ -22,5 +22,5 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       qrText: card.rsvpUrl,
     });
   }
-  return renderCardImage(card, { kind: cardKindForSeats(card.partyAllowed ?? 2), venues: legacyVenues(card, ctx.design) });
+  return renderCardImage(card, { kind: cardKindForSeats(card.partyAllowed ?? 2), venues: legacyVenues(card, ctx.design), dress: legacyDress(ctx.design) });
 }

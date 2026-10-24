@@ -1,4 +1,4 @@
-import { legacyVenues, type InvitationCardView } from '@/lib/card';
+import { legacyDress, legacyVenues, type InvitationCardView } from '@/lib/card';
 import type { DesignFields, InviteGuestView } from '@/lib/invite/types';
 import { normalise } from '@/lib/invite/wcz';
 import { renderCardImage } from '../../_card-image/render';
@@ -28,5 +28,5 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     });
   }
   // The church and the hall from the design the API derives, else the card's one venue.
-  return renderCardImage(card, { kind: ctx.guest?.kind, venues: legacyVenues(card, ctx.design) });
+  return renderCardImage(card, { kind: ctx.guest?.kind, venues: legacyVenues(card, ctx.design), dress: legacyDress(ctx.design) });
 }

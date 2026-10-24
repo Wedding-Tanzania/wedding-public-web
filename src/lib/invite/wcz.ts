@@ -133,6 +133,8 @@ export interface Venue {
   /** A short blurb for guests, per language. */
   sw?: string;
   en?: string;
+  /** The couple's Google Maps link to the place, or "" (vendored from shared-types InviteVenue.map). */
+  map?: string;
 }
 /** One celebration colour: swatch, names in both languages, optional outfit photo. */
 export interface Attire {
@@ -252,6 +254,10 @@ export interface InviteDesign {
   sections: Partial<Record<SectionKey, boolean>>;
   music: Music;
   pageOver: Record<string, Partial<PageRecipe>>;
+  /** Whether the shared invitation text carries the venue map links; absent means yes. */
+  shareMap?: boolean;
+  /** Whether it carries the wedding page link; absent means yes. */
+  sharePage?: boolean;
 }
 
 export interface TypeOpts {
@@ -342,6 +348,10 @@ export interface Strings {
   invFor: string;
   card: string;
   gate: string;
+  /** The label on the card's dress-code row, in the guest banner. */
+  dressCode: string;
+  /** The venue button when the couple saved their own Google Maps link. */
+  openGoogleMaps: string;
   seats: (n: number) => string;
   wd: string[];
   wdHead: string[];
@@ -493,6 +503,8 @@ export const STR: Record<Lang, Strings> = {
     marrying: 'Tunaoana',
     invitation: 'Mwaliko wa harusi',
     invFor: 'Mwaliko kwa',
+    dressCode: 'Mavazi',
+    openGoogleMaps: 'Fungua ramani',
     card: 'Kadi',
     gate: 'Onyesha kadi hii mlangoni',
     seats: (n) => (n === 1 ? 'Mtu 1' : `Watu ${n}`),
@@ -658,6 +670,8 @@ export const STR: Record<Lang, Strings> = {
     marrying: 'We’re getting married',
     invitation: 'Wedding invitation',
     invFor: 'Invitation for',
+    dressCode: 'Dress code',
+    openGoogleMaps: 'Open in Google Maps',
     card: 'Card',
     gate: 'Show this card at the gate',
     seats: (n) => (n === 1 ? '1 guest' : `${n} guests`),
@@ -1242,6 +1256,100 @@ export const PASS_BOXES: Record<PassStyle, { left: number; top: number; right: n
 };
 
 // ---------------------------------------------------------------------------
+// Dress code in the guest banner
+// ---------------------------------------------------------------------------
+
+/** One colour on the card's dress-code row: the swatch, and its name when the couple named the colours. */
+export interface DressChip {
+  hex: string;
+  /** "" for a design that only has `dress` hexes: the swatch goes alone. */
+  name: string;
+}
+
+/** The most colours the banner draws (the designer and the API allow eight). */
+export const MAX_DRESS_CHIPS = 8;
+
+/**
+ * The colours the guest banner shows so guests know what to wear: the named
+ * celebration colours (`attire`, the couple's name in the card language, else
+ * the other language, else the nearest named colour), or, when there are
+ * none, the bare `dress` hexes as swatches without names. Empty means the
+ * banner keeps its old height and draws no row.
+ */
+export function dressChips(d: { attire?: Attire[] | null; dress?: string[] | null }, lang: Lang): DressChip[] {
+  const attire = (d.attire ?? []).filter((a) => typeof a?.hex === 'string' && a.hex !== '');
+  if (attire.length > 0) {
+    return attire.slice(0, MAX_DRESS_CHIPS).map((a) => {
+      const own = ((lang === 'sw' ? a.sw : a.en) || a.en || a.sw || '').trim();
+      return { hex: hex(a.hex), name: own || colourName(a.hex)[lang] };
+    });
+  }
+  return (d.dress ?? [])
+    .filter((c) => typeof c === 'string' && c !== '')
+    .slice(0, MAX_DRESS_CHIPS)
+    .map((c) => ({ hex: hex(c), name: '' }));
+}
+
+/**
+ * The guest banner with a dress-code row. The QR and the text keep their
+ * sizes; the row they share gives up a little of its padding (`row`, was
+ * the pass height), the dress row (`strip`: a hairline, the label, round
+ * swatches with names under them) goes under it across the banner's width,
+ * and the foot may sit a little lower (`foot`). Everything above the banner
+ * moves up by the difference (`dressLift`). The narrow stack pass (t05)
+ * puts the label on its own line and wraps four swatches to a row.
+ */
+export interface DressBand {
+  /** Height of the QR and text row with a dress row under it (without one it is the pass's own height). */
+  row: number;
+  /** Height of the dress row. */
+  strip: number;
+  /** How much lower the banner's foot sits. */
+  foot: number;
+}
+export const DRESS_STRIP_H = 100;
+export const DRESS_BANDS: Record<Exclude<PassStyle, 'stack'>, DressBand & { height: number }> = {
+  // height: the pass without a dress row.
+  card: { row: 240, strip: DRESS_STRIP_H, foot: 0, height: 260 },
+  glass: { row: 240, strip: DRESS_STRIP_H, foot: 0, height: 260 },
+  line: { row: 230, strip: DRESS_STRIP_H, foot: 20, height: 230 },
+  ticket: { row: 226, strip: DRESS_STRIP_H, foot: 4, height: 250 },
+};
+export const DRESS_STACK_PER_ROW = 4;
+export function dressStackH(n: number): number {
+  if (n <= 0) return 0;
+  const rows = Math.ceil(Math.min(n, MAX_DRESS_CHIPS) / DRESS_STACK_PER_ROW);
+  // The gap to the name above (18), hairline and padding (14), label (22), gap (10), then rows of swatch and name (71) with 10 between.
+  return 18 + 14 + 22 + 10 + rows * 71 + (rows - 1) * 10;
+}
+/** How far the banner's top rises for a dress row of `chips` colours: 0 with none. */
+export function dressLift(pass: PassStyle, chips: number): number {
+  if (chips <= 0) return 0;
+  if (pass === 'stack') return dressStackH(chips);
+  const b = DRESS_BANDS[pass];
+  return b.row + b.strip - b.height - b.foot;
+}
+
+/**
+ * The venue box once the banner has grown by `lift`: it moves up with it
+ * (t05's panel beside the stack pass grows up instead, to stay its height).
+ */
+export function venueBoxAt(tplId: string, lift: number): VenueBox {
+  const v = venueBoxFor(tplId);
+  if (lift <= 0) return v;
+  if (v.panel) return { ...v, top: v.top - lift, height: v.height + lift };
+  return { ...v, top: v.top - lift };
+}
+
+/** The area a pass covers once its banner has grown by `lift` (it grows upward, the foot stays). */
+export function passBoxAt(pass: PassStyle, lift: number): { left: number; top: number; right: number; bottom: number } {
+  const p = PASS_BOXES[pass];
+  if (lift <= 0) return p;
+  const foot = pass === 'stack' ? 0 : DRESS_BANDS[pass].foot;
+  return { ...p, top: p.top - lift, bottom: p.bottom + foot };
+}
+
+// ---------------------------------------------------------------------------
 // Photos and crops
 // ---------------------------------------------------------------------------
 
@@ -1290,6 +1398,31 @@ export function tsh(n: number | undefined): string {
 function digits(p: string | undefined): string {
   return String(p || '').replace(/\D/g, '').replace(/^0/, '').replace(/^255/, '');
 }
+/**
+ * The couple's own Google Maps link for a venue, when it is one (https on
+ * google.com/maps, maps.google.com, maps.app.goo.gl or goo.gl/maps, the same
+ * rule as shared-types isGoogleMapsLink), else null.
+ */
+export function exactMapUrl(v: Pick<Venue, 'map'>): string | null {
+  const raw = (v.map ?? '').trim();
+  if (raw === '') return null;
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'https:' || u.username !== '' || u.password !== '') return null;
+  const host = u.hostname.toLowerCase();
+  const under = (prefix: string) => u.pathname === prefix || u.pathname.startsWith(`${prefix}/`);
+  const ok =
+    ((host === 'google.com' || host === 'www.google.com') && under('/maps')) ||
+    host === 'maps.google.com' ||
+    (host === 'maps.app.goo.gl' && u.pathname.length > 1) ||
+    (host === 'goo.gl' && under('/maps') && u.pathname.length > '/maps/'.length);
+  return ok ? raw : null;
+}
+
 export function mapUrl(v: Venue): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${v.name}, ${v.addr}`)}`;
 }
@@ -1333,7 +1466,7 @@ export const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
 /** Fill every field a stored design may lack, so views never null-check. */
 export function normalise(input: Partial<InviteDesign> | null | undefined, fallback: Partial<InviteDesign> = {}): InviteDesign {
   const src = { ...fallback, ...(input ?? {}) };
-  const blankVenue: Venue = { name: '', addr: '', time: '', photo: null, sw: '', en: '' };
+  const blankVenue: Venue = { name: '', addr: '', time: '', photo: null, sw: '', en: '', map: '' };
   return {
     v: 1,
     tpl: byId[src.tpl ?? ''] ? (src.tpl as string) : 't03',
@@ -1361,5 +1494,7 @@ export function normalise(input: Partial<InviteDesign> | null | undefined, fallb
     sections: { ...DEFAULT_SECTIONS, ...(src.sections ?? {}) },
     music: { ...DEFAULT_MUSIC, ...(src.music ?? {}) },
     pageOver: src.pageOver ?? {},
+    ...(typeof src.shareMap === 'boolean' ? { shareMap: src.shareMap } : {}),
+    ...(typeof src.sharePage === 'boolean' ? { sharePage: src.sharePage } : {}),
   };
 }

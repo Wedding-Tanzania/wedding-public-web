@@ -15,7 +15,7 @@ describe('normalise: designs saved before the new fields', () => {
     expect(saved.attire).toEqual([]);
     expect(saved.notes).toEqual([]);
     expect(saved.ceremony.photo).toBeNull();
-    expect(saved.reception).toEqual({ name: '', addr: '', time: '', photo: null, sw: '', en: '' });
+    expect(saved.reception).toEqual({ name: '', addr: '', time: '', photo: null, sw: '', en: '', map: '' });
     expect(saved.sections.quote).toBe(true);
     expect(saved.sections.notes).toBe(true);
     expect(saved.sections.wishes).toBe(true);
