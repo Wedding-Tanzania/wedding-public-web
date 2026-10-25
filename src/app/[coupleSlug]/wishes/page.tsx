@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
+import { storyTag } from '@/lib/story-tag';
 import { WishesForm, type WishesLang } from '@/components/story/WishesForm';
 
 export const revalidate = 300;
@@ -16,7 +17,7 @@ function firstName(full: string): string {
 
 async function load(slug: string): Promise<StoryLite | null> {
   try {
-    return await apiGet<StoryLite>(`/story/${encodeURIComponent(slug)}`);
+    return await apiGet<StoryLite>(`/story/${encodeURIComponent(slug)}`, undefined, [storyTag(slug)]);
   } catch {
     return null;
   }

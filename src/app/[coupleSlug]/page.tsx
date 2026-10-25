@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
+import { storyTag } from '@/lib/story-tag';
 import { normalise, type InviteDesign } from '@/lib/invite/wcz';
 import type { DesignFields, PublicStoryExtras } from '@/lib/invite/types';
 import { InvitePage } from '@/components/invite/InvitePage';
@@ -7,9 +8,10 @@ import { LegacyStoryPage, type GuestbookResponse, type StoryResponse } from '@/c
 
 /**
  * Static, regenerated at most once a minute. The API caches the story for a
- * minute too and drops it on every save, so an edit reaches guests within a
- * minute and every guest in a WhatsApp group opening the link at once is
- * served from the cache, not the API.
+ * minute too and drops it on every save, and a save also asks this site to
+ * drop the page (/api/revalidate, story-refresh.ts), so the couple sees their
+ * edit on the next load. Every guest in a WhatsApp group opening the link at
+ * once is still served from the cache, not the API.
  */
 export const revalidate = 60;
 
@@ -27,13 +29,13 @@ type PublicStory = StoryResponse & DesignFields & { extras?: PublicStoryExtras; 
 export default async function CoupleStoryPage({ params }: { params: { coupleSlug: string } }) {
   let data: PublicStory;
   try {
-    data = await apiGet<PublicStory>(`/story/${params.coupleSlug}`);
+    data = await apiGet<PublicStory>(`/story/${params.coupleSlug}`, undefined, [storyTag(params.coupleSlug)]);
   } catch {
     notFound();
   }
   let guestbook: GuestbookResponse = { items: [] };
   try {
-    guestbook = await apiGet<GuestbookResponse>(`/story/${params.coupleSlug}/guestbook`);
+    guestbook = await apiGet<GuestbookResponse>(`/story/${params.coupleSlug}/guestbook`, undefined, [storyTag(params.coupleSlug)]);
   } catch {
     // guestbook is best-effort
   }
