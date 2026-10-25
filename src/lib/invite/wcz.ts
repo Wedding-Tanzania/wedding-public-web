@@ -420,6 +420,17 @@ export interface Strings {
   phoneLabel: string;
   payFailed: string;
   payNotReady: string;
+  /** The two ways to pay, on the switch, and the line under the pay button. */
+  payMobile: string;
+  payCard: string;
+  payWays: string;
+  /** The card button, and what it says while the checkout opens. */
+  payByCard: string;
+  cardOpening: string;
+  cardNote: string;
+  cardFailed: string;
+  cardOff: string;
+  cardNotReady: string;
   yourPhone: string;
   addGoogle: string;
   addIcs: string;
@@ -577,6 +588,15 @@ export const STR: Record<Lang, Strings> = {
     phoneLabel: 'Namba ya simu ya kulipia',
     payFailed: 'Ombi la malipo halikutumwa. Jaribu tena baada ya muda mfupi.',
     payNotReady: 'Malipo kwa simu bado hayajawashwa. Tumia namba zilizo hapa juu.',
+    payMobile: 'Pesa ya simu',
+    payCard: 'Kadi',
+    payWays: 'Pesa ya simu au kadi',
+    payByCard: 'Lipa kwa kadi',
+    cardOpening: 'Inafungua malipo ya kadi…',
+    cardNote: 'Utamaliza malipo kwenye ukurasa salama wa kadi wa Malipopay.',
+    cardFailed: 'Malipo ya kadi hayakufunguka. Jaribu tena, au lipa kwa pesa ya simu.',
+    cardOff: 'Malipo ya kadi hayapatikani sasa hivi. Lipa kwa pesa ya simu.',
+    cardNotReady: 'Wanandoa bado hawajawezeshwa kupokea malipo hapa. Tumia namba zilizo hapa juu.',
     yourPhone: 'simu yako',
     addGoogle: 'Google Calendar',
     addIcs: 'Apple, Outlook (.ics)',
@@ -745,6 +765,15 @@ export const STR: Record<Lang, Strings> = {
     phoneLabel: 'Phone number to pay from',
     payFailed: 'The payment prompt was not sent. Please try again in a moment.',
     payNotReady: 'Mobile payment prompts are not switched on yet. Use the numbers above.',
+    payMobile: 'Mobile money',
+    payCard: 'Card',
+    payWays: 'Mobile money or card',
+    payByCard: 'Pay by card',
+    cardOpening: 'Opening card payment…',
+    cardNote: 'You finish on Malipopay’s secure card page.',
+    cardFailed: 'The card payment did not open. Please try again, or pay by mobile money.',
+    cardOff: 'Card payment is not available right now. Please pay by mobile money.',
+    cardNotReady: 'The couple cannot take payments here yet. Use the numbers above.',
     yourPhone: 'your phone',
     addGoogle: 'Google Calendar',
     addIcs: 'Apple, Outlook (.ics)',
