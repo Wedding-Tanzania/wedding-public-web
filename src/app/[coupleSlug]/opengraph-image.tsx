@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { apiGet } from '@/lib/api';
+import { storyTag } from '@/lib/story-tag';
 
 export const runtime = 'edge';
 export const alt = 'Wedding.co.tz couple page';
@@ -19,7 +20,7 @@ function firstName(full: string): string {
 export default async function OgImage({ params }: { params: { coupleSlug: string } }) {
   let couple: CoupleOg | null = null;
   try {
-    const data = await apiGet<{ couple?: CoupleOg }>(`/story/${params.coupleSlug}`);
+    const data = await apiGet<{ couple?: CoupleOg }>(`/story/${params.coupleSlug}`, undefined, [storyTag(params.coupleSlug)]);
     couple = data.couple ?? null;
   } catch {
     couple = null;
