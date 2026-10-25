@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { tsh, formatAmountInput, parseAmountInput } from '@/lib/money';
 import { normalizeTzPhone, localDigits, formatLocal, TZ_PHONE_MESSAGE } from '@/lib/phone';
+import { changiaCardCheckout, goToCheckout, payOptions, type PayMethod } from '@/lib/payments';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -29,6 +30,8 @@ interface ChangiaContext {
   stkAvailable: boolean;
   paymentsLive: boolean;
   proofUploadAvailable: boolean;
+  /** Card is listed only once the couple's account is active and card is on. */
+  paymentMethods?: PayMethod[];
 }
 
 interface PledgeResult extends ChangiaContext {
@@ -276,6 +279,17 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   const [payFrom, setPayFrom] = useState('');
   const [sentTo, setSentTo] = useState('');
   const [proofState, setProofState] = useState<'idle' | 'sending' | 'done' | 'failed'>('idle');
+  const [payMethod, setPayMethod] = useState<PayMethod>('mobile_money');
+
+  // Back from the card checkout, the browser can restore this page exactly as
+  // it was left, mid "Opening". Put the button back.
+  useEffect(() => {
+    function onShow(e: PageTransitionEvent) {
+      if (e.persisted) setBusy(false);
+    }
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -439,6 +453,44 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
     }
   }
 
+  /**
+   * The same amount and the same checks as a push, then off to Malipopay's
+   * card page. The webhook settles it against this pledge; the reference
+   * above stays the one that identifies the guest.
+   */
+  async function startCard(): Promise<void> {
+    if (result === null) return;
+    const owedNow = result.outstanding ?? result.pledge.amount;
+    const value = parseAmountInput(sendAmount);
+    if (!Number.isFinite(value) || value < MIN_AMOUNT) {
+      setError(`The smallest payment is ${tsh(MIN_AMOUNT)}.`);
+      return;
+    }
+    if (value > owedNow) {
+      setError(`Only ${tsh(owedNow)} is still owed on this pledge.`);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const r = await changiaCardCheckout(API_BASE, slug, { pledgeId: result.pledge.id, amount: value });
+    if (r.ok) {
+      // Busy stays on: the page is being left.
+      goToCheckout(r.checkoutUrl, window.location);
+      return;
+    }
+    setBusy(false);
+    // As with a push: the server knows the real balance, so take its word.
+    if (r.outstanding !== undefined) {
+      setSendAmount(formatAmountInput(String(r.outstanding)));
+      setResult({ ...result, outstanding: r.outstanding });
+    }
+    setError(
+      r.status === 0
+        ? 'We could not reach the server. Use the details below instead.'
+        : (r.message ?? 'We could not open the card payment. Please try again, or use the details below.'),
+    );
+  }
+
   async function startLookup(): Promise<void> {
     if (lookupPhone.trim() === '') {
       setError('Enter the number you pledged with.');
@@ -542,6 +594,10 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
   // What is still owed, and what the guest has typed over it.
   const owed = result === null ? 0 : (result.outstanding ?? result.pledge.amount);
   const typed = parseAmountInput(sendAmount);
+  // Mobile money first, card beside it; card alone when no push can be sent.
+  const payWays = ctx === null ? [] : payOptions(ctx.paymentMethods, ctx.stkAvailable);
+  const payWith: PayMethod = payWays.includes(payMethod) ? payMethod : (payWays[0] ?? 'mobile_money');
+  const byCard = payWith === 'card';
   const errorNote =
     error === null ? null : (
       <p className="rounded-md border border-due/40 bg-due-bg px-3 py-2 text-sm text-due">
@@ -795,15 +851,43 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                   </div>
                 )}
 
-                {ctx.stkAvailable && pushState === 'idle' && (
+                {payWays.length > 0 && pushState === 'idle' && (
                   <div className="rounded-md border border-bordr px-4 py-4">
                     {/* No network picker. Malipopay reads the network from the
                         number itself, and never accepted the field the old
                         five-way chooser was sending. */}
-                    <p className={labelClass}>Pay now from your phone</p>
+                    <p className={labelClass}>
+                      {byCard ? 'Pay now by card' : 'Pay now from your phone'}
+                    </p>
+                    {payWays.length > 1 && (
+                      <div role="group" aria-label="How to pay" className="mb-3 mt-2 grid grid-cols-2 gap-2">
+                        {payWays.map((m) => {
+                          const on = m === payWith;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              aria-pressed={on}
+                              onClick={() => {
+                                setPayMethod(m);
+                                setError(null);
+                              }}
+                              className={`border py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] ${
+                                on
+                                  ? 'border-herb-600 bg-herb-600 text-paper'
+                                  : 'border-bordr bg-paper text-ink-1 hover:bg-herb-50'
+                              }`}
+                            >
+                              {m === 'card' ? 'Card' : 'Mobile money'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                     <p className="mb-3 text-[11px] text-ink-3">
-                      Approve the prompt on the handset below and the money is
-                      on its way.
+                      {byCard
+                        ? 'You finish on Malipopay’s secure card page. What you pay comes off this same pledge.'
+                        : 'Approve the prompt on the handset below and the money is on its way.'}
                     </p>
 
                     {/* Editable, because nobody has to give it all at once.
@@ -831,20 +915,32 @@ export default function ChangiaPage({ params }: { params: { slug: string } }) {
                     {/* Its own field: paying a relative's michango from your
                         own handset is ordinary, and the prompt has to reach
                         the phone that is actually going to approve it. */}
-                    <label className="mt-3 block">
-                      <span className={labelClass}>Send the prompt to</span>
-                      <PhoneBox value={payFrom} onChange={setPayFrom} />
-                      <span className="mt-1 block text-[11px] text-ink-3">
-                        Paying for someone else? Put your own number here.
-                      </span>
-                    </label>
-                    <button
-                      onClick={() => void startPush()}
-                      disabled={busy}
-                      className={primaryButton}
-                    >
-                      {busy ? 'Sending…' : `Send ${tsh(typed > 0 ? typed : owed)}`}
-                    </button>
+                    {byCard ? (
+                      <button
+                        onClick={() => void startCard()}
+                        disabled={busy}
+                        className={`${primaryButton} mt-3`}
+                      >
+                        {busy ? 'Opening…' : `Pay ${tsh(typed > 0 ? typed : owed)} by card`}
+                      </button>
+                    ) : (
+                      <>
+                        <label className="mt-3 block">
+                          <span className={labelClass}>Send the prompt to</span>
+                          <PhoneBox value={payFrom} onChange={setPayFrom} />
+                          <span className="mt-1 block text-[11px] text-ink-3">
+                            Paying for someone else? Put your own number here.
+                          </span>
+                        </label>
+                        <button
+                          onClick={() => void startPush()}
+                          disabled={busy}
+                          className={primaryButton}
+                        >
+                          {busy ? 'Sending…' : `Send ${tsh(typed > 0 ? typed : owed)}`}
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
 

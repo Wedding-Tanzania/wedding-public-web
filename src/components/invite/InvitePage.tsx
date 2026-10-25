@@ -22,6 +22,7 @@ import {
   type Lang,
   type SectionKey,
 } from '@/lib/invite/wcz';
+import type { PayMethod } from '@/lib/payments';
 import { InviteCard } from './InviteCard';
 import { ScaledCard } from './ScaledCard';
 import { Attire } from './page/Attire';
@@ -51,6 +52,8 @@ export interface InvitePageProps {
   /** What the gate pass QR holds: the guest's RSVP link, which the gate scanner reads. */
   rsvpUrl: string | null;
   accounts: PublicCollectionAccount[];
+  /** How a guest can pay from the invitation; card only while it is offered. Left out on the story page. */
+  paymentMethods?: PayMethod[];
   extras: PublicStoryExtras | null;
   /** The story page slug, for the guestbook. */
   slug: string | null;
@@ -377,7 +380,7 @@ export function InvitePage(props: InvitePageProps) {
       case 'gallery':
         return <Gallery d={d} view={rc.gallery} items={gal.map((x) => ({ ph: x.ph, crop: x.it.crop }))} />;
       case 'michango':
-        return <Michango d={d} lang={lang} token={props.token} guest={guest} accounts={props.accounts} />;
+        return <Michango d={d} lang={lang} token={props.token} guest={guest} accounts={props.accounts} paymentMethods={props.paymentMethods} />;
       case 'kamati': {
         const waText = lang === 'sw' ? `Habari, nina swali kuhusu harusi ya ${a} & ${b}.` : `Hello, I have a question about ${a} & ${b}’s wedding.`;
         return (

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { STR, tsh, type InviteDesign, type Lang } from '@/lib/invite/wcz';
 import type { InviteGuestView, PublicCollectionAccount } from '@/lib/invite/types';
+import { goToCheckout, inviteCardCheckout, offersCard, payOptions, type CheckoutResult, type PayMethod } from '@/lib/payments';
 import { monoStyle, usePal } from './palette';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -24,10 +25,66 @@ interface Line {
 }
 
 /**
+ * Mobile money or card, side by side. Drawn only when there is a choice to
+ * make; the chosen one is filled in the accent, like the button under it.
+ */
+export function PayMethodChoice({
+  lang,
+  options,
+  value,
+  onChange,
+}: {
+  lang: Lang;
+  options: PayMethod[];
+  value: PayMethod;
+  onChange: (next: PayMethod) => void;
+}) {
+  const p = usePal();
+  const S = STR[lang];
+  if (options.length < 2) return null;
+  return (
+    <div role="group" aria-label={S.payWays} style={{ display: 'grid', gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`, gap: 8 }}>
+      {options.map((m) => {
+        const on = m === value;
+        return (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(m)}
+            style={{
+              height: 44,
+              cursor: 'pointer',
+              border: `1px solid ${on ? p.accent : p.pink_(30)}`,
+              background: on ? p.accent : 'transparent',
+              color: on ? p.onacc : p.pink,
+              fontFamily: p.sans,
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            {m === 'card' ? S.payCard : S.payMobile}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** What to tell the guest when the card checkout did not open. */
+function cardError(r: Exclude<CheckoutResult, { ok: true }>, S: (typeof STR)[Lang]): string {
+  if (r.code === 'CARD_NOT_OFFERED') return S.cardOff;
+  if (r.code === 'ACCOUNT_NOT_READY') return S.cardNotReady;
+  // As the push does: a refused amount comes back with the API's own words.
+  if (r.status === 400 && r.message !== undefined) return r.message;
+  return S.cardFailed;
+}
+
+/**
  * Michango: the guest's pledge and what is paid, where to pay, and a payment
- * prompt sent to their phone. The prompt only exists on a personal
- * invitation (the token is what ties the money to the guest); the public
- * story page shows where to pay and nothing else.
+ * prompt sent to their phone or a card checkout. Both only exist on a
+ * personal invitation (the token is what ties the money to the guest); the
+ * public story page shows where to pay and nothing else.
  */
 export function Michango({
   d,
@@ -35,15 +92,21 @@ export function Michango({
   token,
   guest,
   accounts,
+  paymentMethods,
 }: {
   d: InviteDesign;
   lang: Lang;
   token: string | null;
   guest: InviteGuestView | null;
   accounts: PublicCollectionAccount[];
+  /** From the invitation: card is listed while the platform has it on. */
+  paymentMethods?: readonly string[];
 }) {
   const p = usePal();
   const S = STR[lang];
+  // A personal invitation can always send a push; card joins it when offered.
+  const options = payOptions(paymentMethods, true);
+  const cardOn = offersCard(paymentMethods);
   const pledge = guest?.pledge ?? 0;
   const paid = guest?.paid ?? 0;
   const bal = Math.max(0, pledge - paid);
@@ -53,6 +116,18 @@ export function Michango({
   const [other, setOther] = useState(false);
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [method, setMethod] = useState<PayMethod>(options[0] ?? 'mobile_money');
+  const byCard = method === 'card';
+
+  // Coming back from the checkout with the browser's back button restores
+  // this page as it was left, mid "Opening". Put the button back.
+  useEffect(() => {
+    function onShow(e: PageTransitionEvent) {
+      if (e.persisted) setStage((s) => (s === 'sending' ? 'amount' : s));
+    }
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
 
   // Collection accounts first (slice D); until a wedding has any, the
   // numbers the couple typed into the design.
@@ -74,6 +149,20 @@ export function Michango({
           .filter(([, n]) => n !== '')
           .map(([k, n]) => ({ key: k, chip: RAIL[k] as Line['chip'], number: n, holder: null }));
   const holder = accounts.length > 0 ? null : d.michango.name || null;
+
+  async function payByCard() {
+    if (token === null) return;
+    setStage('sending');
+    setError(null);
+    const r = await inviteCardCheckout(API_BASE, token, amt);
+    if (r.ok) {
+      // The page is left here; the webhook settles the payment.
+      goToCheckout(r.checkoutUrl, window.location);
+      return;
+    }
+    setError(cardError(r, S));
+    setStage('amount');
+  }
 
   async function send() {
     if (token === null) return;
@@ -171,9 +260,21 @@ export function Michango({
           {S.payNow}
         </button>
       )}
+      {token !== null && stage === 'idle' && cardOn && (
+        <div style={{ fontSize: 12, color: p.pink_(72), marginTop: 8, textAlign: 'center' }}>{S.payWays}</div>
+      )}
 
       {token !== null && (stage === 'amount' || stage === 'sending') && (
         <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <PayMethodChoice
+            lang={lang}
+            options={options}
+            value={method}
+            onChange={(m) => {
+              setMethod(m);
+              setError(null);
+            }}
+          />
           <div style={tiny(p.pink_(66))}>{S.amount}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {amounts.map((v) => {
@@ -191,11 +292,13 @@ export function Michango({
               );
             })}
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: p.pink_(80), cursor: 'pointer' }}>
-            <input type="checkbox" checked={other} onChange={(e) => setOther(e.target.checked)} />
-            {S.payFromOther}
-          </label>
-          {other && (
+          {!byCard && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: p.pink_(80), cursor: 'pointer' }}>
+              <input type="checkbox" checked={other} onChange={(e) => setOther(e.target.checked)} />
+              {S.payFromOther}
+            </label>
+          )}
+          {!byCard && other && (
             <input
               type="tel"
               inputMode="tel"
@@ -207,9 +310,18 @@ export function Michango({
               style={{ height: 44, padding: '0 12px', borderRadius: 8, border: `1px solid ${p.pink_(30)}`, background: 'transparent', color: p.pink, fontFamily: p.mono, fontSize: 15 }}
             />
           )}
-          <button type="button" style={primary} disabled={stage === 'sending'} onClick={() => void send()}>
-            {stage === 'sending' ? S.sending : `${S.sendPrompt} · ${tsh(amt)}`}
-          </button>
+          {byCard ? (
+            <>
+              <button type="button" style={primary} disabled={stage === 'sending'} onClick={() => void payByCard()}>
+                {stage === 'sending' ? S.cardOpening : `${S.payByCard} · ${tsh(amt)}`}
+              </button>
+              <div style={{ fontSize: 12, color: p.pink_(72), textAlign: 'center' }}>{S.cardNote}</div>
+            </>
+          ) : (
+            <button type="button" style={primary} disabled={stage === 'sending'} onClick={() => void send()}>
+              {stage === 'sending' ? S.sending : `${S.sendPrompt} · ${tsh(amt)}`}
+            </button>
+          )}
           {error !== null && (
             <div role="alert" style={{ fontSize: 13, color: p.pink }}>
               {error}

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { InvitePage } from '@/components/invite/InvitePage';
 import { LegacyRsvpPage, type LegacyRsvpContext } from '@/components/story/LegacyRsvpPage';
 import { normalise } from '@/lib/invite/wcz';
+import type { PayMethod } from '@/lib/payments';
 import type { CalendarLinks, DesignFields, InviteGuestView, PublicStoryExtras } from '@/lib/invite/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -12,6 +13,8 @@ type RsvpContext = LegacyRsvpContext &
     guest?: InviteGuestView;
     extras?: PublicStoryExtras | null;
     storySlug?: string | null;
+    /** How the guest can pay: card shows beside mobile money while the platform has it on. */
+    paymentMethods?: PayMethod[];
   };
 
 /**
@@ -100,6 +103,7 @@ export default async function RsvpPage({
       calendar={calendar}
       rsvpUrl={ctx.card?.rsvpUrl ?? null}
       accounts={ctx.accounts ?? []}
+      paymentMethods={ctx.paymentMethods ?? []}
       extras={ctx.extras ?? null}
       slug={slug}
       guestbook={guestbook}
