@@ -7,7 +7,9 @@ export const metadata = {
     'How Wedding by Lockwood collects, uses, and protects personal information for couples, vendors, and guests.',
 };
 
-const LAST_UPDATED = '24 October 2026';
+const LAST_UPDATED = '26 October 2026';
+
+const SUPPORT_EMAIL = 'support@wedding.co.tz';
 
 export default function PrivacyPage() {
   return (
@@ -58,9 +60,37 @@ export default function PrivacyPage() {
                 booking. We never see or store your MNO PIN or bank password.
               </li>
               <li>
+                <span className="text-ink-1 font-medium">Contacts:</span> when you tap Import on
+                the People screen, the app opens your phone's contact picker and reads only the
+                contacts you pick: their name and phone number. We use them only to build your
+                guest list and send the invitations you ask us to send, never for marketing, and
+                we never read the rest of your address book.
+              </li>
+              <li>
+                <span className="text-ink-1 font-medium">Location:</span> the app does not use
+                your phone's precise location (GPS) and never asks for it. When you sign in, we
+                look up an approximate city and country from your IP address and keep it in your
+                sign-in history, so we can spot a sign-in that is not you. Venue addresses and
+                map links you type for your wedding are part of your couple content.
+              </li>
+              <li>
+                <span className="text-ink-1 font-medium">Camera and photos:</span> the camera is
+                used only to scan the QR code on invitation cards at the gate, and to take a photo
+                you choose to add. Photos you add to your wedding page are stored so your guests
+                can see them, and you can remove them from the Story page in the app at any time.
+              </li>
+              <li>
                 <span className="text-ink-1 font-medium">Device + usage:</span> IP address, user
-                agent, referring URL, anonymised event analytics. Used to keep the service running
-                and to spot abuse.
+                agent, referring URL, the push notification token of your phone, and event
+                analytics linked to your account (for example sign-ins and the invitation links
+                your guests open). Used to keep the service running, deliver notifications, and
+                spot abuse.
+              </li>
+              <li>
+                <span className="text-ink-1 font-medium">Crashes and performance:</span> the
+                mobile app does not include a crash reporting or analytics SDK. Errors are logged
+                on your phone only; our servers keep standard request logs linked to your account
+                to fix faults and keep the service fast.
               </li>
             </ul>
           </div>
@@ -87,7 +117,7 @@ export default function PrivacyPage() {
               <li>To send service messages (OTP codes, booking confirmations, deposit receipts, RSVP notifications).</li>
               <li>To produce TRA-compliant EFD receipts on transactions where this is required.</li>
               <li>To respond to your support requests.</li>
-              <li>To improve the platform with aggregated, de-identified analytics.</li>
+              <li>To improve the platform with event analytics linked to your account, which we review in aggregate.</li>
             </ul>
           </div>
 
@@ -121,12 +151,15 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="text-ink-2">
                   {[
-                    ['Malipopay', 'Payment processing, MNO and bank rails, escrow movements', 'Tanzania'],
+                    ['Malipopay', 'Payment processing, MNO and bank rails, escrow movements. Receives the payer\'s phone number and the amount, to collect michango and payments', 'Tanzania'],
+                    ['SMS and WhatsApp providers (Malipopay messaging and Meta WhatsApp Business)', 'Receive guest names and phone numbers and the message text, to send the invitations, reminders and one-time codes you ask for', 'Tanzania / Global'],
+                    ['Apple Push Notification service and Firebase Cloud Messaging (Google)', 'Receive your phone\'s push token and the notification text, to deliver notifications to your phone', 'Global'],
                     ['MongoDB Atlas', 'Primary database hosting', 'EU / South Africa'],
                     ['Resend', 'Transactional email delivery', 'EU / US'],
-                    ['Airtel SMPP', 'SMS OTP and notifications', 'Tanzania'],
-                    ['Cloudflare', 'CDN, DDoS protection, DNS', 'Global'],
-                    ['Vercel', 'Web application hosting', 'EU / US'],
+                    ['Cloudflare', 'CDN, DDoS protection, DNS, and storage of the photos and files you upload (R2)', 'Global'],
+                    ['DigitalOcean', 'Hosting of our API servers', 'EU'],
+                    ['Netlify', 'Web application hosting', 'EU / US'],
+                    ['Google and Apple', 'Receive a sign-in request when you choose Continue with Google or Sign in with Apple, and return your name and email', 'Global'],
                   ].map(([who, what, where]) => (
                     <tr key={who} className="border-t border-bordr">
                       <td className="p-4 text-ink-1 font-medium">{who}</td>
@@ -137,15 +170,40 @@ export default function PrivacyPage() {
                 </tbody>
               </table>
             </div>
+            <p className="mt-4">
+              Each provider receives only the data it needs and is bound to protect it at least as
+              well as we do. We do not sell personal information and we do not share it with
+              advertisers.
+            </p>
           </div>
 
           <div>
             <h2 className="font-sans text-2xl text-herb-900">6. Retention</h2>
             <p className="mt-3">
-              We keep account data for as long as your account is active, plus seven years for
-              transaction records as required by tax and AML law. Marketing consent is kept until
-              you withdraw it. Couple story pages and RSVP entries are retained for 12 months
-              after the wedding date by default; you can request earlier deletion at any time.
+              We keep your data while your account is open and for 365 days after your wedding
+              date, unless the law requires us to keep it longer: transaction records are kept for
+              seven years as tax and anti-money-laundering law requires. Couple story pages, guest
+              lists and RSVP entries follow the same 365-day rule, and you can delete them sooner.
+            </p>
+            <p className="mt-3">
+              <span className="text-ink-1 font-medium">Deleting your account.</span> In the app,
+              open Settings and tap Delete account. Or email{' '}
+              <a className="text-herb-700 underline" href={`mailto:${SUPPORT_EMAIL}?subject=Delete%20my%20account`}>
+                {SUPPORT_EMAIL}
+              </a>{' '}
+              from the email on your account, or see{' '}
+              <Link href="/delete-account" className="text-herb-700 underline">
+                Delete your account
+              </Link>
+              . Deletion removes your name, phone, email, photo and sign-in history; money records
+              stay with the wedding's books as the law requires.
+            </p>
+            <p className="mt-3">
+              <span className="text-ink-1 font-medium">Consent.</span> Where we rely on your
+              consent (marketing messages, and any optional analytics we add in future) you can
+              withdraw it at any time: turn off notifications in the app's Settings, reply STOP to a
+              marketing SMS, or email us. The app has no optional analytics today; if we add any,
+              we will ask before it starts and you can switch it off in Settings.
             </p>
           </div>
 
@@ -183,8 +241,9 @@ export default function PrivacyPage() {
             <h2 className="font-sans text-2xl text-herb-900">9. Cookies and analytics</h2>
             <p className="mt-3">
               We use a small number of first-party cookies to keep you signed in and to remember
-              your preferences. We use anonymised, aggregated event analytics to understand which
-              parts of the product are useful. We do not run third-party advertising trackers.
+              your preferences. We use event analytics linked to your account to understand which
+              parts of the product are useful. We do not run third-party advertising trackers and
+              we do not track you across other companies' apps or websites.
             </p>
           </div>
 
@@ -212,6 +271,10 @@ export default function PrivacyPage() {
               Lockwood Technology Tanzania Ltd. Privacy office, Dar es Salaam.{' '}
               <a className="text-herb-700 underline" href="mailto:privacy@wedding.co.tz">
                 privacy@wedding.co.tz
+              </a>
+              . For help with the app, or to report a guest message, email{' '}
+              <a className="text-herb-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>
+                {SUPPORT_EMAIL}
               </a>
               .
             </p>
