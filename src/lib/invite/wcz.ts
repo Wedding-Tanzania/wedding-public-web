@@ -481,6 +481,12 @@ export interface Strings {
   wishesSentBody: string;
   wishesMissing: string;
   wishesFailed: string;
+  /** The Report link on each wish (App Store guideline 1.2). */
+  reportWish: string;
+  wishReported: string;
+  reportFailed: string;
+  /** Under the wishes: how to reach a person about a message. */
+  reportHelp: (email: string) => string;
   needChange: string;
   updateResponse: string;
   downloadOn: string;
@@ -644,6 +650,10 @@ export const STR: Record<Lang, Strings> = {
     wishesSentBody: 'Ujumbe wako umefika salama kwa maharusi.',
     wishesMissing: 'Andika jina lako na salamu zako.',
     wishesFailed: 'Imeshindikana kutuma. Jaribu tena.',
+    reportWish: 'Ripoti',
+    wishReported: 'Umeripoti ujumbe huu. Tumeuondoa na timu yetu itaupitia.',
+    reportFailed: 'Imeshindikana kuripoti. Jaribu tena.',
+    reportHelp: (email) => `Umeona ujumbe usiofaa? Gusa Ripoti, au tuandikie ${email}.`,
     needChange: 'Unahitaji kubadilisha jibu lako?',
     updateResponse: 'Badilisha jibu',
     downloadOn: 'Pakua kwenye',
@@ -821,6 +831,10 @@ export const STR: Record<Lang, Strings> = {
     wishesSentBody: 'Your message is safely with the happy couple.',
     wishesMissing: 'Add your name and your wishes.',
     wishesFailed: 'Could not send. Please try again.',
+    reportWish: 'Report',
+    wishReported: 'Thanks for reporting. The message is off the page and our team will review it.',
+    reportFailed: 'Could not report it. Please try again.',
+    reportHelp: (email) => `See something offensive? Tap Report, or write to ${email}.`,
     needChange: 'Need to change your response?',
     updateResponse: 'Update response',
     downloadOn: 'Download on the',

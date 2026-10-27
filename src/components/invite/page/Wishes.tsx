@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from 'react';
 import { STR, type Lang } from '@/lib/invite/wcz';
+import { SUPPORT_EMAIL } from '@/lib/support';
+import { reportWish } from '@/lib/wishes';
 import { labelStyle, monoStyle, usePal } from './palette';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -13,6 +15,8 @@ export interface WishEntry {
   name: string;
   message: string;
   createdAt?: string;
+  /** Set when the API held the wish back (a blocked author, or the word filter). */
+  hidden?: boolean;
 }
 
 /**
@@ -45,6 +49,17 @@ export function Wishes({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function report(id: string) {
+    setNotice(null);
+    if (await reportWish(slug, id)) {
+      setEntries((list) => list.filter((en) => en.id !== id));
+      setNotice(S.wishReported);
+    } else {
+      setNotice(S.reportFailed);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -62,7 +77,8 @@ export function Wishes({
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { entry?: WishEntry };
-      if (data.entry !== undefined) setEntries([data.entry, ...entries]);
+      // A held-back wish still reaches the couple, but is not shown here.
+      if (data.entry !== undefined && data.entry.hidden !== true) setEntries([data.entry, ...entries]);
       setMessage('');
       setSent(true);
     } catch {
@@ -126,10 +142,25 @@ export function Wishes({
           {entries.slice(0, 3).map((en) => (
             <li key={en.id} style={{ padding: '12px 0', borderTop: `1px solid ${P.ink_(12)}` }}>
               <p style={{ margin: 0, fontSize: 15, whiteSpace: 'pre-wrap' }}>{en.message}</p>
-              <div style={{ ...monoStyle(P, 10, 0.12, P.accBg), textTransform: 'uppercase', marginTop: 6 }}>{en.name}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginTop: 6 }}>
+                <div style={{ ...monoStyle(P, 10, 0.12, P.accBg), textTransform: 'uppercase' }}>{en.name}</div>
+                <button type="button" onClick={() => void report(en.id)} data-report-wish={en.id} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: 0, color: P.ink_(60), fontFamily: P.sans, fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                  {S.reportWish}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
+      )}
+      {notice !== null && (
+        <p role="status" style={{ margin: 0, fontSize: 13, color: P.ink_(74), textAlign: 'center' }}>
+          {notice}
+        </p>
+      )}
+      {entries.length > 0 && (
+        <p style={{ margin: 0, fontSize: 12, color: P.ink_(60), textAlign: 'center' }}>
+          {S.reportHelp(SUPPORT_EMAIL)}
+        </p>
       )}
       {onUpdateResponse !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginTop: 6 }}>

@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { SUPPORT_EMAIL } from '@/lib/support';
+import { reportWish } from '@/lib/wishes';
 
 interface Entry {
   id: string;
   name: string;
   message: string;
   createdAt?: string;
+  /** Set when the API held the wish back (a blocked author, or the word filter). */
+  hidden?: boolean;
 }
 
 const API_BASE =
@@ -25,6 +29,17 @@ export function Guestbook({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function report(id: string) {
+    setNotice(null);
+    if (await reportWish(slug, id)) {
+      setEntries((list) => list.filter((en) => en.id !== id));
+      setNotice('Thanks for reporting. The message is off the page and our team will review it.');
+    } else {
+      setNotice('Could not report it. Please try again.');
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -42,7 +57,8 @@ export function Guestbook({
       });
       if (!res.ok) throw new Error('failed');
       const data = (await res.json()) as { entry: Entry };
-      setEntries([data.entry, ...entries]);
+      // A held-back wish still reaches the couple, but is not shown here.
+      if (data.entry.hidden !== true) setEntries([data.entry, ...entries]);
       setName('');
       setMessage('');
       setDone(true);
@@ -63,7 +79,7 @@ export function Guestbook({
         )}
         {done && (
           <p className="mb-3 text-sm text-herb-600">
-            Thank you, your wish has been added below.
+            Thank you, your wish has been sent to the couple.
           </p>
         )}
         <input
@@ -92,13 +108,33 @@ export function Guestbook({
           {entries.map((en) => (
             <li key={en.id} className="rounded-lg border border-bordr bg-paper p-5">
               <p className="whitespace-pre-wrap text-ink-2">{en.message}</p>
-              <p className="mt-3 text-[10px] uppercase tracking-widest text-herb-600">
-                {en.name}
-              </p>
+              <div className="mt-3 flex items-baseline justify-between gap-3">
+                <p className="text-[10px] uppercase tracking-widest text-herb-600">{en.name}</p>
+                <button
+                  type="button"
+                  onClick={() => void report(en.id)}
+                  data-report-wish={en.id}
+                  className="text-xs text-ink-3 underline underline-offset-2 hover:text-ink-1"
+                >
+                  Report
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+      {notice !== null && (
+        <p role="status" className="mt-4 text-center text-sm text-ink-2">
+          {notice}
+        </p>
+      )}
+      <p className="mt-6 text-center text-xs text-ink-3">
+        See something offensive? Tap Report, or write to{' '}
+        <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
+          {SUPPORT_EMAIL}
+        </a>
+        .
+      </p>
     </div>
   );
 }
