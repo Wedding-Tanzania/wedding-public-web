@@ -100,3 +100,13 @@ describe('programme layout', () => {
     expect(page(normalise({ ...saved, pageOver: { t04: { ratiba: 'cards' } } }), 't04').ratiba).toBe('cards');
   });
 });
+
+describe('the contacts section is for RSVP, not the kamati', () => {
+  it('heads the contact people as RSVP contacts in both languages, never as the committee', () => {
+    expect(STR.en.H.kamati).toBe('RSVP contacts');
+    expect(STR.sw.H.kamati).toBe('Mawasiliano ya RSVP');
+    expect(STR.en.rsvpContacts).toBe('RSVP contacts');
+    expect(STR.sw.rsvpContacts).toBe('Mawasiliano ya RSVP');
+    for (const lang of ['en', 'sw'] as const) expect(STR[lang].H.kamati).not.toMatch(/kamati|committee/i);
+  });
+});
