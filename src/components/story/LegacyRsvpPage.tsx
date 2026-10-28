@@ -3,6 +3,7 @@ import { cardDesignFor, legacyDress, legacyVenues, type InvitationCardView } fro
 import { shownSeats, type CardKind, type InviteDesign } from '@/lib/invite/wcz';
 import { qrSvg } from '@/lib/qr';
 import { RsvpForm, type SavedReply, type Status } from '@/app/rsvp/[token]/RsvpForm';
+import type { AnswerParam } from '@/lib/short-links';
 import { SaveCardButton } from '@/app/rsvp/[token]/SaveCardButton';
 
 /*
@@ -25,7 +26,16 @@ export interface LegacyRsvpContext {
   calendar?: { googleUrl: string; icsUrl: string; startsAt?: string; allDay?: boolean };
 }
 
-export async function LegacyRsvpPage({ ctx, params }: { ctx: LegacyRsvpContext; params: { token: string } }) {
+export async function LegacyRsvpPage({
+  ctx,
+  params,
+  picked = null,
+}: {
+  ctx: LegacyRsvpContext;
+  params: { token: string };
+  /** The answer an emailed invitation's button picked, to open the form on. */
+  picked?: AnswerParam | null;
+}) {
   const card = ctx.card;
   const svg = card !== undefined ? await qrSvg(card.rsvpUrl, cardDesignFor(card.templateKey).palette.ink) : null;
 
@@ -61,6 +71,7 @@ export async function LegacyRsvpPage({ ctx, params }: { ctx: LegacyRsvpContext; 
             partyAllowed={ctx.guest?.kind === 'double' ? shownSeats('double', card?.partyAllowed) : card?.partyAllowed}
             reply={ctx.reply}
             calendar={ctx.calendar}
+            picked={picked}
           />
         </section>
 

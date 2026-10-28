@@ -43,6 +43,7 @@ export function RsvpForm({
   partyAllowed,
   firstName,
   reply,
+  picked = null,
 }: {
   token: string;
   status: Status;
@@ -54,13 +55,18 @@ export function RsvpForm({
   partyAllowed?: number;
   firstName: string;
   reply?: SavedReply;
+  /**
+   * An answer button in the invitation email: the form opens on that answer's
+   * details, still waiting for the guest to send it.
+   */
+  picked?: Answer | null;
 }) {
   const answered: Answer | null =
     status === 'accepted' || status === 'maybe' || status === 'declined' ? status : null;
   const [phase, setPhase] = useState<Phase>(
-    status === 'expired' ? 'error' : !rsvpOpen ? 'closed' : answered !== null ? 'done' : 'ask',
+    status === 'expired' ? 'error' : !rsvpOpen ? 'closed' : picked !== null ? 'details' : answered !== null ? 'done' : 'ask',
   );
-  const [answer, setAnswer] = useState<Answer | null>(answered);
+  const [answer, setAnswer] = useState<Answer | null>(picked ?? answered);
   const [partySize, setPartySize] = useState(reply?.partySize ?? Math.min(2, partyAllowed ?? 1));
   const [dietary, setDietary] = useState<string[]>(
     (reply?.dietaryNotes ?? '').split(',').map((d) => d.trim()).filter((d) => DIETARY.includes(d)),

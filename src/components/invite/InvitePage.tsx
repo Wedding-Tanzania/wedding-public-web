@@ -60,6 +60,8 @@ export interface InvitePageProps {
   guestbook: { id: string; name: string; message: string; createdAt?: string }[];
   /** The guest's card as an image, for "Save card". */
   cardPngUrl: string | null;
+  /** An answer button in the invitation email: the page opens on the answer, picked but not sent. */
+  pickedAnswer?: 'accepted' | 'maybe' | 'declined' | null;
 }
 
 /**
@@ -234,6 +236,14 @@ export function InvitePage(props: InvitePageProps) {
     if ((extras.travelNote ?? '') !== '') extraList.push({ k: 'travel', node: <Note text={extras.travelNote ?? ''} /> });
   }
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // From an emailed answer button, go to the answer once the invitation is open.
+  const pickedShown = useRef(false);
+  useEffect(() => {
+    if (stage !== 'open' || pickedShown.current || props.pickedAnswer == null || props.token === null) return;
+    pickedShown.current = true;
+    const t = setTimeout(() => document.getElementById('sec-rsvp')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    return () => clearTimeout(t);
+  }, [stage, props.pickedAnswer, props.token]);
 
   const total = keys.length + extraList.length;
   const wrapFor = (i: number): { style: CSSProperties; inv: boolean } => {
@@ -275,7 +285,7 @@ export function InvitePage(props: InvitePageProps) {
     switch (k) {
       case 'rsvp':
         return (
-          <Rsvp d={d} lang={lang} view={rc.rsvp} rhythm={rc.rhythm} token={props.token} guest={guest} status={props.status} reply={props.reply} rsvpOpen={props.rsvpOpen} calendar={props.calendar} />
+          <Rsvp d={d} lang={lang} view={rc.rsvp} rhythm={rc.rhythm} token={props.token} guest={guest} status={props.status} reply={props.reply} rsvpOpen={props.rsvpOpen} calendar={props.calendar} picked={props.pickedAnswer ?? null} />
         );
       case 'song':
         return (
