@@ -9,6 +9,19 @@ const nextConfig = {
       '/rsvp/preview/[id]/card.png': ['./src/app/rsvp/_card-image/fonts/**', './src/app/_invite-card/fonts/**'],
     },
   },
+  async redirects() {
+    return [
+      // The App Store screenshots were captured against a local demo database,
+      // so the wedding page link on the "A wedding page to share" screenshot
+      // names a wedding that exists nowhere. App Review may type it in: send it
+      // to the store reviewer's demo wedding page on the live site instead.
+      {
+        source: '/amina-and-juma-b0a230',
+        destination: '/neema-and-baraka-74385f',
+        permanent: false,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.wedding.co.tz' },
