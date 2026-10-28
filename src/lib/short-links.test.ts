@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  answerParam,
   calendarPage,
   calendarResponse,
   cardRedirect,
@@ -129,6 +130,21 @@ describe('/i/<code>', () => {
     const res = await cardRedirect('https://wedding.co.tz/i/abcdEFGH', 'abcdEFGH', API, api());
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}`);
+  });
+
+  it('keeps the answer an emailed answer button picked, and nothing else', async () => {
+    for (const answer of ['accepted', 'maybe', 'declined']) {
+      const res = await cardRedirect(`https://wedding.co.tz/i/abcdEFGH?answer=${answer}`, 'abcdEFGH', API, api());
+      expect(res.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}?answer=${answer}`);
+    }
+    const odd = await cardRedirect('https://wedding.co.tz/i/abcdEFGH?answer=yes&utm=x', 'abcdEFGH', API, api());
+    expect(odd.headers.get('location')).toBe(`https://wedding.co.tz/rsvp/${TOKEN}`);
+  });
+
+  it('reads an answer only when it is one of the three', () => {
+    expect(answerParam('maybe')).toBe('maybe');
+    expect(answerParam('Accepted')).toBeNull();
+    expect(answerParam(undefined)).toBeNull();
   });
 
   it('shows a plain page for an unknown code, and for an API without the endpoint yet', async () => {

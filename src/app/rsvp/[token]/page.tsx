@@ -4,6 +4,7 @@ import { InvitePage } from '@/components/invite/InvitePage';
 import { LegacyRsvpPage, type LegacyRsvpContext } from '@/components/story/LegacyRsvpPage';
 import { normalise } from '@/lib/invite/wcz';
 import type { PayMethod } from '@/lib/payments';
+import { answerParam } from '@/lib/short-links';
 import type { CalendarLinks, DesignFields, InviteGuestView, PublicStoryExtras } from '@/lib/invite/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
@@ -64,11 +65,13 @@ export default async function RsvpPage({
   searchParams = {},
 }: {
   params: { token: string };
-  searchParams?: { preview?: string };
+  searchParams?: { preview?: string; answer?: string };
 }) {
   // The couple opening a guest's card from their dashboard adds ?preview=1:
   // that is not the guest opening it.
   const preview = searchParams.preview !== undefined;
+  // An answer button in the invitation email: open on that answer, never send it.
+  const picked = answerParam(searchParams.answer);
   const ctx = await load(params.token, preview ? undefined : { userAgent: headers().get('user-agent') ?? '' });
 
   if (ctx === null) {
@@ -86,7 +89,7 @@ export default async function RsvpPage({
 
   // Weddings that never saved a design keep the page and card they have today.
   if (ctx.designSaved !== true || ctx.design == null || ctx.guest === undefined) {
-    return <LegacyRsvpPage ctx={ctx} params={params} />;
+    return <LegacyRsvpPage ctx={ctx} params={params} picked={picked} />;
   }
 
   const slug = ctx.storySlug ?? null;
@@ -108,6 +111,7 @@ export default async function RsvpPage({
       slug={slug}
       guestbook={guestbook}
       cardPngUrl={`/rsvp/${params.token}/card.png`}
+      pickedAnswer={picked}
     />
   );
 }

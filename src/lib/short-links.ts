@@ -127,8 +127,22 @@ function redirect(location: string): Response {
   return new Response(null, { status: 302, headers: { Location: location, 'Cache-Control': 'no-store' } });
 }
 
+export type AnswerParam = 'accepted' | 'maybe' | 'declined';
+
+/**
+ * The answer an emailed invitation's button picked (/i/<code>?answer=maybe),
+ * or null for anything else. Only ever preselects: a mail scanner opens
+ * every link in an email, so opening one must never answer for the guest.
+ */
+export function answerParam(value: string | null | undefined): AnswerParam | null {
+  return value === 'accepted' || value === 'maybe' || value === 'declined' ? value : null;
+}
+
 function cardUrl(token: string, requestUrl: string): string {
-  return new URL(`/rsvp/${encodeURIComponent(token)}`, requestUrl).toString();
+  const url = new URL(`/rsvp/${encodeURIComponent(token)}`, requestUrl);
+  const answer = answerParam(new URL(requestUrl).searchParams.get('answer'));
+  if (answer !== null) url.searchParams.set('answer', answer);
+  return url.toString();
 }
 
 /** /i/<code>: 302 to the guest's card page. */

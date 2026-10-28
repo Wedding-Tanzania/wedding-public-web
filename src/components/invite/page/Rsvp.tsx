@@ -66,6 +66,12 @@ export function Rsvp(props: {
   reply: SavedReply | null;
   rsvpOpen: boolean;
   calendar: CalendarLinks | null;
+  /**
+   * An answer button in the invitation email: the question shows again with
+   * that answer as the highlighted button. Never sent for the guest: a mail
+   * scanner opens every link in an email.
+   */
+  picked?: Answer | null;
 }) {
   const p = usePal();
   const S = STR[props.lang];
@@ -73,10 +79,13 @@ export function Rsvp(props: {
   // A DOUBLE card can confirm two, even when no seat count was saved.
   const seatsMax = shownSeats(props.guest?.kind, props.guest?.seats);
   const answered = answerOf(props.status);
+  const picked = props.picked ?? null;
   const [answer, setAnswer] = useState<Answer | null>(answered);
   const [phase, setPhase] = useState<Phase>(
-    props.status === 'expired' ? 'expired' : !props.rsvpOpen ? 'closed' : answered !== null ? 'done' : 'ask',
+    props.status === 'expired' ? 'expired' : !props.rsvpOpen ? 'closed' : picked !== null || answered === null ? 'ask' : 'done',
   );
+  // The highlighted button: the emailed pick, else "I'll be there" as always.
+  const lead: Answer = picked ?? 'accepted';
   const [seats, setSeats] = useState(Math.min(seatsMax, props.reply?.partySize ?? props.guest?.coming ?? seatsMax));
   const [message, setMessage] = useState(props.reply?.message ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -192,13 +201,13 @@ export function Rsvp(props: {
               style={{ width: '100%', resize: 'none', padding: '10px 12px', borderRadius: 8, border: `1px solid ${L.b2}`, background: 'transparent', color: L.fg, fontFamily: p.sans, fontSize: 14 }}
             />
           </label>
-          <button type="button" disabled={phase === 'sending'} onClick={() => void send('accepted')} style={btn(true)}>
+          <button type="button" disabled={phase === 'sending'} onClick={() => void send('accepted')} style={btn(lead === 'accepted')}>
             {phase === 'sending' && answer === 'accepted' ? S.sending : S.yes}
           </button>
-          <button type="button" disabled={phase === 'sending'} onClick={() => void send('maybe')} style={btn(false)}>
+          <button type="button" disabled={phase === 'sending'} onClick={() => void send('maybe')} style={btn(lead === 'maybe')}>
             {phase === 'sending' && answer === 'maybe' ? S.sending : S.maybe}
           </button>
-          <button type="button" disabled={phase === 'sending'} onClick={() => void send('declined')} style={btn(false)}>
+          <button type="button" disabled={phase === 'sending'} onClick={() => void send('declined')} style={btn(lead === 'declined')}>
             {phase === 'sending' && answer === 'declined' ? S.sending : S.no}
           </button>
           {error !== null && <div role="alert" style={{ fontSize: 13 }}>{error}</div>}
