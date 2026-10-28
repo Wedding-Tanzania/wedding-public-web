@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Section } from '@/components/Section';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 export const metadata = {
   title: 'Privacy policy',
@@ -8,8 +9,6 @@ export const metadata = {
 };
 
 const LAST_UPDATED = '26 October 2026';
-
-const SUPPORT_EMAIL = 'support@wedding.co.tz';
 
 export default function PrivacyPage() {
   return (
