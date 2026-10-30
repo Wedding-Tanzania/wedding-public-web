@@ -59,9 +59,9 @@ describe('WishWall', () => {
     // The photo wish is in the spotlight, and its caption shows.
     expect(html).toContain('data-wall-spotlight="w3"');
     expect(html).toContain('Familia ya Mushi');
-    // The spotlight item is not repeated in the grid.
-    expect(html).toContain('data-wall-grid="2"');
-    expect(html).not.toContain('data-wall-card="w3"');
+    // Every wish scrolls in the two columns, the spotlight one included, so the words can be read.
+    expect(html).toContain('data-wall-columns="2"');
+    for (const id of ['w1', 'w2', 'w3']) expect(html).toContain(`data-wall-card="${id}"`);
   });
 
   it('speaks English with ?lang=en', async () => {

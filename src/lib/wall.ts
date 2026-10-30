@@ -64,20 +64,66 @@ export function hasPhoto(item: WishWallItem): boolean {
 }
 
 export interface WallSplit {
-  /** Items with at least one photo, newest first: the spotlight rotates through these. */
+  /**
+   * Every wish, for the spotlight: photo wishes and word-only wishes taking
+   * turns (newest first in each), so the big panel is never empty while there
+   * are wishes, and photos still come round often.
+   */
   spotlight: WishWallItem[];
   /** Every item, newest first: the grid window is cut from this. */
   all: WishWallItem[];
 }
 
 /**
- * Orders the items and separates the ones the spotlight can show. The grid
- * still lists photo items too (as photo cards), so a wall with one photo wish
- * is not a spotlight and an empty grid.
+ * Photo wishes and word-only wishes taking turns, each newest first, starting
+ * with a photo; whichever runs out first, the rest follow in order.
+ */
+export function spotlightOrder(all: WishWallItem[]): WishWallItem[] {
+  const photos = all.filter(hasPhoto);
+  const words = all.filter((i) => !hasPhoto(i));
+  const out: WishWallItem[] = [];
+  for (let i = 0; i < Math.max(photos.length, words.length); i += 1) {
+    const p = photos[i];
+    const w = words[i];
+    if (p !== undefined) out.push(p);
+    if (w !== undefined) out.push(w);
+  }
+  return out;
+}
+
+/**
+ * Orders the items for the spotlight and the grid. The grid lists every item
+ * too, so a short wall still fills both sides.
  */
 export function splitWall(items: WishWallItem[]): WallSplit {
   const all = newestFirst(items);
-  return { spotlight: all.filter(hasPhoto), all };
+  return { spotlight: spotlightOrder(all), all };
+}
+
+/**
+ * The two scrolling columns beside the spotlight: wishes dealt left, right,
+ * left, right, newest first, so both columns move and the newest sit at the
+ * top of each.
+ */
+export function splitColumns(all: WishWallItem[]): [WishWallItem[], WishWallItem[]] {
+  const a: WishWallItem[] = [];
+  const b: WishWallItem[] = [];
+  all.forEach((item, i) => (i % 2 === 0 ? a : b).push(item));
+  return [a, b];
+}
+
+/** Seconds for one full pass of a column: slow enough to read, never shorter than 20 s. */
+export function columnSeconds(count: number, perCard = 7): number {
+  return Math.max(20, count * perCard);
+}
+
+/** The spotlight quote's size class by length, so a long wish still fits the panel. */
+export function wordsSize(message: string): 'xl' | 'lg' | 'md' | 'sm' {
+  const n = message.trim().length;
+  if (n <= 60) return 'xl';
+  if (n <= 140) return 'lg';
+  if (n <= 280) return 'md';
+  return 'sm';
 }
 
 /**
