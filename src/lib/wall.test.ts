@@ -8,6 +8,8 @@ import {
   hashtagLabel,
   shortMessage,
   shortUrl,
+  columnSeconds,
+  splitColumns,
   splitWall,
   spotlightOrder,
   wallDate,
@@ -159,5 +161,20 @@ describe('fetchWall', () => {
   it('throws on a non-2xx so the screen keeps its last good data', async () => {
     const fetchImpl = vi.fn(async () => new Response('nope', { status: 503 }));
     await expect(fetchWall('s', fetchImpl as unknown as typeof fetch)).rejects.toThrow(/503/);
+  });
+});
+
+describe('the two scrolling columns', () => {
+  it('deals wishes left and right so both columns move and the newest top each', () => {
+    const all = ['a', 'b', 'c', 'd', 'e'].map((id, i) => item(id, `2026-10-31T1${i}:00:00Z`));
+    const [left, right] = splitColumns(all);
+    expect(left.map((i) => i.id)).toEqual(['a', 'c', 'e']);
+    expect(right.map((i) => i.id)).toEqual(['b', 'd']);
+    expect(splitColumns([])).toEqual([[], []]);
+  });
+
+  it('scrolls slowly enough to read and never faster than a 20 second pass', () => {
+    expect(columnSeconds(1)).toBe(20);
+    expect(columnSeconds(10)).toBe(70);
   });
 });

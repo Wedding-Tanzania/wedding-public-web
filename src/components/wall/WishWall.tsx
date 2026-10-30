@@ -2,23 +2,23 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  GRID_CYCLE_MS,
-  GRID_MAX,
   SPOTLIGHT_MS,
   WALL_POLL_MS,
   clampIndex,
+  columnSeconds,
   coupleLabel,
   fetchWall,
   freshIds,
-  gridWindow,
   hashtagLabel,
-  shortMessage,
   shortUrl,
+  splitColumns,
   splitWall,
   wallDate,
+  wordsSize,
   type WallLang,
   type WishWallItem,
-  type WishWallResponse, wordsSize } from '@/lib/wall';
+  type WishWallResponse,
+} from '@/lib/wall';
 import s from './wall.module.css';
 
 const COPY = {
@@ -89,14 +89,12 @@ export function WishWall({
   const [stale, setStale] = useState(false);
   const [fresh, setFresh] = useState<Set<string>>(() => new Set((initial?.items ?? []).map((i) => i.id)));
   const [spotIndex, setSpotIndex] = useState(0);
-  const [gridOffset, setGridOffset] = useState(0);
   const [idle, setIdle] = useState(false);
   const [qrSvg, setQrSvg] = useState<WallQr | null>(qr);
   const itemsRef = useRef<WishWallItem[]>(initial?.items ?? []);
 
   const { spotlight, all } = useMemo(() => splitWall(data?.items ?? []), [data]);
   const spotlightLen = spotlight.length;
-  const allLen = all.length;
 
   /* Poll */
   useEffect(() => {
@@ -109,11 +107,7 @@ export function WishWall({
         itemsRef.current = next.items;
         setData(next);
         setStale(false);
-        if (arrived.size > 0) {
-          setFresh(arrived);
-          // The newest card belongs at the top of the grid.
-          setGridOffset(0);
-        }
+        if (arrived.size > 0) setFresh(arrived);
       } catch {
         if (alive) setStale(true);
       }
@@ -133,12 +127,6 @@ export function WishWall({
     return () => window.clearInterval(id);
   }, [spotlightLen]);
 
-  /* Grid cycling when there are more cards than fit */
-  useEffect(() => {
-    if (allLen <= GRID_MAX) return undefined;
-    const id = window.setInterval(() => setGridOffset((o) => o + 1), GRID_CYCLE_MS);
-    return () => window.clearInterval(id);
-  }, [allLen]);
 
   /* Cursor hides after 3 s idle */
   useEffect(() => {
@@ -186,11 +174,8 @@ export function WishWall({
     return () => window.clearTimeout(id);
   }, [current]);
 
-  /* Grid: a window of the latest, without the card that is in the spotlight */
-  const grid = useMemo(() => {
-    const window_ = gridWindow(all, gridOffset, GRID_MAX + 1);
-    return window_.filter((i) => current === null || i.id !== current.id).slice(0, GRID_MAX);
-  }, [all, gridOffset, current]);
+  /* The two scrolling columns: every wish, dealt left and right, newest at the top. */
+  const columns = useMemo(() => splitColumns(all), [all]);
 
   const couple = coupleLabel(data?.couple ?? null, lang);
   const date = wallDate(data?.couple?.weddingDate, lang);
@@ -269,35 +254,50 @@ export function WishWall({
 
         <aside className={s.side}>
           {!empty && (
-            <div className={s.gridWrap}>
-              <div className={s.grid} data-wall-grid={grid.length}>
-                {grid.map((item, i) => {
-                  const photo = firstPhoto(item);
-                  const cls = fresh.has(item.id) ? ` ${s.fresh}` : '';
-                  const delay = fresh.has(item.id) ? { animationDelay: `${Math.min(i, 11) * 90}ms` } : undefined;
-                  if (photo !== null) {
-                    return (
-                      <article key={item.id} className={`${s.card} ${s.cardPhoto}${cls}`} style={delay} data-wall-card={item.id}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo.url} alt={t.photoAlt(item.name)} loading="lazy" />
-                        <div className={s.cardPhotoText}>
-                          <p className={s.cardMsg}>{shortMessage(item.message, 90)}</p>
-                          <p className={s.cardName}>{item.name}</p>
+            <div className={s.cols} data-wall-columns={columns.filter((c) => c.length > 0).length}>
+              {columns.map((col, c) =>
+                col.length === 0 ? null : (
+                  <div key={c} className={s.col}>
+                    <div
+                      className={`${s.track} ${c === 0 ? s.trackA : s.trackB}`}
+                      style={{ animationDuration: `${columnSeconds(col.length)}s` }}
+                      data-wall-track={col.length}
+                    >
+                      {[0, 1].map((copy) => (
+                        <div key={copy} className={`${s.list}${copy === 1 ? ` ${s.dup}` : ''}`} aria-hidden={copy === 1}>
+                          {col.map((item, i) => {
+                            const photo = firstPhoto(item);
+                            const isFresh = copy === 0 && fresh.has(item.id);
+                            const cls = isFresh ? ` ${s.fresh}` : '';
+                            const delay = isFresh ? { animationDelay: `${Math.min(i, 11) * 90}ms` } : undefined;
+                            if (photo !== null) {
+                              return (
+                                <article key={item.id} className={`${s.card} ${s.cardPhoto}${cls}`} style={delay} data-wall-card={copy === 0 ? item.id : undefined}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={photo.url} alt={copy === 0 ? t.photoAlt(item.name) : ''} loading="lazy" />
+                                  <div className={s.cardBody}>
+                                    <p className={s.cardMsg}>{item.message}</p>
+                                    <p className={s.cardName}>{item.name}</p>
+                                  </div>
+                                </article>
+                              );
+                            }
+                            return (
+                              <article key={item.id} className={`${s.card} ${s.cardText} ${i % 2 === 1 ? s.paper : s.linen}${cls}`} style={delay} data-wall-card={copy === 0 ? item.id : undefined}>
+                                <div className={s.quote} aria-hidden>
+                                  &ldquo;
+                                </div>
+                                <p className={s.cardMsg}>{item.message}</p>
+                                <p className={s.cardName}>{item.name}</p>
+                              </article>
+                            );
+                          })}
                         </div>
-                      </article>
-                    );
-                  }
-                  return (
-                    <article key={item.id} className={`${s.card} ${s.cardText} ${i % 3 === 1 ? s.paper : s.linen}${cls}`} style={delay} data-wall-card={item.id}>
-                      <div className={s.quote} aria-hidden>
-                        &ldquo;
-                      </div>
-                      <p className={s.cardMsg}>{shortMessage(item.message, 150)}</p>
-                      <p className={s.cardName}>{item.name}</p>
-                    </article>
-                  );
-                })}
-              </div>
+                      ))}
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
           )}
 

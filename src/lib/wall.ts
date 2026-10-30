@@ -100,6 +100,23 @@ export function splitWall(items: WishWallItem[]): WallSplit {
   return { spotlight: spotlightOrder(all), all };
 }
 
+/**
+ * The two scrolling columns beside the spotlight: wishes dealt left, right,
+ * left, right, newest first, so both columns move and the newest sit at the
+ * top of each.
+ */
+export function splitColumns(all: WishWallItem[]): [WishWallItem[], WishWallItem[]] {
+  const a: WishWallItem[] = [];
+  const b: WishWallItem[] = [];
+  all.forEach((item, i) => (i % 2 === 0 ? a : b).push(item));
+  return [a, b];
+}
+
+/** Seconds for one full pass of a column: slow enough to read, never shorter than 20 s. */
+export function columnSeconds(count: number, perCard = 7): number {
+  return Math.max(20, count * perCard);
+}
+
 /** The spotlight quote's size class by length, so a long wish still fits the panel. */
 export function wordsSize(message: string): 'xl' | 'lg' | 'md' | 'sm' {
   const n = message.trim().length;
