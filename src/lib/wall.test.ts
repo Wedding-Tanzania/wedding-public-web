@@ -9,7 +9,9 @@ import {
   shortMessage,
   shortUrl,
   splitWall,
+  spotlightOrder,
   wallDate,
+  wordsSize,
   type WishWallItem,
 } from './wall';
 
@@ -23,8 +25,22 @@ function item(id: string, at: string, photo = false): WishWallItem {
   };
 }
 
+/** Newest first, as splitWall orders before it builds the spotlight. */
+function newest(items: WishWallItem[]): WishWallItem[] {
+  return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+describe('wordsSize', () => {
+  it('sets a short wish large and a long one smaller so it fits the panel', () => {
+    expect(wordsSize('Hongera sana Kaka')).toBe('xl');
+    expect(wordsSize('x'.repeat(120))).toBe('lg');
+    expect(wordsSize('x'.repeat(250))).toBe('md');
+    expect(wordsSize('x'.repeat(480))).toBe('sm');
+  });
+});
+
 describe('splitWall', () => {
-  it('orders newest first and picks the photo items for the spotlight', () => {
+  it('orders newest first and puts every wish in the spotlight, photos and words taking turns', () => {
     const items = [
       item('a', '2026-10-31T10:00:00Z'),
       item('b', '2026-10-31T12:00:00Z', true),
@@ -33,12 +49,27 @@ describe('splitWall', () => {
     ];
     const { spotlight, all } = splitWall(items);
     expect(all.map((i) => i.id)).toEqual(['d', 'b', 'c', 'a']);
-    expect(spotlight.map((i) => i.id)).toEqual(['b', 'c']);
+    expect(spotlight.map((i) => i.id)).toEqual(['b', 'd', 'c', 'a']);
   });
 
-  it('ignores a photo row with no url', () => {
+  it('shows words in the spotlight when nobody has sent a photo yet', () => {
+    const items = [item('a', '2026-10-31T10:00:00Z'), item('b', '2026-10-31T11:00:00Z')];
+    expect(splitWall(items).spotlight.map((i) => i.id)).toEqual(['b', 'a']);
+  });
+
+  it('lets the longer kind follow once the other runs out', () => {
+    const items = [
+      item('p1', '2026-10-31T10:00:00Z', true),
+      item('w1', '2026-10-31T11:00:00Z'),
+      item('w2', '2026-10-31T12:00:00Z'),
+      item('w3', '2026-10-31T13:00:00Z'),
+    ];
+    expect(spotlightOrder(newest(items)).map((i) => i.id)).toEqual(['p1', 'w3', 'w2', 'w1']);
+  });
+
+  it('treats a photo row with no url as words', () => {
     const odd: WishWallItem = { ...item('x', '2026-10-31T10:00:00Z'), photos: [{ id: 'p', url: '' }] };
-    expect(splitWall([odd]).spotlight).toEqual([]);
+    expect(splitWall([odd]).spotlight.map((i) => i.id)).toEqual(['x']);
     expect(splitWall([odd]).all).toHaveLength(1);
   });
 

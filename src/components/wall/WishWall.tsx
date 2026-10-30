@@ -18,8 +18,7 @@ import {
   wallDate,
   type WallLang,
   type WishWallItem,
-  type WishWallResponse,
-} from '@/lib/wall';
+  type WishWallResponse, wordsSize } from '@/lib/wall';
 import s from './wall.module.css';
 
 const COPY = {
@@ -246,6 +245,12 @@ export function WishWall({
               {current !== null && firstPhoto(current) !== null ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={current.id} src={firstPhoto(current)?.url} alt={t.photoAlt(current.name)} className={`${s.spotImg} ${s.over} ${spotParity ? s.kbA : s.kbB}`} />
+              ) : current !== null ? (
+                <figure key={current.id} className={s.spotWords} data-wall-words={wordsSize(current.message)}>
+                  <span className={s.spotQuote} aria-hidden>&ldquo;</span>
+                  <blockquote className={`${s.spotWordsMsg} ${s[`words_${wordsSize(current.message)}`]}`}>{current.message}</blockquote>
+                  <figcaption className={s.spotWordsName}>{current.name}</figcaption>
+                </figure>
               ) : (
                 <div className={s.spotEmpty}>{t.spotEmpty}</div>
               )}
@@ -253,7 +258,7 @@ export function WishWall({
                 <div className={s.spotCaption}>{firstPhoto(current)?.caption}</div>
               )}
             </div>
-            {current !== null && (
+            {current !== null && firstPhoto(current) !== null && (
               <div className={s.spotText} key={current.id}>
                 <p className={s.spotName}>{current.name}</p>
                 <p className={s.spotMsg}>{current.message}</p>
