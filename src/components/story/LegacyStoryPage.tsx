@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Countdown } from '@/components/story/Countdown';
 import { Guestbook } from '@/components/story/Guestbook';
+import type { GuestbookPhoto } from '@/lib/wish-photos';
 
 /*
  * The story page every wedding had before the invitation designer. A wedding
@@ -48,7 +49,7 @@ export interface StoryResponse {
   couple?: { partnerA: string; partnerB: string; weddingDate: string };
 }
 export interface GuestbookResponse {
-  items: { id: string; name: string; message: string; createdAt?: string }[];
+  items: { id: string; name: string; message: string; createdAt?: string; photos?: GuestbookPhoto[] }[];
 }
 
 const CARD_SWATCH: Record<string, [string, string]> = {

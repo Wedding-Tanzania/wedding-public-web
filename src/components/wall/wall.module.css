@@ -1,0 +1,566 @@
+/*
+ * The live wall of wishes, drawn for a 1920x1080 TV in Chrome full screen,
+ * and fine at 1280x720 and on a phone. Every motion is CSS; prefers-reduced-
+ * motion turns it all off at the bottom of the file.
+ */
+
+.root {
+  --wall-ink: #f2f5ee;
+  --wall-muted: rgba(242, 245, 238, 0.68);
+  --wall-faint: rgba(242, 245, 238, 0.42);
+  --wall-line: rgba(242, 245, 238, 0.14);
+  --wall-card: rgba(255, 255, 255, 0.06);
+  position: relative;
+  isolation: isolate;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  color: var(--wall-ink);
+  background: linear-gradient(160deg, #1a2516 0%, #22301d 55%, #2a3a24 100%);
+  font-family: var(--font-manrope), Manrope, system-ui, sans-serif;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  box-sizing: border-box;
+  padding: clamp(18px, 2.4vw, 44px) clamp(18px, 2.8vw, 56px);
+  gap: clamp(14px, 2vw, 32px);
+}
+
+.root.idle {
+  cursor: none;
+}
+
+/* Soft light, slowly drifting behind everything. */
+.bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.blob1 {
+  width: 48vw;
+  height: 48vw;
+  left: -12vw;
+  top: -18vw;
+  background: radial-gradient(circle at 40% 40%, rgba(138, 163, 120, 0.55), rgba(138, 163, 120, 0) 70%);
+  animation: drift1 38s ease-in-out infinite alternate;
+}
+
+.blob2 {
+  width: 42vw;
+  height: 42vw;
+  right: -14vw;
+  top: 10vh;
+  background: radial-gradient(circle at 50% 50%, rgba(232, 217, 184, 0.28), rgba(232, 217, 184, 0) 70%);
+  animation: drift2 46s ease-in-out infinite alternate;
+}
+
+.blob3 {
+  width: 40vw;
+  height: 40vw;
+  left: 28vw;
+  bottom: -22vw;
+  background: radial-gradient(circle at 50% 50%, rgba(111, 138, 94, 0.5), rgba(111, 138, 94, 0) 70%);
+  animation: drift3 52s ease-in-out infinite alternate;
+}
+
+@keyframes drift1 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(9vw, 7vh) scale(1.12); }
+}
+@keyframes drift2 {
+  from { transform: translate(0, 0) scale(1.05); }
+  to { transform: translate(-8vw, 12vh) scale(0.95); }
+}
+@keyframes drift3 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-10vw, -8vh) scale(1.1); }
+}
+
+/* Header */
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.names {
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 68px);
+  font-weight: 200;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.meta {
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(11px, 0.85vw, 16px);
+  letter-spacing: 0.08em;
+  color: var(--wall-muted);
+}
+
+.right {
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(11px, 0.8vw, 15px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c9d6bc;
+}
+
+.eyebrowSub {
+  margin: 4px 0 0;
+  font-size: clamp(12px, 0.9vw, 17px);
+  color: var(--wall-faint);
+  letter-spacing: 0.04em;
+}
+
+.count {
+  margin: 10px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(20px, 1.9vw, 36px);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #8aa378;
+  box-shadow: 0 0 0 0 rgba(138, 163, 120, 0.6);
+  animation: pulse 2.4s ease-out infinite;
+}
+
+.dot.stale {
+  background: #b57850;
+  animation: none;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(138, 163, 120, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(138, 163, 120, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(138, 163, 120, 0); }
+}
+
+/* Stage */
+
+.stage {
+  display: grid;
+  grid-template-columns: 55fr 45fr;
+  gap: clamp(16px, 2vw, 36px);
+  min-height: 0;
+}
+
+.spot {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--wall-card);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.55), inset 0 0 0 1px var(--wall-line);
+}
+
+.spotPhoto {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #16200f;
+}
+
+.spotImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.kbA {
+  animation: fadeIn 1.4s ease-out both, kenA 9s ease-in-out forwards;
+}
+
+.kbB {
+  animation: fadeIn 1.4s ease-out both, kenB 9s ease-in-out forwards;
+}
+
+@keyframes kenA {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.1) translate(-1.5%, 1%); }
+}
+@keyframes kenB {
+  from { transform: scale(1.1) translate(1.5%, -1%); }
+  to { transform: scale(1) translate(0, 0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The photo that was showing stays under the new one until the fade is over,
+ * then is removed. Same element, same classes, so its motion carries on. */
+.under {
+  z-index: 0;
+}
+
+.over {
+  z-index: 1;
+}
+
+.spotCaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 60px 28px 18px;
+  background: linear-gradient(to top, rgba(26, 37, 22, 0.78), rgba(26, 37, 22, 0));
+  font-size: clamp(14px, 1.05vw, 20px);
+  color: var(--wall-ink);
+  text-wrap: balance;
+}
+
+.spotText {
+  padding: clamp(16px, 1.6vw, 30px) clamp(20px, 1.8vw, 34px) clamp(18px, 1.8vw, 34px);
+  display: grid;
+  gap: 8px;
+  animation: riseIn 0.9s ease-out both;
+}
+
+.spotName {
+  margin: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(11px, 0.8vw, 15px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c9d6bc;
+}
+
+.spotMsg {
+  margin: 0;
+  font-size: clamp(18px, 1.55vw, 30px);
+  font-weight: 300;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Right column: grid, then QR */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.6vw, 26px);
+  min-height: 0;
+}
+
+.gridWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(clamp(96px, 9vw, 150px), auto);
+  grid-auto-flow: dense;
+  gap: clamp(10px, 0.9vw, 16px);
+}
+
+.card {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 0;
+  box-shadow: inset 0 0 0 1px var(--wall-line);
+}
+
+.cardPhoto {
+  grid-row: span 2;
+  background: #16200f;
+}
+
+.cardPhoto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardPhotoText {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 14px 12px;
+  background: linear-gradient(to top, rgba(26, 37, 22, 0.86), rgba(26, 37, 22, 0));
+  display: grid;
+  gap: 3px;
+}
+
+.cardText {
+  padding: 18px 16px 14px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
+  color: #1f2a1a;
+}
+
+.linen {
+  background: #f1eadb;
+}
+
+.paper {
+  background: #ffffff;
+}
+
+.quote {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(30px, 2.6vw, 48px);
+  line-height: 0.6;
+  color: #4f6a42;
+  margin-top: 6px;
+}
+
+.cardMsg {
+  margin: 0;
+  font-size: clamp(12px, 0.95vw, 17px);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardPhotoText .cardMsg {
+  -webkit-line-clamp: 2;
+  color: var(--wall-ink);
+}
+
+.cardName {
+  margin: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(9px, 0.65vw, 12px);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #4f6a42;
+}
+
+.cardPhotoText .cardName {
+  color: #c9d6bc;
+}
+
+.fresh {
+  animation: slideIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* QR panel */
+
+.qrPanel {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.3vw, 24px);
+  padding: clamp(12px, 1vw, 18px) clamp(14px, 1.2vw, 22px);
+  border-radius: 20px;
+  background: #f1eadb;
+  color: #1f2a1a;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.6);
+  max-width: 100%;
+}
+
+.qrBox {
+  flex: 0 0 auto;
+  width: clamp(88px, 8.2vw, 156px);
+  height: clamp(88px, 8.2vw, 156px);
+  padding: 8px;
+  background: #fff;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.qrBox svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qrText {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qrLead {
+  margin: 0;
+  font-size: clamp(13px, 1.05vw, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.qrLeadSub {
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 16px);
+  color: #4a5840;
+}
+
+.qrUrl {
+  margin: 4px 0 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(10px, 0.78vw, 14px);
+  letter-spacing: 0.04em;
+  color: #4f6a42;
+  overflow-wrap: anywhere;
+}
+
+/* Empty state */
+
+.empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.emptyInner {
+  max-width: 720px;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 56px);
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.emptyBody {
+  margin: 0;
+  font-size: clamp(15px, 1.2vw, 22px);
+  color: var(--wall-muted);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.spotEmpty {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--wall-muted);
+  font-size: clamp(14px, 1.1vw, 20px);
+}
+
+/* Smaller screens */
+
+@media (max-width: 1400px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
+    grid-template-rows: auto auto;
+  }
+  .spot {
+    min-height: 0;
+  }
+  .top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .right {
+    text-align: left;
+  }
+  .stage {
+    grid-template-columns: 1fr;
+  }
+  .spot {
+    grid-template-rows: auto auto;
+  }
+  .spotPhoto {
+    aspect-ratio: 4 / 5;
+    max-height: 62vh;
+  }
+  .gridWrap {
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(110px, auto);
+  }
+  .qrPanel {
+    align-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob,
+  .dot,
+  .spotImg,
+  .spotText,
+  .fresh {
+    animation: none !important;
+  }
+}

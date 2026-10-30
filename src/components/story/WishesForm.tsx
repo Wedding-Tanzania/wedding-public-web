@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { recallSentWish, type SentWish } from '@/lib/wish-photos';
+import { SAGE_THEME, WishPhotos } from './WishPhotos';
 
 export type WishesLang = 'sw' | 'en';
 
@@ -26,6 +28,7 @@ const COPY = {
     thanksBody: (couple: string) => `Salamu zako zimefika kwa ${couple}.`,
     another: 'Tuma salamu nyingine',
     seeAll: 'Ona ukurasa wa harusi',
+    seeWall: 'Ona ukuta wa salamu',
     left: (n: number) => `Herufi ${n} zimebaki`,
   },
   en: {
@@ -44,6 +47,7 @@ const COPY = {
     thanksBody: (couple: string) => `Your wishes have reached ${couple}.`,
     another: 'Send another wish',
     seeAll: 'See the wedding page',
+    seeWall: 'See the wall',
     left: (n: number) => `${n} characters left`,
   },
 } as const;
@@ -88,6 +92,8 @@ export function WishesForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  /** The wish just sent, while the guest may still add photos to it. */
+  const [wish, setWish] = useState<SentWish | null>(null);
   const t = COPY[lang];
 
   useEffect(() => {
@@ -97,7 +103,13 @@ export function WishesForm({
     } catch {
       // Storage can be off in a private window; the page still works.
     }
-  }, []);
+    // A reload during the photo step lands back on it.
+    const resumed = recallSentWish(slug);
+    if (resumed !== null) {
+      setWish(resumed);
+      setSent(true);
+    }
+  }, [slug]);
 
   function switchLang(next: WishesLang) {
     setLang(next);
@@ -127,6 +139,12 @@ export function WishesForm({
         return;
       }
       if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { entry?: { id?: string; photos?: SentWish['photos'] }; editToken?: string };
+      if (typeof data.entry?.id === 'string' && typeof data.editToken === 'string') {
+        setWish({ entryId: data.entry.id, editToken: data.editToken, photos: data.entry.photos ?? [] });
+      } else {
+        setWish(null);
+      }
       setSent(true);
       setMessage('');
     } catch {
@@ -172,7 +190,16 @@ export function WishesForm({
           )}
         </div>
 
-        {sent ? (
+        {sent && wish !== null ? (
+          <div className="px-6 py-7">
+            <p className="text-center text-lg font-semibold text-herb-700" role="status">
+              {t.thanks} {t.thanksBody(couple)}
+            </p>
+            <div className="mt-6">
+              <WishPhotos slug={slug} wish={wish} lang={lang} theme={SAGE_THEME} onDone={() => setWish(null)} />
+            </div>
+          </div>
+        ) : sent ? (
           <div className="px-6 py-10 text-center" role="status">
             <p className="text-2xl font-semibold text-herb-700">{t.thanks}</p>
             <p className="mt-2 text-ink-2">{t.thanksBody(couple)}</p>
@@ -184,6 +211,9 @@ export function WishesForm({
               >
                 {t.another}
               </button>
+              <a href={`/${slug}/wall`} className="text-sm text-herb-700 underline underline-offset-4">
+                {t.seeWall}
+              </a>
               <a href={`/${slug}`} className="text-sm text-herb-700 underline underline-offset-4">
                 {t.seeAll}
               </a>

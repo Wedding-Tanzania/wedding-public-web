@@ -36,6 +36,7 @@ import { Photo } from './page/Photo';
 import { Rsvp, type SavedReply } from './page/Rsvp';
 import { Venues } from './page/Venues';
 import { Wishes } from './page/Wishes';
+import type { GuestbookPhoto } from '@/lib/wish-photos';
 import { createDemoMelody, spotifyEmbed, streamKind } from './page/music';
 import { PalContext, labelStyle, monoStyle, nameStyle, palette, usePal, type Pal } from './page/palette';
 
@@ -57,7 +58,7 @@ export interface InvitePageProps {
   extras: PublicStoryExtras | null;
   /** The story page slug, for the guestbook. */
   slug: string | null;
-  guestbook: { id: string; name: string; message: string; createdAt?: string }[];
+  guestbook: { id: string; name: string; message: string; createdAt?: string; photos?: GuestbookPhoto[] }[];
   /** The guest's card as an image, for "Save card". */
   cardPngUrl: string | null;
   /** An answer button in the invitation email: the page opens on the answer, picked but not sent. */
