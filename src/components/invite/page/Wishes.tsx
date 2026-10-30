@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { STR, type Lang } from '@/lib/invite/wcz';
 import { SUPPORT_EMAIL } from '@/lib/support';
 import { reportWish } from '@/lib/wishes';
-import { labelStyle, monoStyle, usePal } from './palette';
+import { recallSentWish, type GuestbookPhoto, type SentWish } from '@/lib/wish-photos';
+import { WishPhotos, type WishPhotosTheme } from '@/components/story/WishPhotos';
+import { labelStyle, monoStyle, usePal, type Pal } from './palette';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api/v1';
 const NAME_MAX = 80;
@@ -17,6 +19,22 @@ export interface WishEntry {
   createdAt?: string;
   /** Set when the API held the wish back (a blocked author, or the word filter). */
   hidden?: boolean;
+  photos?: GuestbookPhoto[];
+}
+
+/** The photo step drawn in the panel's own colours. */
+function photoTheme(P: Pal): WishPhotosTheme {
+  return {
+    ink: P.pink,
+    muted: P.pink_(70),
+    line: P.pink_(22),
+    accent: P.accent,
+    onAccent: P.onacc,
+    well: P.pink_(10),
+    danger: '#B02020',
+    sans: P.sans,
+    mono: P.mono,
+  };
 }
 
 /**
@@ -50,6 +68,17 @@ export function Wishes({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  /** The wish just sent, while the guest may still add photos to it. */
+  const [wish, setWish] = useState<SentWish | null>(null);
+
+  useEffect(() => {
+    // A reload during the photo step lands back on it.
+    const resumed = recallSentWish(slug);
+    if (resumed !== null) {
+      setWish(resumed);
+      setSent(true);
+    }
+  }, [slug]);
 
   async function report(id: string) {
     setNotice(null);
@@ -76,9 +105,15 @@ export function Wishes({
         body: JSON.stringify({ name: name.trim(), message: message.trim() }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { entry?: WishEntry };
+      const data = (await res.json()) as { entry?: WishEntry; editToken?: string };
       // A held-back wish still reaches the couple, but is not shown here.
       if (data.entry !== undefined && data.entry.hidden !== true) setEntries([data.entry, ...entries]);
+      // A held-back wish still takes photos (they stay hidden with it).
+      if (data.entry !== undefined && typeof data.editToken === 'string') {
+        setWish({ entryId: data.entry.id, editToken: data.editToken, photos: data.entry.photos ?? [] });
+      } else {
+        setWish(null);
+      }
       setMessage('');
       setSent(true);
     } catch {
@@ -98,7 +133,23 @@ export function Wishes({
         <div style={{ fontSize: 15, color: P.ink_(74), maxWidth: 360 }}>{S.wishesLead}</div>
       </div>
       <div style={{ width: '100%', boxSizing: 'border-box', padding: '26px 22px', borderRadius: 16, background: P.panel, color: P.pink, boxShadow: `inset 0 0 0 1px ${P.pink_(12)}` }}>
-        {sent ? (
+        {sent && wish !== null ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div role="status" style={{ textAlign: 'center', fontSize: 15, color: P.pink_(80) }}>
+              <span style={{ fontWeight: 600, color: P.pink }}>{S.wishesSent}.</span> {S.wishesSentBody}
+            </div>
+            <WishPhotos
+              slug={slug}
+              wish={wish}
+              lang={lang}
+              theme={photoTheme(P)}
+              onDone={(photos) => {
+                setWish(null);
+                setEntries((list) => list.map((en) => (en.id === wish.entryId ? { ...en, photos } : en)));
+              }}
+            />
+          </div>
+        ) : sent ? (
           <div role="status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, padding: '14px 0' }}>
             <svg width="30" height="28" viewBox="0 0 24 24" aria-hidden>
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke={P.accPn} strokeWidth="1.5" />
@@ -141,6 +192,14 @@ export function Wishes({
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {entries.slice(0, 3).map((en) => (
             <li key={en.id} style={{ padding: '12px 0', borderTop: `1px solid ${P.ink_(12)}` }}>
+              {en.photos !== undefined && en.photos.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  {en.photos.map((p) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={p.id} src={p.url} alt={p.caption ?? ''} loading="lazy" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, background: P.ink_(8), display: 'block' }} />
+                  ))}
+                </div>
+              )}
               <p style={{ margin: 0, fontSize: 15, whiteSpace: 'pre-wrap' }}>{en.message}</p>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginTop: 6 }}>
                 <div style={{ ...monoStyle(P, 10, 0.12, P.accBg), textTransform: 'uppercase' }}>{en.name}</div>

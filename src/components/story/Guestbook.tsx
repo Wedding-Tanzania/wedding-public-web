@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { SUPPORT_EMAIL } from '@/lib/support';
 import { reportWish } from '@/lib/wishes';
+import type { GuestbookPhoto } from '@/lib/wish-photos';
 
 interface Entry {
   id: string;
@@ -11,6 +12,8 @@ interface Entry {
   createdAt?: string;
   /** Set when the API held the wish back (a blocked author, or the word filter). */
   hidden?: boolean;
+  /** Photos the guest added to the wish (web or WhatsApp). */
+  photos?: GuestbookPhoto[];
 }
 
 const API_BASE =
@@ -107,6 +110,16 @@ export function Guestbook({
         <ul className="mt-8 space-y-4">
           {entries.map((en) => (
             <li key={en.id} className="rounded-lg border border-bordr bg-paper p-5">
+              {en.photos !== undefined && en.photos.length > 0 && (
+                <ul className="mb-3 flex gap-2" data-wish-photos-row={en.id}>
+                  {en.photos.map((p) => (
+                    <li key={p.id} className="h-20 w-20 overflow-hidden rounded-lg bg-linen">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.url} alt={p.caption ?? ''} loading="lazy" className="block h-full w-full object-cover" />
+                    </li>
+                  ))}
+                </ul>
+              )}
               <p className="whitespace-pre-wrap text-ink-2">{en.message}</p>
               <div className="mt-3 flex items-baseline justify-between gap-3">
                 <p className="text-[10px] uppercase tracking-widest text-herb-600">{en.name}</p>
