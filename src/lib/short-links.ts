@@ -110,11 +110,17 @@ export async function resolveShortCode(
   return typeof body?.token === 'string' && body.token !== '' ? { token: body.token } : 'unavailable';
 }
 
-/** A small branded page for a link that does not open, in Kiswahili and English. */
-export function linkProblemPage(kind: 'missing' | 'unavailable'): Response {
+/**
+ * A small branded page for a link that does not open, in Kiswahili and
+ * English. `what` names what may have gone: a guest's card, or a couple's
+ * own link (/g).
+ */
+export function linkProblemPage(kind: 'missing' | 'unavailable', what: 'card' | 'link' = 'card'): Response {
   const [sw, en] =
     kind === 'missing'
-      ? ['Kiungo hiki hakipatikani. Huenda kimeandikwa vibaya au kadi imefutwa.', 'This link does not open. It may be mistyped, or the card was removed.']
+      ? what === 'card'
+        ? ['Kiungo hiki hakipatikani. Huenda kimeandikwa vibaya au kadi imefutwa.', 'This link does not open. It may be mistyped, or the card was removed.']
+        : ['Kiungo hiki hakipatikani. Huenda kimeandikwa vibaya au kimeondolewa.', 'This link does not open. It may be mistyped, or it was removed.']
       : ['Tumeshindwa kufungua kiungo hiki sasa hivi. Tafadhali jaribu tena baada ya muda mfupi.', 'We could not open this link just now. Please try again in a moment.'];
   const html = `<!doctype html><html lang="sw"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wedding.co.tz</title><meta name="robots" content="noindex"></head><body style="margin:0;background:#F1EADB;color:#1F2A1A;font-family:Manrope,system-ui,sans-serif"><main style="max-width:28rem;margin:0 auto;padding:4rem 1rem"><p style="font-weight:700;color:#4F6A42;letter-spacing:.08em;font-size:.75rem">WEDDING.CO.TZ</p><p style="font-size:1.125rem;line-height:1.5">${sw}</p><p style="color:#4A5840;line-height:1.5">${en}</p><p><a href="/" style="color:#4F6A42;font-weight:600">wedding.co.tz</a></p></main></body></html>`;
   return new Response(html, {
