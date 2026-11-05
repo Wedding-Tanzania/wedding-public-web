@@ -1,0 +1,89 @@
+name: Deploy wedding.co.tz to Core-Server
+
+# wedding.co.tz runs on Core-Server (164.90.193.49): the standalone Next.js
+# build (server.js plus traced node_modules) is made here on a GitHub runner,
+# rsynced to /srv/wedding-public-web/releases/<stamp>, the current symlink
+# swapped and pm2 reloaded. Netlify was dropped on 2026-11-05 when its credit
+# ran out a second time and blocked every production deploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-public-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: build + deploy wedding.co.tz
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://wedding.co.tz
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (standalone)
+        env:
+          # Baked into the bundle: which API the pages talk to and the site's own
+          # address (sitemap, robots, OG tags). Change them in the repo variables.
+          NEXT_PUBLIC_API_BASE: ${{ vars.NEXT_PUBLIC_API_BASE || 'https://api-uat.wedding.co.tz/api/v1' }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://wedding.co.tz' }}
+          NEXT_PUBLIC_APP_STORE_URL: ${{ vars.NEXT_PUBLIC_APP_STORE_URL }}
+          NEXT_PUBLIC_PLAY_STORE_URL: ${{ vars.NEXT_PUBLIC_PLAY_STORE_URL }}
+        run: |
+          npm run build
+          test -f .next/standalone/server.js
+          # The standalone tree leaves public/ and .next/static for the host to serve.
+          cp -R public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+          tar -C .next/standalone -czf release.tgz .
+          ls -lh release.tgz
+
+      - name: Configure SSH (temp key, never touches runner ~/.ssh)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        run: |
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/deploy_key"
+          chmod 600 "$RUNNER_TEMP/deploy_key"
+          ssh-keyscan -H "$REMOTE_HOST" > "$RUNNER_TEMP/known_hosts" 2>/dev/null
+
+      # One release folder per deploy, one atomic symlink swap, pm2 reload. The
+      # last five releases stay for a rollback (ln -sfn an older folder, reload).
+      - name: Upload release, switch and reload
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        run: |
+          SSH_OPTS="-i $RUNNER_TEMP/deploy_key -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts -o StrictHostKeyChecking=yes"
+          TARGET="$REMOTE_USER@$REMOTE_HOST"
+          REL="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          BASE=/srv/wedding-public-web
+          scp $SSH_OPTS release.tgz "$TARGET:/tmp/wedding-public-web-$REL.tgz"
+          ssh $SSH_OPTS "$TARGET" "set -e; mkdir -p $BASE/releases/$REL && tar -xzf /tmp/wedding-public-web-$REL.tgz -C $BASE/releases/$REL && rm /tmp/wedding-public-web-$REL.tgz && ln -sfn $BASE/releases/$REL $BASE/current && pm2 startOrReload $BASE/ecosystem.config.js --only wedding-public-web --update-env && pm2 save >/dev/null && ls -1dt $BASE/releases/* | tail -n +6 | xargs -r rm -rf"
+
+      # Asked of the origin itself (before or after the DNS move), not of the
+      # public name, so a CDN or a stale DNS answer cannot mask a bad release.
+      - name: Readiness check
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/attire/navy.webp" -o /dev/null && curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/" | grep -q "Wedding by Lockwood"; then echo ready; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the origin did not serve the new build"; exit 1
