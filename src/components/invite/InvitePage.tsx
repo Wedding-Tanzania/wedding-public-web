@@ -38,6 +38,7 @@ import { Venues } from './page/Venues';
 import { Wishes } from './page/Wishes';
 import type { GuestbookPhoto } from '@/lib/wish-photos';
 import { createDemoMelody, spotifyEmbed, streamKind } from './page/music';
+import { spotifyUri, useSpotifyPlayer } from './page/spotify';
 import { PalContext, labelStyle, monoStyle, nameStyle, palette, usePal, type Pal } from './page/palette';
 
 export interface InvitePageProps {
@@ -153,8 +154,19 @@ export function InvitePage(props: InvitePageProps) {
   const closePass = useCallback(() => setPassOpen(false), []);
   const kind = m.link ? streamKind(m.link) : null;
   const embed = m.link ? spotifyEmbed(m.link) : null;
+  // A Spotify link with no uploaded song: Spotify's player is the music, driven
+  // from the page (start on the open tap, pause from the pill).
+  const spotifyOnly = m.on && file === null && !m.demo && embed !== null;
+  const sp = useSpotifyPlayer(spotifyOnly && m.link ? spotifyUri(m.link) : null, spotifyOnly);
+  const spotifyLive = spotifyOnly && sp.ready && !sp.failed;
+  const canPlay = musicOn || spotifyLive;
+  const isPlaying = spotifyOnly ? sp.playing : playing;
 
   const play = useCallback(() => {
+    if (spotifyOnly) {
+      sp.play();
+      return;
+    }
     if (!musicOn) return;
     if (file !== null && audio.current !== null) {
       audio.current.volume = 0.7;
@@ -165,12 +177,16 @@ export function InvitePage(props: InvitePageProps) {
       demo.current ??= createDemoMelody();
       if (demo.current.start()) setPlaying(true);
     }
-  }, [file, m.demo, musicOn]);
+  }, [file, m.demo, musicOn, spotifyOnly, sp]);
   const pause = useCallback(() => {
+    if (spotifyOnly) {
+      sp.pause();
+      return;
+    }
     audio.current?.pause();
     demo.current?.stop();
     setPlaying(false);
-  }, []);
+  }, [spotifyOnly, sp]);
   useEffect(() => () => demo.current?.stop(), []);
 
   const openNow = () => {
@@ -179,6 +195,26 @@ export function InvitePage(props: InvitePageProps) {
     setStage('opening');
     setTimeout(() => setStage('open'), 1250);
   };
+  // Francis (2026-11-05): the music plays by itself once the card is opened,
+  // unless the guest pauses it. A template with no opening tap has had no
+  // gesture yet, so the first touch anywhere starts it; a page opened by a
+  // tap started it in openNow above.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (stage !== 'open' || rc.open !== 'none' || !m.auto || autoStarted.current) return;
+    if (!canPlay) return;
+    const start = () => {
+      if (autoStarted.current) return;
+      autoStarted.current = true;
+      play();
+    };
+    document.addEventListener('pointerdown', start, { once: true, passive: true });
+    document.addEventListener('keydown', start, { once: true });
+    return () => {
+      document.removeEventListener('pointerdown', start);
+      document.removeEventListener('keydown', start);
+    };
+  }, [stage, rc.open, m.auto, canPlay, play]);
 
   // ===== Reveal on scroll =====
   const root = useRef<HTMLDivElement>(null);
@@ -267,9 +303,9 @@ export function InvitePage(props: InvitePageProps) {
     );
   };
 
-  const playerIcon = playing ? 'Pause' : 'PlayArrow';
-  const playerLabel = playing ? S.pause : S.play;
-  const toggle = () => (playing ? pause() : play());
+  const playerIcon = isPlaying ? 'Pause' : 'PlayArrow';
+  const playerLabel = isPlaying ? S.pause : S.play;
+  const toggle = () => (isPlaying ? pause() : play());
   const songTitle = m.title || S.ourSong;
   const songArtist = m.artist || `${a} & ${b}`;
 
@@ -304,9 +340,12 @@ export function InvitePage(props: InvitePageProps) {
                 <Eq height={22} width={4} n={4} color={P.accent} />
               </>
             )}
-            {/* Spotify plays only inside its own player and only when the guest
-                presses play; it cannot be the page's background music. */}
-            {embed !== null && (
+            {/* Spotify plays only inside its own player. When it is the only
+                music, the page drives that player through Spotify's iFrame API
+                (page/spotify.ts); otherwise, or when the API never arrives, the
+                plain embed sits here. */}
+            {spotifyOnly && !sp.failed && <div ref={sp.host} data-spotify-player="1" style={{ alignSelf: 'stretch', width: '100%', maxWidth: 400, marginInline: 'auto', minHeight: 152, borderRadius: 12, overflow: 'hidden' }} />}
+            {embed !== null && (!spotifyOnly || sp.failed) && (
               <iframe
                 title={songTitle}
                 src={embed}
@@ -431,14 +470,14 @@ export function InvitePage(props: InvitePageProps) {
   const musicPill = musicOn || linkOnly ? (
     <button
       type="button"
-      onClick={musicOn ? toggle : () => scrollTo('sec-song')}
+      onClick={canPlay ? toggle : () => scrollTo('sec-song')}
       data-music-pill="1"
-      className={playing ? undefined : 'wi-pulse'}
-      aria-label={musicOn ? (playing ? S.pause : S.play) : S.tapMusic}
+      className={isPlaying ? undefined : 'wi-pulse'}
+      aria-label={canPlay ? (isPlaying ? S.pause : S.play) : S.tapMusic}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.45)', cursor: 'pointer', background: 'rgba(26,37,22,0.55)', color: '#FFFFFF', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: P.sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
     >
-      <Icon name={playing ? 'Pause' : 'MusicNote'} size={14} />
-      {playing ? S.musicPlaying : S.tapMusic}
+      <Icon name={isPlaying ? 'Pause' : 'MusicNote'} size={14} />
+      {isPlaying ? S.musicPlaying : S.tapMusic}
     </button>
   ) : null;
   const overlayText = { photo: '#FFFFFF', curtain: th.onacc, unfold: th.bg }[rc.open as string] ?? P.ink;
@@ -455,7 +494,7 @@ export function InvitePage(props: InvitePageProps) {
       <div
         ref={root}
         data-invite-page="1"
-        data-playing={playing ? '1' : '0'}
+        data-playing={isPlaying ? '1' : '0'}
         data-stage={stage}
         lang={lang}
         style={{
@@ -489,7 +528,7 @@ export function InvitePage(props: InvitePageProps) {
               S={S}
               forName={guest !== null ? `${S.forLabel} · ${guest.name}` : `${a} & ${b}`}
               textColor={overlayText}
-              music={musicOn}
+              music={canPlay}
               songTitle={songTitle}
               coverPh={coverPh}
               coverCrop={coverCrop}
@@ -650,10 +689,10 @@ export function InvitePage(props: InvitePageProps) {
           </div>
 
           {/* What floats: the entry pass button at the left, the player at the right */}
-          {stage === 'open' && (guest !== null && qr !== null || (musicOn && rc.player !== 'bar')) && (
+          {stage === 'open' && (guest !== null && qr !== null || (canPlay && rc.player !== 'bar')) && (
             <div style={{ position: 'sticky', bottom: 14, zIndex: 9, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, padding: '0 14px 4px', pointerEvents: 'none' }}>
               <div>{guest !== null && qr !== null && <EntryPassButton lang={lang} onOpen={openPass} />}</div>
-              {musicOn && rc.player === 'pill' && (
+              {canPlay && rc.player === 'pill' && (
                 <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 10, maxWidth: '58%', minWidth: 0, padding: '6px 6px 6px 14px', borderRadius: 999, background: `${P.ink}E6`, color: P.bg, boxShadow: '0 12px 30px rgba(26,37,22,0.28)', backdropFilter: 'blur(8px)' }}>
                   <Eq height={16} width={3} n={3} color={P.accent} />
                   <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -665,7 +704,7 @@ export function InvitePage(props: InvitePageProps) {
                   </button>
                 </div>
               )}
-              {musicOn && rc.player === 'disc' && (
+              {canPlay && rc.player === 'disc' && (
                 <button type="button" onClick={toggle} aria-label={playerLabel} style={{ pointerEvents: 'auto', position: 'relative', width: 56, height: 56, flex: 'none', borderRadius: '50%', border: 0, padding: 0, cursor: 'pointer', background: 'none', boxShadow: '0 10px 26px rgba(26,37,22,0.35)' }}>
                   {vinyl(56, 22)}
                   <span style={{ position: 'absolute', right: -4, bottom: -4, width: 26, height: 26, borderRadius: '50%', background: P.accent, color: P.onacc, display: 'grid', placeItems: 'center' }}>
