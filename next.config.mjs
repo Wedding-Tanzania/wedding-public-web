@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Core-Server runs the site from .next/standalone (server.js plus the traced
+  // node_modules), built on a GitHub runner and rsynced over; see
+  // .github/workflows/deploy.yml. Netlify ignored this and used its own runtime.
+  output: 'standalone',
   experimental: {
     // The card image reads its fonts from disk at request time. Name them, so
     // the serverless bundle on Netlify carries them.
