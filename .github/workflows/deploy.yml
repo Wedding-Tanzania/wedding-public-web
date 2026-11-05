@@ -29,10 +29,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          cache: npm
 
       - name: Install
-        run: npm ci --no-audit --no-fund
+        # npm install, not ci: the lock file was last refreshed on macOS and lacks
+        # the Linux-only optional packages (@emnapi/*) that ci insists on.
+        run: npm install --no-audit --no-fund
 
       - name: Build (standalone)
         env:
