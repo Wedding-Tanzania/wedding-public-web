@@ -84,7 +84,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
         run: |
           for i in 1 2 3 4 5 6; do
-            if curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/attire/navy.webp" -o /dev/null && curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/" | grep -q "Wedding by Lockwood"; then echo ready; exit 0; fi
+            if curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/attire/navy-women.webp" -o /dev/null && curl -fsS -H "Host: wedding.co.tz" "http://$REMOTE_HOST/" | grep -q "Wedding by Lockwood"; then echo ready; exit 0; fi
             sleep 5
           done
           echo "::error::the origin did not serve the new build"; exit 1
