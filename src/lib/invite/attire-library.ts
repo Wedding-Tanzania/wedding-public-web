@@ -1,17 +1,33 @@
 import { NAMED_COLOURS, hex } from './wcz';
 
 /**
- * The dress-code photo library: one photograph per celebration colour of a
- * man in a suit and a woman in a gown of that colour, on a plain background.
- * Francis (2026-11-05) asked for human-looking people instead of the drawn
- * figures. The couple's own outfit photo, when uploaded, always wins over the
- * library (see Attire.tsx).
+ * The dress-code photo library: per celebration colour, four photographs on
+ * a plain background, one person each: a woman in a gown of the colour, a
+ * man in a suit of the colour, a man in a blazer of the colour with cream
+ * trousers (the groomsmen look at Andrew's wedding), and a man in a black
+ * suit with the colour only on his bow tie and pocket square. Francis
+ * (2026-11-05) asked for human-looking people instead of drawn figures and
+ * (2026-11-06) for the women and the men shown apart, since the men often
+ * wear black while the women wear the colour. The couple's own outfit photo,
+ * when uploaded, always wins over the library (see Attire.tsx).
  *
- * The files live in public/attire/<key>.webp (720x960). Any colour a couple
- * picks is first named (the nearest of NAMED_COLOURS, the same naming the
- * swatches use) and that name picks the look, so "Mint" dresses in sage and
- * "Maroon" in burgundy rather than whatever is nearest in raw RGB.
+ * The files live in public/attire/<key>-<variant>.webp (600x800; 75 from
+ * Figma generate_image, model gpt-image-2.5-flare, and 21 from Canva
+ * generate-image exported through a scratch design, same prompts). Any colour
+ * a couple picks is first named (the nearest of NAMED_COLOURS, the same
+ * naming the swatches use) and that name picks the look, so "Mint" dresses
+ * in sage and "Maroon" in burgundy rather than whatever is nearest in raw RGB.
  */
+import type { AttireMen } from './wcz';
+
+/** The four photographs of a look. */
+export type LookVariant = 'women' | 'men-suit' | 'men-blazer' | 'men-black';
+export const LOOK_VARIANTS: readonly LookVariant[] = ['women', 'men-suit', 'men-blazer', 'men-black'];
+
+/** The men's photograph for how a row says the men wear the colour. */
+export function menVariant(men: AttireMen): LookVariant {
+  return men === 'blazer' ? 'men-blazer' : men === 'black' ? 'men-black' : 'men-suit';
+}
 export interface LibraryLook {
   key: string;
   /** The colour the photograph was made for. */
@@ -122,7 +138,7 @@ export function libraryLook(colour: string): LibraryLook {
   return look;
 }
 
-/** The public path of a look's photograph. */
-export function libraryImage(look: LibraryLook): string {
-  return `/attire/${look.key}.webp`;
+/** The public path of one of a look's photographs. */
+export function libraryImage(look: LibraryLook, variant: LookVariant): string {
+  return `/attire/${look.key}-${variant}.webp`;
 }

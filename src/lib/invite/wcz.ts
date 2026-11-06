@@ -142,12 +142,25 @@ export interface Venue {
    */
   mapQuery?: string;
 }
-/** One celebration colour: swatch, names in both languages, optional outfit photo. */
+/** Who a celebration colour is for. */
+export type AttireWear = 'all' | 'women' | 'men';
+/** How the men wear it: a suit in the colour, a blazer in it with cream trousers, or a black suit with the colour as accents. */
+export type AttireMen = 'suit' | 'blazer' | 'black';
+export const ATTIRE_MEN: readonly AttireMen[] = ['suit', 'blazer', 'black'];
+/** One celebration colour: swatch, names in both languages, who wears it, how the men wear it, optional outfit photo. */
 export interface Attire {
   hex: string;
   sw: string;
   en: string;
   photo: string | null;
+  wear: AttireWear;
+  men: AttireMen;
+}
+export function attireWear(v: unknown): AttireWear {
+  return v === 'women' || v === 'men' ? v : 'all';
+}
+export function attireMen(v: unknown): AttireMen {
+  return v === 'blazer' || v === 'black' ? v : 'suit';
 }
 /** One "A note for our guests" row. */
 export interface Note {
@@ -465,6 +478,8 @@ export interface Strings {
   wearColours: string;
   men: string;
   women: string;
+  /** Captions under the men's library photographs, by AttireMen. */
+  menLook: Record<AttireMen, string>;
   viewFull: string;
   viewLess: string;
   notesLead: string;
@@ -634,6 +649,7 @@ export const STR: Record<Lang, Strings> = {
     wearColours: 'Sherehekeeni nasi kwa rangi hizi',
     men: 'Wanaume',
     women: 'Wanawake',
+    menLook: { suit: 'Suti ya rangi hiyo', blazer: 'Blaza ya rangi hiyo, suruali ya krimu', black: 'Suti nyeusi, rangi kwenye tai' },
     viewFull: 'Ona ratiba kamili',
     viewLess: 'Ficha ratiba',
     notesLead: 'Mambo ya kujua',
@@ -815,6 +831,7 @@ export const STR: Record<Lang, Strings> = {
     wearColours: 'Celebrate with us in these colours',
     men: 'Men',
     women: 'Women',
+    menLook: { suit: 'Suit in the colour', blazer: 'Blazer in the colour, cream trousers', black: 'Black suit, the colour on the tie' },
     viewFull: 'View full programme',
     viewLess: 'Show less',
     notesLead: 'Good to know',
@@ -1100,10 +1117,10 @@ export function attireOf(d: InviteDesign): Attire[] {
   if (d.attire.length > 0) {
     return d.attire.map((a) => {
       const auto = colourName(a.hex);
-      return { hex: hex(a.hex), en: a.en || auto.en, sw: a.sw || auto.sw, photo: a.photo };
+      return { hex: hex(a.hex), en: a.en || auto.en, sw: a.sw || auto.sw, photo: a.photo, wear: attireWear(a.wear), men: attireMen(a.men) };
     });
   }
-  return d.dress.map((c) => ({ hex: hex(c), ...colourName(c), photo: null }));
+  return d.dress.map((c) => ({ hex: hex(c), ...colourName(c), photo: null, wear: 'all' as const, men: 'suit' as const }));
 }
 
 /** The guest notes to show, in one language: the couple's rows, or the defaults. */
@@ -1533,7 +1550,7 @@ export function normalise(input: Partial<InviteDesign> | null | undefined, fallb
     rsvpBy: src.rsvpBy ?? '',
     ratiba: src.ratiba ?? [],
     dress: src.dress ?? [],
-    attire: (src.attire ?? []).map((a) => ({ hex: a.hex, sw: a.sw ?? '', en: a.en ?? '', photo: a.photo ?? null })),
+    attire: (src.attire ?? []).map((a) => ({ hex: a.hex, sw: a.sw ?? '', en: a.en ?? '', photo: a.photo ?? null, wear: attireWear(a.wear), men: attireMen(a.men) })),
     story: src.story ?? [],
     notes: (src.notes ?? []).map((n) => ({ sw: n.sw ?? '', en: n.en ?? '', bodySw: n.bodySw ?? '', bodyEn: n.bodyEn ?? '' })),
     michango: { mpesa: '', tigo: '', airtel: '', name: '', ...(src.michango ?? {}) },
