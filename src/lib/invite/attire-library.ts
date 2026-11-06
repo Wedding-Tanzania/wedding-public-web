@@ -11,12 +11,9 @@ import { NAMED_COLOURS, hex } from './wcz';
  * wear black while the women wear the colour. The couple's own outfit photo,
  * when uploaded, always wins over the library (see Attire.tsx).
  *
- * The files live in public/attire/<key>-<variant>.webp (600x800, Figma
- * generate_image, model gpt-image-2.5-flare). Figma's credits ran out on
- * 2026-11-06 with 21 photographs to go (every variant of teal, turquoise,
- * purple, lilac and black, and the sky-blue woman): those files are for now
- * crops of the earlier couple photographs (400x900) and are to be replaced
- * once the credits reset. Any colour
+ * The files live in public/attire/<key>-<variant>.webp (600x800; 75 from
+ * Figma generate_image, model gpt-image-2.5-flare, and 21 from Canva
+ * generate-image exported through a scratch design, same prompts). Any colour
  * a couple picks is first named (the nearest of NAMED_COLOURS, the same
  * naming the swatches use) and that name picks the look, so "Mint" dresses
  * in sage and "Maroon" in burgundy rather than whatever is nearest in raw RGB.
