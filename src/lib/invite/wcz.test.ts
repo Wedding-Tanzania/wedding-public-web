@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_NOTES, SECTION_KEYS, STR, attireOf, colourName, countdown, notesOf, normalise, page, venueBlurb, words } from './wcz';
+import { DEFAULT_NOTES, SECTION_KEYS, STR, attireOf, colourName, countdown, notesOf, normalise, page, venueBlurb, words, type Attire } from './wcz';
 
 const saved = normalise({
   tpl: 't03',
@@ -40,11 +40,16 @@ describe('celebration colours', () => {
 
   it('derives the colour cards from the dress hexes until the couple names them', () => {
     expect(attireOf(saved)).toEqual([
-      { hex: '#8A9A5B', en: 'Sage green', sw: 'Kijani cha sage', photo: null },
-      { hex: '#DCAE96', en: 'Dusty rose', sw: 'Waridi hafifu', photo: null },
+      { hex: '#8A9A5B', en: 'Sage green', sw: 'Kijani cha sage', photo: null, wear: 'all', men: 'suit' },
+      { hex: '#DCAE96', en: 'Dusty rose', sw: 'Waridi hafifu', photo: null, wear: 'all', men: 'suit' },
     ]);
-    const named = normalise({ ...saved, attire: [{ hex: '#8A9A5B', en: 'Olive sage', sw: '', photo: 'https://cdn.test/a.jpg' }] });
-    expect(attireOf(named)).toEqual([{ hex: '#8A9A5B', en: 'Olive sage', sw: 'Kijani cha sage', photo: 'https://cdn.test/a.jpg' }]);
+    const named = normalise({ ...saved, attire: [{ hex: '#8A9A5B', en: 'Olive sage', sw: '', photo: 'https://cdn.test/a.jpg', wear: 'women', men: 'suit' }] });
+
+    // Rows saved before "wear" and "men" existed read as everyone, suit; bad values do too.
+    const old = normalise({ ...saved, attire: [{ hex: '#8A9A5B', en: '', sw: '', photo: null } as Attire, { hex: '#1F2A44', en: '', sw: '', photo: null, wear: 'kids', men: 'kilt' } as unknown as Attire] });
+    expect(old.attire.map((a) => [a.wear, a.men])).toEqual([['all', 'suit'], ['all', 'suit']]);
+    expect(named.attire[0]).toMatchObject({ wear: 'women', men: 'suit' });
+    expect(attireOf(named)).toEqual([{ hex: '#8A9A5B', en: 'Olive sage', sw: 'Kijani cha sage', photo: 'https://cdn.test/a.jpg', wear: 'women', men: 'suit' }]);
   });
 });
 

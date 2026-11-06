@@ -42,7 +42,7 @@ const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47];
 const OUT = process.env.CARD_OUT;
 if (OUT) mkdirSync(OUT, { recursive: true });
 
-const A = (hex: string, sw: string, en: string): Attire => ({ hex, sw, en, photo: null });
+const A = (hex: string, sw: string, en: string): Attire => ({ hex, sw, en, photo: null, wear: 'all', men: 'suit' });
 const EIGHT = [
   A('#1F2A44', 'Buluu iliyokoza', 'Navy'),
   A('#D4AF37', 'Dhahabu', 'Gold'),

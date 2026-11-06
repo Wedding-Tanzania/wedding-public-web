@@ -1,14 +1,23 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ATTIRE_LIBRARY, LOOK_BY_NAME, libraryImage, libraryLook } from './attire-library';
+import { ATTIRE_LIBRARY, LOOK_BY_NAME, LOOK_VARIANTS, libraryImage, libraryLook, menVariant } from './attire-library';
 import { NAMED_COLOURS } from './wcz';
 
 describe('attire library', () => {
-  it('has a photograph on disk for every look', () => {
+  it('has all four photographs on disk for every look', () => {
     for (const l of ATTIRE_LIBRARY) {
-      expect(existsSync(path.join(process.cwd(), 'public', libraryImage(l))), l.key).toBe(true);
+      for (const v of LOOK_VARIANTS) {
+        expect(existsSync(path.join(process.cwd(), 'public', libraryImage(l, v))), `${l.key} ${v}`).toBe(true);
+      }
     }
+  });
+
+  it("picks the men's photograph from how the row says the men wear it", () => {
+    expect(menVariant('suit')).toBe('men-suit');
+    expect(menVariant('blazer')).toBe('men-blazer');
+    expect(menVariant('black')).toBe('men-black');
+    expect(libraryImage(libraryLook('#2E8B57'), menVariant('black'))).toBe('/attire/emerald-men-black.webp');
   });
 
   it('dresses every named colour in a look that exists', () => {
