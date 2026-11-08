@@ -1,27 +1,30 @@
 import Link from 'next/link';
 import { Wordmark } from './Wordmark';
+import { DEMO_STORY_URL, START_URL } from '@/lib/site-links';
 
 const cols = [
   {
     title: 'Platform',
     links: [
+      { href: '/#how', label: 'How it works' },
       { href: '/features', label: 'Features' },
+      { href: '/app', label: 'The app' },
       { href: '/pricing', label: 'Pricing' },
-      { href: '/vendors', label: 'Vendors' },
-      { href: '/testimonials', label: 'Stories' },
     ],
   },
   {
     title: 'Kamati',
     links: [
-      { href: '/contact', label: 'Create wedding' },
-      { href: '/features', label: 'Join committee' },
-      { href: '/features#michango', label: 'Michango guide' },
+      { href: START_URL, label: 'Create your wedding' },
+      { href: '/features#kamati', label: 'Plan with your kamati' },
+      { href: '/features#michango', label: 'Michango' },
+      { href: DEMO_STORY_URL, label: 'Sample wedding page' },
     ],
   },
   {
     title: 'Vendors',
     links: [
+      { href: '/vendors', label: 'Vendors' },
       { href: '/vendors/join', label: 'Join as vendor' },
       { href: 'https://vendors.wedding.co.tz', label: 'Vendor portal' },
       { href: '/press', label: 'Resources' },
@@ -36,6 +39,7 @@ const cols = [
       { href: '/security', label: 'Security' },
       { href: '/privacy', label: 'Privacy' },
       { href: '/terms', label: 'Terms' },
+      { href: '/delete-account', label: 'Delete account' },
     ],
   },
 ];

@@ -2,12 +2,13 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Wordmark } from './Wordmark';
+import { LOGIN_URL, START_URL } from '@/lib/site-links';
 
 const navItems = [
-  { href: '/vendors', label: 'Vendors' },
+  { href: '/#how', label: 'How it works' },
   { href: '/features', label: 'Features' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/testimonials', label: 'Stories' },
+  { href: '/#michango', label: 'Michango' },
+  { href: '/app', label: 'The app' },
 ];
 
 export function SiteNav() {
@@ -26,16 +27,17 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <Link href="https://app.wedding.co.tz" className="btn btn-outline !py-3 !px-5 !text-[11px]">
+          <Link href={LOGIN_URL} className="btn btn-outline !py-3 !px-5 !text-[11px]">
             Log in
           </Link>
-          <Link href="/contact" className="btn btn-primary !py-3 !px-5 !text-[11px]">
+          <Link href={START_URL} className="btn btn-primary !py-3 !px-5 !text-[11px]">
             Start planning
           </Link>
         </div>
         <button
           className="md:hidden text-herb-700"
           aria-label="Open menu"
+          aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
         >
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -52,8 +54,15 @@ export function SiteNav() {
               </Link>
             ))}
             <Link
-              href="/contact"
-              className="btn btn-primary !py-3 mt-2 justify-center"
+              href={LOGIN_URL}
+              className="btn btn-outline !py-3 mt-2 justify-center"
+              onClick={() => setOpen(false)}
+            >
+              Log in
+            </Link>
+            <Link
+              href={START_URL}
+              className="btn btn-primary !py-3 justify-center"
               onClick={() => setOpen(false)}
             >
               Start planning
