@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Vendor } from '@/lib/types';
 import { apiGet } from '@/lib/api';
-import { Section, SectionHead } from '@/components/Section';
+import { Section } from '@/components/Section';
 
 export const revalidate = 60;
 export const metadata = { title: 'Vendors' };
@@ -11,129 +11,6 @@ interface VendorListResponse {
   page: number;
   total: number;
 }
-
-const sampleVendors: Vendor[] = [
-  {
-    id: '1',
-    userId: 'u1',
-    slug: 'kilima-gardens-estate',
-    businessName: 'Kilima Gardens Estate',
-    category: 'venue',
-    serviceAreas: ['Dar es Salaam'],
-    yearsInBusiness: 12,
-    verified: true,
-    highlyRated: true,
-    fastResponder: true,
-    themes: ['garden', 'rooftop_urban'],
-    description: 'An estate venue on Bagamoyo Road with a garden pavilion, terrace, and a 320-seat main hall.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.9,
-    reviewCount: 81,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    id: '2',
-    userId: 'u2',
-    slug: 'mushi-studios',
-    businessName: 'Mushi Studios',
-    category: 'photographer',
-    serviceAreas: ['Dar es Salaam', 'Zanzibar'],
-    yearsInBusiness: 6,
-    verified: true,
-    highlyRated: true,
-    fastResponder: true,
-    themes: ['coastal_swahili', 'beach_zanzibar', 'christian_church'],
-    description: 'Photo and motion for weddings, with a still, documentary eye. Two-photographer days as standard.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.95,
-    reviewCount: 64,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    id: '3',
-    userId: 'u3',
-    slug: 'komba-catering',
-    businessName: 'Komba Catering',
-    category: 'caterer',
-    serviceAreas: ['Dar es Salaam', 'Bagamoyo'],
-    yearsInBusiness: 9,
-    verified: true,
-    highlyRated: true,
-    fastResponder: false,
-    themes: ['traditional_chagga', 'coastal_swahili', 'islamic_nikah'],
-    description: 'Coastal-Swahili-led menus with Indian Ocean seafood. Halal certified. Up to 600 guests.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.8,
-    reviewCount: 52,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    id: '4',
-    userId: 'u4',
-    slug: 'bloom-florals',
-    businessName: 'Bloom & Co Florals',
-    category: 'decor',
-    serviceAreas: ['Dar es Salaam', 'Arusha'],
-    yearsInBusiness: 4,
-    verified: true,
-    highlyRated: false,
-    fastResponder: true,
-    themes: ['garden', 'rooftop_urban', 'christian_church'],
-    description: 'Romantic, garden-style florals with seasonal local stems. Aisle, ceremony arch, and tablescapes.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.7,
-    reviewCount: 31,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    id: '5',
-    userId: 'u5',
-    slug: 'dj-shanto',
-    businessName: 'DJ Shanto',
-    category: 'dj_mc',
-    serviceAreas: ['Dar es Salaam', 'Mwanza'],
-    yearsInBusiness: 8,
-    verified: true,
-    highlyRated: true,
-    fastResponder: true,
-    themes: ['rooftop_urban', 'christian_church', 'islamic_nikah'],
-    description: 'Bilingual MC and DJ. Strong with Bongo Flava, Afrobeats, classic Bongo, and Bollywood mash-ups.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.9,
-    reviewCount: 47,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    id: '6',
-    userId: 'u6',
-    slug: 'amara-cakes',
-    businessName: 'Amara Cake House',
-    category: 'cake',
-    serviceAreas: ['Dar es Salaam'],
-    yearsInBusiness: 5,
-    verified: true,
-    highlyRated: false,
-    fastResponder: true,
-    themes: ['garden', 'beach_zanzibar', 'islamic_nikah'],
-    description: 'Tiered cakes, dessert tables, and grooms cakes. Vegan and gluten-free options.',
-    portfolioImageUrls: [],
-    packages: [],
-    rating: 4.6,
-    reviewCount: 23,
-    createdAt: '',
-    updatedAt: '',
-  },
-];
 
 const categoryFilters = [
   { value: '', label: 'All' },
@@ -168,26 +45,27 @@ export default async function VendorsPage({
   if (searchParams.category !== undefined) query.set('category', searchParams.category);
   if (searchParams.theme !== undefined) query.set('theme', searchParams.theme);
 
-  let data: VendorListResponse;
+  // Only real, verified listings. When there are none (or the API is down)
+  // the page says so instead of showing made-up businesses.
+  let data: VendorListResponse | null;
   try {
     data = await apiGet<VendorListResponse>(`/vendors?${query.toString()}`);
-    if (data.items.length === 0) data = { items: sampleVendors, page: 1, total: sampleVendors.length };
   } catch {
-    data = { items: sampleVendors, page: 1, total: sampleVendors.length };
+    data = null;
   }
+  const items = data?.items ?? [];
+  const filtered = searchParams.category !== undefined || searchParams.theme !== undefined;
 
   return (
     <main>
       <Section tone="ivory" className="!pt-32 !pb-12">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="eyebrow justify-center">Marketplace</div>
+          <div className="eyebrow justify-center">Vendors</div>
           <h1 className="mt-4 font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
-            Verified vendors.
-            <br />
-            <em className="not-italic font-extrabold text-herb-600">From across East Africa.</em>
+            Verified wedding businesses.
           </h1>
           <p className="mt-6 font-sans text-xl text-ink-2 leading-relaxed">
-            Filter by theme, category, or city. Every listing reviewed by our team.
+            Filter by category or theme. Every listing here has been checked by our team.
           </p>
         </div>
       </Section>
@@ -216,17 +94,38 @@ export default async function VendorsPage({
           ))}
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.items.map((v) => (
-            <VendorCard key={v.id} v={v} />
-          ))}
-        </div>
-
-        <div className="text-center mt-16">
-          <p className="font-sans text-ink-3">
-            Showing {data.items.length} of {data.total} vendors.
-          </p>
-        </div>
+        {items.length > 0 ? (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map((v) => (
+                <VendorCard key={v.id} v={v} />
+              ))}
+            </div>
+            <div className="text-center mt-16">
+              <p className="font-sans text-ink-3">
+                Showing {items.length} of {data?.total ?? items.length} vendors.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="mx-auto flex max-w-xl flex-col items-center gap-5 py-16 text-center">
+            <h2 className="font-sans text-2xl font-bold text-ink-1">
+              {data === null
+                ? 'The vendor list could not be loaded just now.'
+                : filtered
+                  ? 'No verified vendors in this category yet.'
+                  : 'The first verified vendors are being added.'}
+            </h2>
+            <p className="font-sans text-[15px] leading-relaxed text-ink-2">
+              {data === null
+                ? 'Please try again in a minute.'
+                : 'Run a wedding business? List it, and couples will find it here once our team has verified it.'}
+            </p>
+            <Link href="/vendors/join" className="btn btn-primary">
+              List your business
+            </Link>
+          </div>
+        )}
       </Section>
     </main>
   );
@@ -259,11 +158,6 @@ function VendorCard({ v }: { v: Vendor }) {
             ✓ Verified
           </div>
         )}
-        {v.highlyRated && (
-          <div className="absolute top-3 left-3 bg-herb-600 text-paper text-[10px] px-3 py-1 rounded-full font-medium uppercase tracking-widest">
-            Highly rated
-          </div>
-        )}
       </div>
       <div className="p-6">
         <div className="font-sans text-2xl text-herb-900 group-hover:text-herb-700 transition">
@@ -274,11 +168,10 @@ function VendorCard({ v }: { v: Vendor }) {
         </div>
         <p className="mt-4 text-sm text-ink-2 leading-relaxed line-clamp-3">{v.description}</p>
         <div className="mt-5 pt-4 border-t border-bordr flex items-center justify-between">
-          {v.rating !== undefined && (
-            <div className="text-sm text-ink-1">
-              <span className="font-sans text-lg">{v.rating.toFixed(1)}</span>
-              <span className="text-ink-3 ml-2 text-xs">({v.reviewCount})</span>
-            </div>
+          {v.verified ? (
+            <span className="text-[11px] uppercase tracking-widest text-ink-3">Verified listing</span>
+          ) : (
+            <span />
           )}
           <span className="text-[11px] uppercase tracking-widest text-herb-600 group-hover:text-herb-800">
             View →

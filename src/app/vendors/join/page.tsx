@@ -40,8 +40,8 @@ const steps = [
     body: 'Our team reviews the listing. Only verified businesses appear in the vendor directory.',
   },
   {
-    title: 'Answer enquiries',
-    body: 'Couples planning on Wedding by Lockwood send enquiries. Reply to each one with a quote.',
+    title: 'Log every enquiry',
+    body: 'Phone, WhatsApp, a walk-in or your profile: add each enquiry to the portal and reply with a quote.',
   },
   {
     title: 'Confirm the booking',
@@ -62,7 +62,7 @@ const blocks: Block[] = [
   {
     eyebrow: 'Leads and quotes',
     title: 'Every enquiry in one inbox',
-    body: 'No more chasing couples across WhatsApp, Instagram and phone calls. Each enquiry lands in one inbox, and you answer it with a quote the couple can accept.',
+    body: 'No more chasing couples across WhatsApp, Instagram and phone calls. Keep every enquiry in one inbox, however it reached you, and answer it with a quote the couple can accept.',
     bullets: [
       'All enquiries in one list, nothing lost',
       'Send a quote from the enquiry itself',
@@ -100,7 +100,7 @@ const extras = [
   },
   {
     title: 'Found by the right couples',
-    body: 'The directory lets couples filter by category, wedding theme and area, so the enquiries you get fit what you do.',
+    body: 'Couples filter the directory by category and wedding theme, and can ask about a quote from your profile.',
   },
 ];
 
@@ -111,7 +111,7 @@ const faqs = [
   },
   {
     q: 'How do couples find me?',
-    a: 'Verified businesses appear in the vendor directory at wedding.co.tz/vendors, where couples filter by category, theme and area and send an enquiry from your profile.',
+    a: 'Verified businesses appear in the vendor directory at wedding.co.tz/vendors, where couples filter by category and wedding theme and can ask about a quote from your profile.',
   },
   {
     q: 'Can my staff use the portal too?',
