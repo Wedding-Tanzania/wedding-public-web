@@ -27,9 +27,9 @@ export const features: Feature[] = [
     id: 'guests',
     eyebrow: 'Wageni · guests and cards',
     title: 'Every guest, every card, every reply',
-    body: 'Build the guest list from your phone contacts, send each guest their own invitation card by SMS or WhatsApp, and see who has said yes.',
+    body: 'Build the guest list from your phone contacts, a spreadsheet or a linked Google Sheet, send each guest their own invitation card by SMS or WhatsApp, and see who has said yes.',
     bullets: [
-      'Import guests from your contacts, or add them one by one',
+      'Import from your contacts, Excel, CSV or Google Sheets',
       'A personal card for each guest, sent by SMS or WhatsApp',
       'RSVP answers land back in the list',
     ],
@@ -61,7 +61,7 @@ export const features: Feature[] = [
     bullets: [
       'Planned and paid, side by side, per category',
       'Money received against money spent on the home screen',
-      'Bigger changes wait for the couple to approve them',
+      'Budget changes need a second kamati member to approve',
     ],
     photo: '/marketing/feature-budget.webp',
     photoAlt: 'An engaged couple at a cafe going through their wedding budget with a notebook and a phone',
@@ -72,10 +72,10 @@ export const features: Feature[] = [
     id: 'kamati',
     eyebrow: 'Kamati · the committee',
     title: 'Plan together with your kamati',
-    body: 'Invite the chairperson, the treasurer and the rest of the committee. Everyone works from the same list of tasks, so nothing slips between meetings.',
+    body: 'Invite the mwenyekiti, katibu, mweka hazina and the rest of the committee. Each one gets the role that fits, and everyone works from the same list of tasks, so nothing slips between meetings.',
     bullets: [
+      'Roles for chair, secretary, treasurer, members, planner and family',
       'Tasks with due dates and priorities',
-      'Kamati members join with their own sign-in',
       'One place instead of a dozen WhatsApp threads',
     ],
     photo: '/marketing/feature-kamati.webp',
@@ -120,7 +120,7 @@ export const features: Feature[] = [
     title: 'The whole wedding on one screen',
     body: 'The countdown, the budget, michango and guests at a glance, right on your phone. Notifications tell you when a pledge is paid or something needs your approval.',
     bullets: [
-      'For the couple and every kamati member',
+      'In Kiswahili or English, for the couple and every kamati member',
       'On your phone, and on the web at app.wedding.co.tz',
       'Your data stays yours: delete your account any time',
     ],

@@ -9,6 +9,7 @@ const navItems = [
   { href: '/features', label: 'Features' },
   { href: '/#michango', label: 'Michango' },
   { href: '/app', label: 'The app' },
+  { href: '/vendors/join', label: 'For vendors' },
 ];
 
 export function SiteNav() {
@@ -19,14 +20,14 @@ export function SiteNav() {
         <Link href="/" aria-label="Wedding by Lockwood home">
           <Wordmark tone="dark" />
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-[12px] uppercase tracking-widest font-medium text-ink-2">
+        <nav className="hidden lg:flex items-center gap-8 text-[12px] uppercase tracking-widest font-medium text-ink-2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} className="hover:text-herb-700">
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           <Link href={LOGIN_URL} className="btn btn-outline !py-3 !px-5 !text-[11px]">
             Log in
           </Link>
@@ -35,7 +36,7 @@ export function SiteNav() {
           </Link>
         </div>
         <button
-          className="md:hidden text-herb-700"
+          className="lg:hidden text-herb-700"
           aria-label="Open menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -46,7 +47,7 @@ export function SiteNav() {
         </button>
       </div>
       {open && (
-        <div className="md:hidden border-t border-bordr bg-paper">
+        <div className="lg:hidden border-t border-bordr bg-paper">
           <div className="px-6 py-4 flex flex-col gap-3 text-sm text-ink-2">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>

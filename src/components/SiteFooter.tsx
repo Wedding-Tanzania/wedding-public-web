@@ -25,7 +25,7 @@ const cols = [
     title: 'Vendors',
     links: [
       { href: '/vendors', label: 'Vendors' },
-      { href: '/vendors/join', label: 'Join as vendor' },
+      { href: '/vendors/join', label: 'For vendors' },
       { href: 'https://vendors.wedding.co.tz', label: 'Vendor portal' },
       { href: '/press', label: 'Resources' },
     ],
