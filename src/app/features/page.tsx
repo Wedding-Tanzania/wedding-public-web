@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Section } from '@/components/Section';
 import { FeatureBlock, features } from '@/components/marketing/features';
+import { MoreFeatures } from '@/components/marketing/MoreFeatures';
 import { START_URL } from '@/lib/site-links';
 
 export const metadata: Metadata = {
@@ -43,6 +44,10 @@ export default function FeaturesPage() {
             <FeatureBlock key={f.id} feature={f} index={i} />
           ))}
         </div>
+      </Section>
+
+      <Section tone="cream">
+        <MoreFeatures />
       </Section>
 
       <section className="bg-herb-800 px-6 py-20 lg:px-12">

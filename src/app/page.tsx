@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Section } from '@/components/Section';
 import { FeatureBlock, features } from '@/components/marketing/features';
+import { MoreFeatures } from '@/components/marketing/MoreFeatures';
 import { START_URL } from '@/lib/site-links';
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function HomePage() {
       <Hero />
       <HowItWorks />
       <Features />
+      <More />
       <BuiltForTanzania />
       <Trust />
       <Faq />
@@ -138,6 +140,14 @@ function Features() {
           <FeatureBlock key={f.id} feature={f} index={i} />
         ))}
       </div>
+    </Section>
+  );
+}
+
+function More() {
+  return (
+    <Section tone="cream">
+      <MoreFeatures />
     </Section>
   );
 }
