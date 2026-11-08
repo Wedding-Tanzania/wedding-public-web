@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import type { Vendor } from '@/lib/types';
 import { apiGet } from '@/lib/api';
 import { Section } from '@/components/Section';
+import { COUPLE_APP_URL } from '@/lib/site-links';
 
 export const revalidate = 60;
 
@@ -67,15 +67,19 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
             </p>
           )}
           <div className="flex flex-wrap gap-4 mt-10">
-            <Link href={`/contact?topic=couple&vendor=${vendor.slug}`} className="btn btn-primary">
-              Ask about a quote
-            </Link>
+            <a href={`${COUPLE_APP_URL}/vendors/${encodeURIComponent(vendor.slug)}`} className="btn btn-primary">
+              Request a quote
+            </a>
             {pkgs.length > 0 && (
               <a href="#packages" className="btn btn-outline">
                 See packages
               </a>
             )}
           </div>
+          <p className="mt-4 max-w-xl font-sans text-sm leading-relaxed text-ink-3">
+            You sign in to your wedding on Wedding by Lockwood, and the request goes straight to{' '}
+            {vendor.businessName}. Track the reply in My vendors.
+          </p>
         </div>
       </section>
 
@@ -86,7 +90,7 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
               <div className="eyebrow">Packages</div>
               <h2 className="font-sans font-light text-4xl mt-4 text-herb-900">What they offer.</h2>
               <p className="text-ink-2 mt-4 leading-relaxed">
-                Packages as the vendor has listed them. Ask for a quote to fit your day.
+                Packages as the vendor has listed them. Request a quote to fit your day.
               </p>
             </div>
             <div>

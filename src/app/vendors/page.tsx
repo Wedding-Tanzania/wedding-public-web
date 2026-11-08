@@ -119,7 +119,7 @@ export default async function VendorsPage({
             <p className="font-sans text-[15px] leading-relaxed text-ink-2">
               {data === null
                 ? 'Please try again in a minute.'
-                : 'Run a wedding business? List it, and couples will find it here once our team has verified it.'}
+                : 'Run a wedding business? List it free, and couples will find it here once our team has verified it.'}
             </p>
             <Link href="/vendors/join" className="btn btn-primary">
               List your business
