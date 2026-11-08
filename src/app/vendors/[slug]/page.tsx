@@ -1,72 +1,44 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import type { Vendor } from '@/lib/types';
 import { apiGet } from '@/lib/api';
 import { Section } from '@/components/Section';
+import { COUPLE_APP_URL } from '@/lib/site-links';
 
 export const revalidate = 60;
 
-const samplePackages = [
-  {
-    id: 'p1',
-    name: 'Half-day ceremony',
-    description: 'Six hours of coverage with two photographers. Online gallery and 60 hi-res edits.',
-    priceTzs: 2_800_000,
-    inclusions: [],
-  },
-  {
-    id: 'p2',
-    name: 'Full-day',
-    description: 'Twelve hours. Two photographers + assistant. Online gallery, 120 hi-res edits, USB drive.',
-    priceTzs: 4_500_000,
-    inclusions: [],
-  },
-  {
-    id: 'p3',
-    name: 'Two-day celebration',
-    description: 'Kitchen party + ceremony + reception. Photo + 4-min motion edit.',
-    priceTzs: 7_200_000,
-    inclusions: [],
-  },
-];
-
-export default async function VendorProfilePage({ params }: { params: { slug: string } }) {
-  let vendor: Vendor | null = null;
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
-    vendor = await apiGet<Vendor>(`/vendors/${params.slug}`);
+    const v = await apiGet<Vendor>(`/vendors/${encodeURIComponent(params.slug)}`);
+    return { title: v.businessName, description: v.description || undefined };
   } catch {
-    vendor = null;
+    return { title: 'Vendor not found', robots: { index: false, follow: false } };
+  }
+}
+
+/**
+ * A verified vendor's public profile. Only what the vendor saved is shown:
+ * an unknown slug is a 404 (no made-up demo vendor), packages appear only
+ * when the vendor has added them, and there are no ratings until reviews
+ * exist in the product.
+ */
+export default async function VendorProfilePage({ params }: { params: { slug: string } }) {
+  let vendor: Vendor;
+  try {
+    vendor = await apiGet<Vendor>(`/vendors/${encodeURIComponent(params.slug)}`);
+  } catch (err) {
+    // An unknown or unverified vendor is a 404; anything else (API down)
+    // goes to the error page rather than pretending the vendor is missing.
+    if (err instanceof Error && /failed: 404$/.test(err.message)) notFound();
+    throw err;
   }
 
-  if (vendor === null) {
-    // Demo fallback so the design is visible without a running api
-    vendor = {
-      id: 'demo',
-      userId: 'demo',
-      slug: params.slug,
-      businessName: params.slug
-        .split('-')
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(' '),
-      category: 'photographer',
-      serviceAreas: ['Dar es Salaam', 'Zanzibar'],
-      yearsInBusiness: 6,
-      verified: true,
-      highlyRated: true,
-      fastResponder: true,
-      themes: ['coastal_swahili', 'beach_zanzibar'],
-      description:
-        'A documentary-style studio capturing weddings across coastal Tanzania. Two-photographer days as standard, with motion edits available.',
-      portfolioImageUrls: [],
-      packages: samplePackages,
-      rating: 4.95,
-      reviewCount: 64,
-      createdAt: '',
-      updatedAt: '',
-    };
-  }
-
-  const pkgs = vendor.packages.length > 0 ? vendor.packages : samplePackages;
+  const pkgs = vendor.packages ?? [];
+  const themes = vendor.themes ?? [];
+  const facts: Array<[string, string]> = [];
+  if (vendor.yearsInBusiness !== undefined) facts.push(['Years in business', String(vendor.yearsInBusiness)]);
+  if (vendor.serviceAreas.length > 0) facts.push(['Areas served', vendor.serviceAreas.join(', ')]);
+  if (themes.length > 0) facts.push(['Wedding themes', themes.map((t) => t.replace(/_/g, ' ')).join(', ')]);
 
   return (
     <main>
@@ -77,85 +49,87 @@ export default async function VendorProfilePage({ params }: { params: { slug: st
         }}
       >
         <div className="max-w-wrap mx-auto">
-          <div className="flex items-center gap-3 mb-6">
-            {vendor.verified && <span className="tag">Verified</span>}
-            {vendor.highlyRated && (
-              <span className="tag" style={{ background: 'var(--w-sage)', color: 'var(--w-paper)' }}>
-                Highly rated
-              </span>
-            )}
-            {vendor.fastResponder && (
-              <span className="tag" style={{ background: 'var(--w-herb-100)', color: 'var(--w-herb-700)' }}>
-                Fast responder
-              </span>
-            )}
-          </div>
+          {vendor.verified && (
+            <div className="flex items-center gap-3 mb-6">
+              <span className="tag">Verified</span>
+            </div>
+          )}
           <h1 className="font-sans font-light text-[clamp(2.6rem,6vw,5rem)] leading-[1.05] tracking-tight text-herb-900">
             {vendor.businessName}
           </h1>
           <div className="mt-4 text-[11px] uppercase tracking-widest text-ink-3">
-            {vendor.category.replace('_', ' ')} · {vendor.serviceAreas.join(' · ')}
+            {vendor.category.replace(/_/g, ' ')}
+            {vendor.serviceAreas.length > 0 ? ` · ${vendor.serviceAreas.join(' · ')}` : ''}
           </div>
-          <p className="font-sans text-xl text-ink-2 mt-6 max-w-3xl leading-relaxed">
-            {vendor.description}
-          </p>
+          {vendor.description && (
+            <p className="font-sans text-xl text-ink-2 mt-6 max-w-3xl leading-relaxed">
+              {vendor.description}
+            </p>
+          )}
           <div className="flex flex-wrap gap-4 mt-10">
-            <Link href={`/contact?topic=couple&vendor=${vendor.slug}`} className="btn btn-primary">
+            <a href={`${COUPLE_APP_URL}/vendors/${encodeURIComponent(vendor.slug)}`} className="btn btn-primary">
               Request a quote
-            </Link>
-            <a href="#packages" className="btn btn-outline">
-              See packages
             </a>
+            {pkgs.length > 0 && (
+              <a href="#packages" className="btn btn-outline">
+                See packages
+              </a>
+            )}
           </div>
+          <p className="mt-4 max-w-xl font-sans text-sm leading-relaxed text-ink-3">
+            You sign in to your wedding on Wedding by Lockwood, and the request goes straight to{' '}
+            {vendor.businessName}. Track the reply in My vendors.
+          </p>
         </div>
       </section>
 
-      <Section tone="paper">
-        <div id="packages" className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
-          <div className="lg:sticky lg:top-32">
-            <div className="eyebrow">Packages</div>
-            <h2 className="font-sans font-light text-4xl mt-4 text-herb-900">Pricing.</h2>
-            <p className="text-ink-2 mt-4 leading-relaxed">
-              All packages can be customised. Deposits are paid through Malipopay; the platform fee is
-              included in the price shown.
-            </p>
-          </div>
-          <div>
-            {pkgs.map((p, i) => (
-              <div
-                key={p.id}
-                className={`grid grid-cols-[1fr_auto] gap-8 items-start py-8 border-t border-bordr ${i === pkgs.length - 1 ? 'border-b' : ''}`}
-              >
-                <div>
-                  <div className="font-sans text-2xl text-herb-900">{p.name}</div>
-                  <p className="text-ink-2 leading-relaxed mt-2">{p.description}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-ink-3">From</div>
-                  <div className="font-sans text-3xl text-herb-700">
-                    TZS {p.priceTzs.toLocaleString('en-TZ')}
+      {pkgs.length > 0 && (
+        <Section tone="paper">
+          <div id="packages" className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
+            <div className="lg:sticky lg:top-32">
+              <div className="eyebrow">Packages</div>
+              <h2 className="font-sans font-light text-4xl mt-4 text-herb-900">What they offer.</h2>
+              <p className="text-ink-2 mt-4 leading-relaxed">
+                Packages as the vendor has listed them. Request a quote to fit your day.
+              </p>
+            </div>
+            <div>
+              {pkgs.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`grid grid-cols-[1fr_auto] gap-8 items-start py-8 border-t border-bordr ${i === pkgs.length - 1 ? 'border-b' : ''}`}
+                >
+                  <div>
+                    <div className="font-sans text-2xl text-herb-900">{p.name}</div>
+                    <p className="text-ink-2 leading-relaxed mt-2">{p.description}</p>
                   </div>
+                  {p.priceTzs > 0 && (
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-widest text-ink-3">From</div>
+                      <div className="font-sans text-3xl text-herb-700">
+                        TZS {p.priceTzs.toLocaleString('en-TZ')}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {facts.length > 0 && (
+        <Section tone="cream">
+          <div className="grid gap-8 max-w-5xl mx-auto sm:grid-cols-3">
+            {facts.map(([l, v]) => (
+              <div key={l} className="text-center">
+                <div className="font-sans text-2xl text-herb-700 capitalize">{v}</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-3">{l}</div>
               </div>
             ))}
           </div>
-        </div>
-      </Section>
-
-      <Section tone="cream">
-        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {[
-            ['Years', String(vendor.yearsInBusiness ?? 'New')],
-            ['Reviews', `${vendor.reviewCount} (${vendor.rating?.toFixed(1) ?? '·'} ★)`],
-            ['Themes', vendor.themes.length > 0 ? vendor.themes.length.toString() : 'All'],
-          ].map(([l, v]) => (
-            <div key={l} className="text-center">
-              <div className="font-sans text-5xl text-herb-700">{v}</div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-3 mt-3">{l}</div>
-            </div>
-          ))}
-        </div>
-      </Section>
+        </Section>
+      )}
     </main>
   );
 }

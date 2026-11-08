@@ -7,7 +7,7 @@ import { VENDOR_LOGIN_URL, VENDOR_SIGNUP_URL } from '@/lib/site-links';
 export const metadata: Metadata = {
   title: 'For wedding businesses',
   description:
-    'List your wedding business on Wedding by Lockwood. Answer enquiries, send quotes, confirm bookings and keep your calendar and team in one vendor portal.',
+    'List your wedding business free on Wedding by Lockwood. Answer quote requests from couples, confirm bookings and keep your calendar and team in one vendor portal.',
 };
 
 /**
@@ -32,16 +32,16 @@ const categories = [
 
 const steps = [
   {
-    title: 'Create your listing',
-    body: 'Your business name, category, the areas you serve, your packages and portfolio photos.',
+    title: 'Create your free account',
+    body: 'Sign up in the vendor portal with your phone number or email. It takes a minute and costs nothing.',
   },
   {
-    title: 'Get verified',
-    body: 'Our team reviews the listing. Only verified businesses appear in the vendor directory.',
+    title: 'List and get verified',
+    body: 'Add your category, the areas you serve, packages and photos. Our team checks the listing, then it appears in the directory.',
   },
   {
-    title: 'Answer enquiries',
-    body: 'Couples planning on Wedding by Lockwood send enquiries. Reply to each one with a quote.',
+    title: 'Answer quote requests',
+    body: 'Couples who find you request a quote from your profile. It lands in your leads inbox and you reply with a price.',
   },
   {
     title: 'Confirm the booking',
@@ -62,10 +62,10 @@ const blocks: Block[] = [
   {
     eyebrow: 'Leads and quotes',
     title: 'Every enquiry in one inbox',
-    body: 'No more chasing couples across WhatsApp, Instagram and phone calls. Each enquiry lands in one inbox, and you answer it with a quote the couple can accept.',
+    body: 'No more chasing couples across WhatsApp, Instagram and phone calls. Quote requests from couples arrive in one inbox with their wedding date and note, and you answer each one with a quote they can accept.',
     bullets: [
-      'All enquiries in one list, nothing lost',
-      'Send a quote from the enquiry itself',
+      'Every request in one list, nothing lost',
+      'Send a quote from the request itself',
       'See which quotes were accepted or declined',
     ],
     photo: '/marketing/vendor-photographer.webp',
@@ -100,27 +100,26 @@ const extras = [
   },
   {
     title: 'Found by the right couples',
-    body: 'The directory lets couples filter by category, wedding theme and area, so the enquiries you get fit what you do.',
+    body: 'Couples filter the directory by category and wedding theme, and request a quote straight from your profile.',
   },
 ];
 
-const faqs = [
+const faqs: Array<{ q: string; a: string; link?: { href: string; label: string } }> = [
   {
     q: 'Who can list a business?',
     a: 'Any wedding business in Tanzania: photographers, caterers, decorators, venues, DJs and MCs, cake makers, transport, beauty, officiants and bridal wear. Your listing goes live once our team has verified it.',
   },
   {
     q: 'How do couples find me?',
-    a: 'Verified businesses appear in the vendor directory at wedding.co.tz/vendors, where couples filter by category, theme and area and send an enquiry from your profile.',
+    a: 'Verified businesses appear in the vendor directory at wedding.co.tz/vendors, where couples filter by category and wedding theme and request a quote from your profile. Each request lands in your leads inbox.',
   },
   {
     q: 'Can my staff use the portal too?',
     a: 'Yes. Invite them from the Team page and give each one a role, so sales staff handle enquiries and coordinators handle the calendar.',
   },
   {
-    q: 'What does it cost to join?',
-    a: 'Ask us. We will tell you the current terms for your category before you list.',
-    link: { href: '/contact?topic=vendor', label: 'Contact us' },
+    q: 'What does it cost?',
+    a: 'Nothing. Creating your account, listing your business and using the vendor portal are free.',
   },
 ];
 
@@ -161,12 +160,12 @@ export default function VendorJoinPage() {
               Your wedding business, booked and organised.
             </h1>
             <p className="mt-6 max-w-lg font-sans text-[17px] leading-relaxed text-herb-100">
-              List your business where Tanzanian couples plan their weddings. Answer enquiries, send
-              quotes, confirm bookings and keep your calendar and team in one vendor portal.
+              List your business free where Tanzanian couples plan their weddings. Answer quote
+              requests, confirm bookings and keep your calendar and team in one vendor portal.
             </p>
             <div className="mt-9 flex flex-wrap gap-3.5">
               <Link href={VENDOR_SIGNUP_URL} className="btn bg-linen text-herb-800 hover:bg-paper">
-                List your business
+                Create a free account
               </Link>
               <Link
                 href={VENDOR_LOGIN_URL}
@@ -299,7 +298,7 @@ export default function VendorJoinPage() {
           </h2>
           <div className="flex flex-wrap gap-3.5">
             <Link href={VENDOR_SIGNUP_URL} className="btn bg-linen text-herb-800 hover:bg-paper">
-              List your business
+              Create a free account
             </Link>
             <Link href="/vendors" className="btn text-linen ring-1 ring-inset ring-linen/60 hover:ring-linen">
               See the directory

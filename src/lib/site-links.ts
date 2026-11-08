@@ -6,3 +6,5 @@ export const DEMO_STORY_URL = '/neema-and-baraka-74385f';
 /** The vendor portal, where a wedding business signs up and runs its bookings. */
 export const VENDOR_SIGNUP_URL = 'https://vendors.wedding.co.tz/register';
 export const VENDOR_LOGIN_URL = 'https://vendors.wedding.co.tz/login';
+/** The couple app; a vendor's page there is where a signed-in couple requests a quote. */
+export const COUPLE_APP_URL = 'https://app.wedding.co.tz';
