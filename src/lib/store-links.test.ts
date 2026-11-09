@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectPlatform, openInBrowserHref, storeRedirect } from './store-links';
+import { detectPlatform, openInBrowserHref, playUrlFor, storeRedirect } from './store-links';
 
 const IPHONE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
@@ -11,7 +11,7 @@ const IPAD_AS_MAC_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
 
 const APP_STORE = 'https://apps.apple.com/app/id6822616728';
-const PLAY = 'https://play.google.com/store/apps/details?id=tz.co.wedding.app';
+const PLAY = 'https://play.google.com/store/apps/details?id=tz.co.wedding';
 
 describe('detectPlatform', () => {
   it('detects an iPhone', () => {
@@ -77,5 +77,24 @@ describe('openInBrowserHref', () => {
   it('rejects protocol relative URLs', () => {
     expect(openInBrowserHref('//evil')).toBe('/');
     expect(openInBrowserHref('/\\evil')).toBe('/');
+  });
+});
+
+describe('playUrlFor', () => {
+  it('leaves the listing alone without a source', () => {
+    expect(playUrlFor(PLAY, null)).toBe(PLAY);
+  });
+
+  it('adds the campaign as a Play install referrer', () => {
+    const u = new URL(playUrlFor(PLAY, 'instagram'));
+    expect(u.searchParams.get('id')).toBe('tz.co.wedding');
+    expect(u.searchParams.get('referrer')).toBe('utm_source=instagram&utm_medium=campaign_link');
+  });
+});
+
+describe('storeRedirect while only Play is live', () => {
+  it('sends Android to Play and keeps iPhone on the page', () => {
+    expect(storeRedirect(ANDROID_UA, { appStore: null, playStore: PLAY })).toBe(PLAY);
+    expect(storeRedirect(IPHONE_UA, { appStore: null, playStore: PLAY })).toBeNull();
   });
 });

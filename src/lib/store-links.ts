@@ -2,15 +2,26 @@
  * Store links for the Wedding by Lockwood app and the pure helpers behind
  * https://wedding.co.tz/app. Framework free so it can be unit tested.
  *
- * NEXT_PUBLIC_APP_STORE_URL overrides the App Store link. The fallback is the
- * App Store Connect id of the app; the listing resolves once it is public.
- * NEXT_PUBLIC_PLAY_STORE_URL is unset until the Google Play listing exists,
- * so PLAY_STORE_URL is null and the page shows the "coming soon" badge.
+ * Google Play is live, so PLAY_STORE_URL defaults to the listing
+ * (NEXT_PUBLIC_PLAY_STORE_URL overrides it). The App Store version is not
+ * out yet: APP_STORE_URL stays null, and the badge reads "coming soon", until
+ * NEXT_PUBLIC_APP_STORE_URL is set at build time.
  */
-export const APP_STORE_URL: string =
-  process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || 'https://apps.apple.com/app/id6822616728';
+export const PLAY_STORE_URL: string | null =
+  process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim() || 'https://play.google.com/store/apps/details?id=tz.co.wedding';
 
-export const PLAY_STORE_URL: string | null = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim() || null;
+export const APP_STORE_URL: string | null = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || null;
+
+/**
+ * The Play listing with the campaign attached, so Play Console's acquisition
+ * report can split installs by source too.
+ */
+export function playUrlFor(playUrl: string, source: string | null): string {
+  if (source === null) return playUrl;
+  const u = new URL(playUrl);
+  u.searchParams.set('referrer', `utm_source=${source}&utm_medium=campaign_link`);
+  return u.toString();
+}
 
 export type StorePlatform = 'ios' | 'android' | 'other';
 

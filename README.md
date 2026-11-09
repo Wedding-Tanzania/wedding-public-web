@@ -29,7 +29,7 @@ Imported from `../tokens.json`. Tailwind config extends with primary `#A80754`, 
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_APP_STORE_URL` | App Store listing. Defaults to `https://apps.apple.com/app/id6822616728`. |
-| `NEXT_PUBLIC_PLAY_STORE_URL` | Google Play listing. Leave unset until the Play listing is live; the badge then reads "coming soon" and Android stays on the page. |
+| `NEXT_PUBLIC_APP_STORE_URL` | App Store listing. Unset while the iOS app is not out: the badge reads "coming soon" and iPhones stay on /app. Set it (e.g. `https://apps.apple.com/app/id6822616728`) once the app is live. |
+| `NEXT_PUBLIC_PLAY_STORE_URL` | Google Play listing. Defaults to `https://play.google.com/store/apps/details?id=tz.co.wedding`; Android phones on /app go straight there. |
 
 Run `npm test` for the unit tests behind the redirect and link helpers.
